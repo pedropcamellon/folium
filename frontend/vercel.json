@@ -1,0 +1,12 @@
+{
+  "env": {
+    "NEXT_PUBLIC_API_URL": "https://app-south-drift-backend-dev.azurewebsites.net",
+    "DOTNET_API_URL": "https://app-south-drift-backend-dev.azurewebsites.net/api"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_API_URL": "https://app-south-drift-backend-dev.azurewebsites.net",
+      "DOTNET_API_URL": "https://app-south-drift-backend-dev.azurewebsites.net/api"
+    }
+  }
+}

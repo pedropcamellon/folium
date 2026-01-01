@@ -1,0 +1,54 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: southdrift-minio
+    ports:
+      - "9000:9000"  # S3 API
+      - "9001:9001"  # Web Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - south-drift-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  backend:
+    extends:
+      file: ./backend/docker-compose.yml
+      service: backend
+    depends_on:
+      - minio
+    environment:
+      - STORAGE_ENDPOINT=http://minio:9000
+      - STORAGE_ACCESS_KEY=minioadmin
+      - STORAGE_SECRET_KEY=minioadmin
+      - STORAGE_BUCKET=southdrift-dev
+      - STORAGE_REGION=us-east-1
+    networks:
+      - south-drift-network
+
+  frontend:
+    extends:
+      file: ./frontend/docker-compose.yml
+      service: frontend
+    depends_on:
+      - backend
+    networks:
+      - south-drift-network
+
+networks:
+  south-drift-network:
+    driver: bridge
+
+volumes:
+  backend_cache:
+  frontend_node_modules:
+  frontend_next:
+  minio_data:
