@@ -12,6 +12,10 @@ from app.models.interaction import (
 from app.services.interaction_service import InteractionService
 from app.dependencies import get_interaction_service
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/interactions")
 
 
@@ -121,16 +125,17 @@ async def upload_audio(
         ),
     )
 
-    # Mock transcription with background task
-    async def mock_transcription():
-        await asyncio.sleep(3)  # Simulate processing delay
-        mock_transcript = "Mock transcript: Patient reported symptoms discussed during appointment."
-        current_note = interaction.note or ""
-        updated_note = f"{current_note}\n\n[Audio Transcript]\n{mock_transcript}".strip()
-        await service.update_note(interaction_id, NoteUpdateRequest(note=updated_note))
-
     # Run in background (fire and forget)
-    asyncio.create_task(mock_transcription())
+    asyncio.create_task(
+        transcribe_audio(
+            interaction_id=interaction_id,
+            storage=storage,
+            storage_key=storage_key,
+            service=service,
+            interaction=interaction,
+            existing_metadata=existing_metadata,
+        )
+    )
 
     return {
         "interactionId": interaction_id,
@@ -139,7 +144,7 @@ async def upload_audio(
         "storageUrl": storage_url,
         "size": len(audio_content),
         "status": "stored",
-        "message": "Audio uploaded to storage. Transcription will be processed asynchronously.",
+        "message": "Audio uploaded to storage. Transcription in progress via microservice.",
     }
 
 
@@ -179,3 +184,73 @@ async def get_audio(
             "Content-Disposition": f'inline; filename="{audio_data.get("filename", "audio.webm")}"'
         },
     )
+
+
+# Trigger transcription with microservice
+async def transcribe_audio(
+    interaction_id: str,
+    storage,
+    storage_key: str,
+    service: InteractionService,
+    interaction,
+    existing_metadata: dict,
+):
+    """Background task to transcribe audio"""
+    from app.services.transcription_service import get_transcription_service
+
+    logger.info(f"🚀 BACKGROUND TASK STARTED for {interaction_id}")  # Console output for debugging
+    logger.info(f"🎤 Starting transcription for interaction {interaction_id}")
+
+    try:
+        # Generate presigned URL for transcription service to access audio
+        presigned_url = await storage.get_presigned_url(storage_key, expiration=3600)
+        logger.info(f"🔗 Generated presigned URL: {presigned_url[:80]}...")
+
+        # Call transcription microservice
+        transcription_svc = get_transcription_service()
+        logger.info(f"📞 Calling transcription service...")
+
+        result = await transcription_svc.transcribe(
+            audio_url=presigned_url, language_code="en-US", speaker_labels=False
+        )
+
+        logger.info(f"✅ Transcription service returned result: {result.keys()}")
+
+        # Update interaction note with transcript
+        transcript = result.get("transcript", "")
+        logger.info(f"📝 Transcript received ({len(transcript)} chars): {transcript[:100]}...")
+
+        if transcript and transcript.strip():
+            from datetime import datetime
+
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+            # Overwrite note with new transcript
+            updated_note = f"{transcript}\n{timestamp}".strip()
+
+            logger.info(f"💾 Updating interaction note (length: {len(updated_note)} chars)")
+            await service.update_note(interaction_id, NoteUpdateRequest(note=updated_note))
+        else:
+            logger.info("⚠️ Transcript empty, skipping note update")
+
+        logger.info(f"✅ Transcription completed for {interaction_id}")
+
+    except Exception as e:
+        logger.error(
+            f"❌ Transcription failed for interaction {interaction_id}: {e}", exc_info=True
+        )
+
+        # Optionally update interaction with error status
+        await service.update(
+            interaction_id,
+            InteractionUpdate(
+                metadata={
+                    **existing_metadata,
+                    "audio": {
+                        **existing_metadata.get("audio", {}),
+                        "transcriptionError": str(e),
+                        "transcriptionStatus": "failed",
+                    },
+                }
+            ),
+        )

@@ -1,0 +1,57 @@
+services:
+  # Self-hosted Whisper (HIPAA compliant, default)
+  transcribe:
+    build:
+      context: .
+      args:
+        PROVIDER: whisper  # Change to: aws, azure
+    ports:
+      - "8001:8001"
+    environment:
+      # Provider selection
+      - TRANSCRIPTION_PROVIDER=whisper  # Must match build arg
+      
+      # Whisper settings (if provider=whisper)
+      - WHISPER_MODEL_SIZE=base
+      - WHISPER_DEVICE=cpu
+      
+      # AWS settings (if provider=aws)
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_REGION=us-east-1
+      # - TEMP_S3_BUCKET=southdrift-transcribe-temp
+      
+      # Azure settings (if provider=azure)
+      # - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
+      # - AZURE_SPEECH_REGION=eastus
+      
+      # Service settings
+      - PORT=8001
+      - LOG_LEVEL=info
+      - HF_HOME=/app/.cache/huggingface  # Use cached models from image
+    volumes:
+      # Optional: Persist models outside container (for model updates without rebuild)
+      - whisper-models:/app/.cache/huggingface
+    # Network will be overridden by parent docker-compose.yml
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health", "||", "exit", "1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  whisper-models:
+    driver: local
+
+# Network omitted - will be defined by parent docker-compose.yml

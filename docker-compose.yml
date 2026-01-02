@@ -3,8 +3,8 @@ services:
     image: minio/minio:latest
     container_name: southdrift-minio
     ports:
-      - "9000:9000"  # S3 API
-      - "9001:9001"  # Web Console
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web Console
     environment:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin
@@ -25,12 +25,21 @@ services:
       service: backend
     depends_on:
       - minio
+      - transcribe
     environment:
       - STORAGE_ENDPOINT=http://minio:9000
       - STORAGE_ACCESS_KEY=minioadmin
       - STORAGE_SECRET_KEY=minioadmin
       - STORAGE_BUCKET=southdrift-dev
       - STORAGE_REGION=us-east-1
+      - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
+    networks:
+      - south-drift-network
+
+  transcribe:
+    extends:
+      file: ./services/transcribe/docker-compose.yml
+      service: transcribe
     networks:
       - south-drift-network
 
@@ -52,3 +61,4 @@ volumes:
   frontend_node_modules:
   frontend_next:
   minio_data:
+  whisper-models:

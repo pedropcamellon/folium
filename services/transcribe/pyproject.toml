@@ -1,0 +1,34 @@
+[project]
+name = "transcribe"
+version = "1.0.0"
+description = "Audio transcription microservice with Abstract Provider Pattern"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "httpx>=0.27.0",                    # Download audio from presigned URLs
+    "pydantic-settings>=2.6.0",         # Environment configuration
+]
+
+[project.optional-dependencies]
+# Self-hosted Whisper (default - HIPAA compliant)
+whisper = [
+    "faster-whisper>=1.0.0",            # Optimized Whisper (2-4x faster)
+    "ffmpeg-python>=0.2.0",             # Audio format conversion
+]
+
+# AWS Transcribe (requires BAA)
+aws = [
+    "boto3>=1.34.0",                    # AWS SDK
+]
+
+# Azure Speech (requires BAA)
+azure = [
+    "azure-cognitiveservices-speech>=1.34.0",  # Azure Speech SDK
+]
+
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+]

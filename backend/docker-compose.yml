@@ -16,14 +16,14 @@ services:
     develop:
       watch:
         - action: sync
-          path: .
-          target: /app
+          path: ./app
+          target: /app/app
           ignore:
             - __pycache__/
             - "*.pyc"
             - .pytest_cache/
-            - .venv/
-            - .env
+        - action: rebuild
+          path: pyproject.toml
 
 volumes:
   backend_cache:

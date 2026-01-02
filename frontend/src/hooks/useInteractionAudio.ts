@@ -111,18 +111,22 @@ export function useInteractionAudio(interactionId: string, onTranscriptUpdate?: 
         const abortController = new AbortController();
         pollingAbortRef.current = abortController;
 
-        const maxAttempts = 10;
+        const maxAttempts = 5;
         const interval = 2000;
 
-        // Get initial note state
+        // Get initial note state and metadata
         let initialNote = '';
+        let initialUpdatedAt = '';
         try {
             const initialRes = await fetch(API_ENDPOINTS.interaction(interactionId));
             if (initialRes.ok) {
                 const initialData = await initialRes.json();
                 initialNote = initialData.note || '';
+                initialUpdatedAt = initialData.updatedAt || '';
             }
-        } catch { }
+        } catch (e) {
+            console.error('Failed to get initial interaction state:', e);
+        }
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             if (abortController.signal.aborted) break;
@@ -133,21 +137,48 @@ export function useInteractionAudio(interactionId: string, onTranscriptUpdate?: 
 
             try {
                 const noteRes = await fetch(API_ENDPOINTS.interaction(interactionId));
-                if (noteRes.ok) {
-                    const data = await noteRes.json();
-                    if (data.note && data.note !== initialNote) {
-                        onTranscriptUpdate?.(data.note);
-                        setAudioState(AudioState.IDLE);
-                        pollingAbortRef.current = null;
-                        return;
-                    }
+
+                if (!noteRes.ok) {
+                    console.error(`Polling attempt ${attempt + 1} failed: ${noteRes.status} ${noteRes.statusText}`);
+                    continue;
                 }
+
+                const data = await noteRes.json();
+
+                // Check if transcription failed
+                const transcriptionError = data.metadata?.audio?.transcriptionError;
+                if (transcriptionError) {
+                    console.error('Transcription failed:', transcriptionError);
+                    setAudioState(AudioState.ERROR);
+                    setSubmitError(`Transcription failed: ${transcriptionError}`);
+                    pollingAbortRef.current = null;
+                    return;
+                }
+
+                // Check if interaction was updated (transcription completed)
+                const wasUpdated = data.updatedAt !== initialUpdatedAt;
+                const noteChanged = data.note && data.note !== initialNote;
+                const hasTranscript = data.note && data.note.includes('[Audio Transcript');
+
+                // Stop polling if: updated, note changed, or transcript already present
+                if (wasUpdated || noteChanged || hasTranscript) {
+                    console.log(`Transcript updated after ${attempt + 1} poll(s)`);
+                    onTranscriptUpdate?.(data.note || '');
+                    setAudioState(AudioState.IDLE);
+                    pollingAbortRef.current = null;
+                    return;
+                }
+
+                console.log(`Polling attempt ${attempt + 1}/${maxAttempts} - no update yet`);
+
             } catch (e) {
-                // Ignore fetch errors during polling
+                console.error(`Polling attempt ${attempt + 1} error:`, e);
+                // Continue polling on network errors
             }
         }
 
-        // Polling completed without finding update
+        // Polling timeout - transcription may still be processing
+        console.warn('Polling timeout - transcription may still be in progress');
         setAudioState(AudioState.IDLE);
         pollingAbortRef.current = null;
     };
