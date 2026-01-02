@@ -32,7 +32,7 @@ class AzureSpeechProvider(TranscriptionProvider):
             )
 
             print(
-                f"✅ Azure Speech initialized (region: {settings.AZURE_SPEECH_REGION})"
+                f"[OK] Azure Speech initialized (region: {settings.AZURE_SPEECH_REGION})"
             )
         except ImportError:
             raise RuntimeError(

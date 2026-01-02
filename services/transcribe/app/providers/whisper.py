@@ -39,7 +39,7 @@ class WhisperProvider(TranscriptionProvider):
                 download_root=None,  # Use default HF_HOME cache location
             )
             print(
-                f"✅ Whisper model loaded from cache: {settings.WHISPER_MODEL_SIZE} on {settings.WHISPER_DEVICE}"
+                f"[OK] Whisper model loaded from cache: {settings.WHISPER_MODEL_SIZE} on {settings.WHISPER_DEVICE}"
             )
         except ImportError:
             raise RuntimeError(
@@ -86,14 +86,14 @@ class WhisperProvider(TranscriptionProvider):
             segments = list(segments_iter)
 
             logger.info(
-                f"📊 Detected {len(segments)} segments, language: {info.language}"
+                f"[INFO] Detected {len(segments)} segments, language: {info.language}"
             )
 
             # Format response
             transcript = " ".join([s.text.strip() for s in segments])
 
             logger.info(
-                f"📝 Transcript generated ({len(transcript)} chars): {transcript[:100]}..."
+                f"[INFO] Transcript generated ({len(transcript)} chars): {transcript[:100]}..."
             )
 
             processing_time = time.time() - start_time

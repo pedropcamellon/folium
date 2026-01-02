@@ -41,7 +41,7 @@ class AWSTranscribeProvider(TranscriptionProvider):
                 aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             )
 
-            print(f"✅ AWS Transcribe initialized (region: {settings.AWS_REGION})")
+            print(f"[OK] AWS Transcribe initialized (region: {settings.AWS_REGION})")
         except ImportError:
             raise RuntimeError("boto3 not installed. Run: uv pip install -e .[aws]")
 

@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Initialize provider on startup"""
     logger.info(
-        f"🚀 Starting transcription service with provider: {settings.TRANSCRIPTION_PROVIDER}"
+        f"[STARTUP] Starting transcription service with provider: {settings.TRANSCRIPTION_PROVIDER}"
     )
 
     try:
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("🛑 Shutting down transcription service")
+    logger.info("[SHUTDOWN] Shutting down transcription service")
 
 
 # Create FastAPI app

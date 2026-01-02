@@ -29,7 +29,7 @@ RUN uv pip install --system -e .[whisper]
 # Pre-download Whisper model to cache it in the image
 ENV HF_HOME=/app/.cache/huggingface
 RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('base', device='cpu', compute_type='int8')" && \
-    echo "✅ Whisper base model cached in image"
+    echo "[OK] Whisper base model cached in image"
 
 
 # ============== AWS Stage (Requires BAA) ==============
