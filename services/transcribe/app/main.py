@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
     try:
         provider = await get_transcription_provider()
-        logger.info(f"✅ Provider initialized: {provider.get_provider_name()}")
+        logger.info(f"[OK] Provider initialized: {provider.get_provider_name()}")
     except Exception as e:
         logger.error(f"❌ Failed to initialize provider: {e}")
         raise
@@ -84,7 +84,7 @@ async def transcribe_audio(request: TranscriptionRequest):
             vocabulary_name=request.vocabulary_name,
         )
 
-        logger.info(f"✅ Transcription completed in {result['processing_time']:.2f}s")
+        logger.info(f"[OK] Transcription completed in {result['processing_time']:.2f}s")
 
         return TranscriptionResponse(**result)
 

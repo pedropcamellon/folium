@@ -6,9 +6,17 @@ import { Button } from "@/components/ui/button";
 
 import { API_ENDPOINTS } from "@/lib/api";
 import { useInteractionAudio, AudioState } from "@/hooks/useInteractionAudio";
+import { useInteractionSummary, SummaryState } from "@/hooks/useInteractionSummary";
 
 // Types
 import { PatientInteraction } from "@/types";
+
+// State enums
+enum NoteEditState {
+    VIEWING = 'viewing',
+    EDITING = 'editing',
+    SAVING = 'saving',
+}
 
 // Props
 interface PatientInteractionDetailsModalProps {
@@ -21,14 +29,33 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
     // -------------------- State and refs --------------------
     // Data state
     const [currentInteraction, setCurrentInteraction] = useState<PatientInteraction | null>(null);
+
+    // Summary hook
+    const {
+        summary,
+        summaryState,
+        summaryError,
+        generateSummaryFromTranscript,
+        setSummary,
+    } = useInteractionSummary((formattedSummary, structuredData) => {
+        // Update interaction with structured summary on success
+        if (currentInteraction) {
+            setCurrentInteraction({
+                ...currentInteraction,
+                summary: formattedSummary,
+                structuredSummary: structuredData,
+                chiefComplaint: structuredData.chief_complaint,
+                clinicalAssessment: structuredData.assessment,
+                treatmentPlan: structuredData.plan,
+            });
+        }
+    });
+
     // UI state
-    const [summary, setSummary] = useState<string>("");
-    const [summaryError, setSummaryError] = useState<string | null>(null);
     const [note, setNote] = useState("");
-    const [editMode, setEditMode] = useState(false);
+    const [noteEditState, setNoteEditState] = useState<NoteEditState>(NoteEditState.VIEWING);
     const [editedNote, setEditedNote] = useState("");
     const [lastSavedNote, setLastSavedNote] = useState("");
-    const [isSavingNote, setIsSavingNote] = useState(false);
     const [saveNoteError, setSaveNoteError] = useState<string | null>(null);
     const noteInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -83,29 +110,33 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
     // Use summary field from currentInteraction
     useEffect(() => {
         if (currentInteraction) {
-            setSummaryError(null);
             setSummary(currentInteraction.summary || "");
         }
-    }, [currentInteraction]);
+    }, [currentInteraction, setSummary]);
 
     // When entering edit mode, set editedNote and focus
     useEffect(() => {
-        if (editMode) {
+        if (noteEditState === NoteEditState.EDITING) {
             setEditedNote(note);
             setTimeout(() => noteInputRef.current?.focus(), 0);
         }
-    }, [editMode, note]);
+    }, [noteEditState, note]);
 
     // -------------------- Handlers --------------------
+    // Generate clinical summary
+    const handleGenerateSummary = () => {
+        generateSummaryFromTranscript(note, currentInteraction?.type);
+    };
+
     // Discard note edits
     const handleDiscardNote = () => {
         setEditedNote(lastSavedNote);
-        setEditMode(false);
+        setNoteEditState(NoteEditState.VIEWING);
     };
 
     // Save note
     const handleSaveNote = async () => {
-        setIsSavingNote(true);
+        setNoteEditState(NoteEditState.SAVING);
         setSaveNoteError(null);
         try {
             const res = await fetch(API_ENDPOINTS.interactionNote(currentInteraction?.id || ""), {
@@ -116,11 +147,10 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
             if (!res.ok) throw new Error('Failed to save note');
             setNote(editedNote);
             setLastSavedNote(editedNote);
-            setEditMode(false);
+            setNoteEditState(NoteEditState.VIEWING);
         } catch (e) {
             setSaveNoteError("Failed to save note");
-        } finally {
-            setIsSavingNote(false);
+            setNoteEditState(NoteEditState.EDITING);
         }
     };
 
@@ -139,14 +169,25 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
                 <div className="flex flex-col gap-4 overflow-y-auto">
                     {/* Summary */}
                     <div>
-                        <div className="font-semibold mb-1">Summary</div>
-                        {summaryError ? (
-                            <div className="text-xs text-red-500">{summaryError}</div>
-                        ) : (
-                            <div className="whitespace-pre-wrap text-sm">
-                                {summary || "No summary available."}
+                        <div className="flex items-center justify-between mb-1">
+                            <div className="font-semibold">Clinical Summary</div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={handleGenerateSummary}
+                                disabled={summaryState === SummaryState.GENERATING || !note}
+                            >
+                                {summaryState === SummaryState.GENERATING ? "Generating..." : "Generate Summary"}
+                            </Button>
+                        </div>
+                        {summaryError && (
+                            <div className="mb-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 flex items-center gap-2">
+                                <span>Failed to generate summary</span>
                             </div>
                         )}
+                        <div className="whitespace-pre-wrap text-sm border p-3 rounded bg-slate-50">
+                            {summary || "No summary available. Generate one from your notes."}
+                        </div>
                     </div>
 
                     {/* Notes */}
@@ -196,12 +237,12 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
                         )}
                         {recordingError && <div className="text-xs text-red-500 mb-1">{recordingError}</div>}
 
-                        {!editMode ? (
+                        {noteEditState === NoteEditState.VIEWING ? (
                             <>
                                 <div className="whitespace-pre-wrap text-sm mb-2 border p-2 rounded">
                                     {note || "No notes yet."}
                                 </div>
-                                <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                                <Button size="sm" variant="outline" onClick={() => setNoteEditState(NoteEditState.EDITING)}>
                                     Edit Note
                                 </Button>
                             </>
@@ -215,8 +256,8 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
                                     placeholder="Type your notes here..."
                                 />
                                 <div className="flex items-center gap-2">
-                                    <Button size="sm" onClick={handleSaveNote} disabled={isSavingNote}>
-                                        {isSavingNote ? "Saving..." : "Save"}
+                                    <Button size="sm" onClick={handleSaveNote} disabled={noteEditState === NoteEditState.SAVING}>
+                                        {noteEditState === NoteEditState.SAVING ? "Saving..." : "Save"}
                                     </Button>
                                     <Button size="sm" variant="ghost" onClick={handleDiscardNote}>
                                         Cancel

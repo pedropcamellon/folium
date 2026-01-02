@@ -72,7 +72,7 @@ class WhisperProvider(TranscriptionProvider):
             language = language_code.split("-")[0]  # "en-US" → "en"
 
             logger.info(
-                f"🎤 Transcribing audio file: {temp_path} ({len(audio_data)} bytes)"
+                f"[TRANSCRIBE] Transcribing audio file: {temp_path} ({len(audio_data)} bytes)"
             )
 
             segments_iter, info = self.model.transcribe(

@@ -64,6 +64,10 @@ export interface PatientInteraction {
   metadata: Record<string, any>;
   note?: string; // User-editable note field
   summary?: string;
+  structuredSummary?: StructuredSummary;
+  chiefComplaint?: string;
+  clinicalAssessment?: string;
+  treatmentPlan?: string;
   patientId: string;
   providerId: string;
   providerName: string;
@@ -71,4 +75,42 @@ export interface PatientInteraction {
   type: InteractionType;
   updatedAt: string;
   updatedBy: string;
+}
+
+// ============== SUMMARIZATION TYPES ==============
+export interface StructuredSummary {
+  chief_complaint: string;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  clinical_tags: string[];
+  icd_codes: string[];
+  action_items: string[];
+}
+
+export interface SummarizationRequest {
+  transcript: string;
+  format?: 'soap' | 'narrative';
+  interaction_type?: string;
+  language?: string;
+}
+
+export interface SummarizationResponse {
+  summary: string;
+  structured_data: StructuredSummary;
+  processing_time: number;
+  model_used: string;
+  provider: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+export interface SummarizationHealthResponse {
+  status: string;
+  service_url: string;
+  message?: string;
 }

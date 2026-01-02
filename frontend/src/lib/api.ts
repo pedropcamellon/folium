@@ -13,24 +13,28 @@ export const API_ENDPOINTS = {
   health: `${FASTAPI_BASE_URL}/health`,
   
   // Patients
-  patients: `${FASTAPI_BASE_URL}/api/patients`,
-  patient: (id: string) => `${FASTAPI_BASE_URL}/api/patients/${id}`,
+  patients: `${FASTAPI_BASE_URL}/api/v1/patients`,
+  patient: (id: string) => `${FASTAPI_BASE_URL}/api/v1/patients/${id}`,
   
   // Interactions
-  interactions: `${FASTAPI_BASE_URL}/api/interactions`,
-  interaction: (id: string) => `${FASTAPI_BASE_URL}/api/interactions/${id}`,
-  interactionsByPatient: (patientId: string) => `${FASTAPI_BASE_URL}/api/interactions?patientId=${patientId}`,
-  interactionNote: (id: string) => `${FASTAPI_BASE_URL}/api/interactions/${id}/note`,
+  interactions: `${FASTAPI_BASE_URL}/api/v1/interactions`,
+  interaction: (id: string) => `${FASTAPI_BASE_URL}/api/v1/interactions/${id}`,
+  interactionsByPatient: (patientId: string) => `${FASTAPI_BASE_URL}/api/v1/interactions?patientId=${patientId}`,
+  interactionNote: (id: string) => `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/note`,
   
   // Clinical Documents
-  documents: `${FASTAPI_BASE_URL}/api/clinical-documents`,
-  document: (id: string) => `${FASTAPI_BASE_URL}/api/clinical-documents/${id}`,
+  documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents`,
+  document: (id: string) => `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}`,
   documentsByPatient: (patientId: string, types?: string[]) => {
     const typeParam = types ? `&types=${types.join(',')}` : '';
-    return `${FASTAPI_BASE_URL}/api/clinical-documents?patientId=${patientId}${typeParam}`;
+    return `${FASTAPI_BASE_URL}/api/v1/clinical-documents?patientId=${patientId}${typeParam}`;
   },
   documentsByInteraction: (interactionId: string) => 
-    `${FASTAPI_BASE_URL}/api/clinical-documents?interactionId=${interactionId}`,
+    `${FASTAPI_BASE_URL}/api/v1/clinical-documents?interactionId=${interactionId}`,
+  
+  // Summarization
+  summarize: `${FASTAPI_BASE_URL}/api/v1/summarization/test`,
+  summarizationHealth: `${FASTAPI_BASE_URL}/api/v1/summarization/health`,
 } as const;
 
 /**
