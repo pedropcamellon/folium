@@ -26,6 +26,7 @@ services:
     depends_on:
       - minio
       - transcribe
+      - summarize
     environment:
       - STORAGE_ENDPOINT=http://minio:9000
       - STORAGE_ACCESS_KEY=minioadmin
@@ -33,6 +34,7 @@ services:
       - STORAGE_BUCKET=southdrift-dev
       - STORAGE_REGION=us-east-1
       - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
+      - SUMMARIZATION_SERVICE_URL=http://summarize:8002
     networks:
       - south-drift-network
 
@@ -40,6 +42,13 @@ services:
     extends:
       file: ./services/transcribe/docker-compose.yml
       service: transcribe
+    networks:
+      - south-drift-network
+
+  summarize:
+    extends:
+      file: ./services/summarize/docker-compose.yml
+      service: summarize
     networks:
       - south-drift-network
 

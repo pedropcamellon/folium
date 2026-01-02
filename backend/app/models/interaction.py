@@ -40,6 +40,12 @@ class InteractionBase(BaseModel):
     isCompliant: bool = True
     metadata: Optional[Dict[str, Any]] = None
 
+    # Clinical summary fields (from summarization service)
+    structured_summary: Optional[Dict[str, Any]] = None  # Full SOAP note
+    chief_complaint: Optional[str] = None
+    clinical_assessment: Optional[str] = None
+    treatment_plan: Optional[str] = None
+
 
 class InteractionCreate(InteractionBase):
     """Model for creating a new interaction"""

@@ -1,0 +1,75 @@
+services:
+  summarize:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROVIDER: local # local, openai, bedrock, azure
+    container_name: south-drift-summarize
+    ports:
+      - "8002:8002"
+    environment:
+      # Service Configuration
+      - SERVICE_NAME=summarize
+      - SERVICE_PORT=8002
+      - LOG_LEVEL=DEBUG
+
+      # Provider Selection
+      - SUMMARIZATION_PROVIDER=local
+
+      # Local LLM Settings (if using local provider)
+      - LOCAL_MODEL_PATH=/models/model.gguf
+      - LOCAL_MODEL_NAME=mediphi-clinical
+      - LOCAL_N_CTX=8192
+      - LOCAL_N_THREADS=4
+      - LOCAL_TEMPERATURE=0.0
+      # - LOCAL_MAX_TOKENS=800
+
+      # OpenAI Settings (if using openai provider)
+      # - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # - OPENAI_MODEL=gpt-4-turbo
+
+      # AWS Bedrock Settings (if using bedrock provider)
+      # - AWS_REGION=us-east-1
+      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      # - AWS_BEDROCK_MODEL=anthropic.claude-3-sonnet-20240229-v1:0
+
+      # Azure OpenAI Settings (if using azure provider)
+      # - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      # - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
+      # - AZURE_OPENAI_DEPLOYMENT=gpt-4
+
+      # CORS Settings
+      - CORS_ORIGINS=["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"]
+
+    volumes:
+      # Mount local models directory (download GGUF model here)
+      - ./models:/models
+
+      # Development: Watch mode for hot reload
+      - ./app:/app/app
+
+    networks:
+      - south-drift-network
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s # Allow time for model loading
+
+    # Resource limits (CPU-only configuration)
+    deploy:
+      resources:
+        limits:
+          cpus: "8.0"
+          memory: 16G
+        reservations:
+          cpus: "4.0"
+          memory: 8G
+
+networks:
+  south-drift-network:
+    driver: bridge

@@ -7,11 +7,15 @@ from app.repositories.document_repository import DocumentRepository
 from app.services.patient_service import PatientService
 from app.services.interaction_service import InteractionService
 from app.services.document_service import DocumentService
+from app.services.transcription_service import TranscriptionService
+from app.services.summarization_service import SummarizationService
 
 # Repository singletons (in-memory for MVP)
 _patient_repository = None
 _interaction_repository = None
 _document_repository = None
+_transcription_service = None
+_summarization_service = None
 
 
 def get_patient_repository() -> PatientRepository:
@@ -57,3 +61,19 @@ def get_document_service(
 ) -> DocumentService:
     """Get document service with injected repository"""
     return DocumentService(repository)
+
+
+def get_transcription_service() -> TranscriptionService:
+    """Get transcription service instance (singleton)"""
+    global _transcription_service
+    if _transcription_service is None:
+        _transcription_service = TranscriptionService()
+    return _transcription_service
+
+
+def get_summarization_service() -> SummarizationService:
+    """Get summarization service instance (singleton)"""
+    global _summarization_service
+    if _summarization_service is None:
+        _summarization_service = SummarizationService()
+    return _summarization_service

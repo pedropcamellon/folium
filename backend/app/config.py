@@ -36,6 +36,11 @@ class Settings(BaseSettings):
         "http://localhost:8001"  # or "http://transcribe:8001" in docker-compose
     )
 
+    # Summarization Service
+    SUMMARIZATION_SERVICE_URL: str = (
+        "http://localhost:8002"  # or "http://summarize:8002" in docker-compose
+    )
+
     # Legacy settings (deprecated)
 
     # AWS
