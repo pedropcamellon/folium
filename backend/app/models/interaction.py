@@ -76,6 +76,12 @@ class NoteUpdateRequest(BaseModel):
     note: str
 
 
+class SummaryUpdateRequest(BaseModel):
+    """Model for updating just the summary field"""
+
+    summary: str
+
+
 class InteractionResponse(InteractionBase):
     """Model for interaction response with metadata"""
 

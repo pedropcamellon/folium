@@ -4,8 +4,10 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROVIDER: local # local, openai, bedrock, azure
+        PROVIDER: azure # local, openai, bedrock, azure
     container_name: south-drift-summarize
+    env_file:
+      - .env
     ports:
       - "8002:8002"
     environment:
@@ -15,7 +17,7 @@ services:
       - LOG_LEVEL=DEBUG
 
       # Provider Selection
-      - SUMMARIZATION_PROVIDER=local
+      - SUMMARIZATION_PROVIDER=azure
 
       # Local LLM Settings (if using local provider)
       - LOCAL_MODEL_PATH=/models/model.gguf
@@ -23,22 +25,25 @@ services:
       - LOCAL_N_CTX=8192
       - LOCAL_N_THREADS=4
       - LOCAL_TEMPERATURE=0.0
-      # - LOCAL_MAX_TOKENS=800
+      - LOCAL_MAX_TOKENS=800
 
       # OpenAI Settings (if using openai provider)
       # - OPENAI_API_KEY=${OPENAI_API_KEY}
       # - OPENAI_MODEL=gpt-4-turbo
+      # - OPENAI_TEMPERATURE=0.3
+      # - OPENAI_MAX_TOKENS=500
 
       # AWS Bedrock Settings (if using bedrock provider)
+      # Requires: AWS credentials and Bedrock model access
+      # To use: Set PROVIDER=bedrock in build args and uncomment below
       # - AWS_REGION=us-east-1
       # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       # - AWS_BEDROCK_MODEL=anthropic.claude-3-sonnet-20240229-v1:0
+      # - AWS_BEDROCK_TEMPERATURE=0.3
+      # - AWS_BEDROCK_MAX_TOKENS=500
 
-      # Azure OpenAI Settings (if using azure provider)
-      # - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
-      # - AZURE_OPENAI_KEY=${AZURE_OPENAI_KEY}
-      # - AZURE_OPENAI_DEPLOYMENT=gpt-4
+      # Azure OpenAI Settings (loaded from .env file)
 
       # CORS Settings
       - CORS_ORIGINS=["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"]

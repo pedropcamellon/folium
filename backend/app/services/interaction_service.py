@@ -87,6 +87,15 @@ class InteractionService:
         updated = await self.repository.update(interaction_id, {"note": note_data.note})
         return InteractionResponse(**updated)
 
+    async def update_summary(self, interaction_id: str, summary_data) -> InteractionResponse:
+        """Update just the summary field of an interaction"""
+        existing = await self.repository.get_by_id(interaction_id)
+        if not existing:
+            raise InteractionNotFoundError(interaction_id)
+
+        updated = await self.repository.update(interaction_id, {"summary": summary_data.summary})
+        return InteractionResponse(**updated)
+
     async def delete(self, interaction_id: str) -> bool:
         """Delete interaction"""
         existing = await self.repository.get_by_id(interaction_id)

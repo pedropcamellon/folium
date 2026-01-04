@@ -8,6 +8,7 @@ from app.models.interaction import (
     InteractionUpdate,
     InteractionResponse,
     NoteUpdateRequest,
+    SummaryUpdateRequest,
 )
 from app.services.interaction_service import InteractionService
 from app.dependencies import get_interaction_service
@@ -64,6 +65,16 @@ async def update_interaction_note(
 ):
     """Update just the note field of an interaction"""
     return await service.update_note(interaction_id, note_data)
+
+
+@router.patch("/{interaction_id}/summary", response_model=InteractionResponse)
+async def update_interaction_summary(
+    interaction_id: str,
+    summary_data: SummaryUpdateRequest,
+    service: InteractionService = Depends(get_interaction_service),
+):
+    """Update just the summary field of an interaction"""
+    return await service.update_summary(interaction_id, summary_data)
 
 
 @router.delete("/{interaction_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -1,0 +1,167 @@
+import { useState, useRef, useEffect } from "react";
+import { FaMicrophone, FaPause } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
+import { useInteractionAudio, AudioState } from "@/hooks/useInteractionAudio";
+import { API_ENDPOINTS } from "@/lib/api";
+import { PatientInteraction } from "@/types";
+
+enum NoteEditState {
+    VIEWING = 'viewing',
+    EDITING = 'editing',
+    SAVING = 'saving',
+}
+
+interface NotesSectionProps {
+    interaction: PatientInteraction;
+    onInteractionUpdate: (interaction: PatientInteraction) => void;
+    onLoadSample: () => void;
+}
+
+export function NotesSection({ interaction, onInteractionUpdate, onLoadSample }: NotesSectionProps) {
+    const [note, setNote] = useState(interaction.note || "");
+    const [editState, setEditState] = useState<NoteEditState>(NoteEditState.VIEWING);
+    const [editedNote, setEditedNote] = useState("");
+    const [lastSavedNote, setLastSavedNote] = useState(interaction.note || "");
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const noteInputRef = useRef<HTMLTextAreaElement>(null);
+
+    const {
+        audioState,
+        audioUrl,
+        recordingError,
+        submitError,
+        startRecording,
+        stopRecording,
+        submitAudio,
+        loadExistingAudio,
+    } = useInteractionAudio(interaction.id, (transcriptNote) => {
+        setNote(transcriptNote);
+        setLastSavedNote(transcriptNote);
+        onInteractionUpdate({ ...interaction, note: transcriptNote });
+    });
+
+    useEffect(() => {
+        setNote(interaction.note || "");
+        setLastSavedNote(interaction.note || "");
+        loadExistingAudio();
+    }, [interaction.id, interaction.note, loadExistingAudio]);
+
+    useEffect(() => {
+        if (editState === NoteEditState.EDITING) {
+            setEditedNote(note);
+            setTimeout(() => noteInputRef.current?.focus(), 0);
+        }
+    }, [editState, note]);
+
+    const handleSave = async () => {
+        setEditState(NoteEditState.SAVING);
+        setSaveError(null);
+        try {
+            const res = await fetch(API_ENDPOINTS.interactionNote(interaction.id), {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ note: editedNote }),
+            });
+            if (!res.ok) throw new Error('Failed to save note');
+            setNote(editedNote);
+            setLastSavedNote(editedNote);
+            onInteractionUpdate({ ...interaction, note: editedNote });
+            setEditState(NoteEditState.VIEWING);
+        } catch (e) {
+            setSaveError("Failed to save note");
+            setEditState(NoteEditState.EDITING);
+        }
+    };
+
+    const handleCancel = () => {
+        setEditedNote(lastSavedNote);
+        setEditState(NoteEditState.VIEWING);
+    };
+
+    return (
+        <div>
+            <div className="flex items-center gap-2 mb-2">
+                <div className="font-semibold">Notes</div>
+                {audioState !== AudioState.RECORDING ? (
+                    <Button size="icon" variant="outline" onClick={startRecording} aria-label="Record">
+                        <FaMicrophone />
+                    </Button>
+                ) : (
+                    <Button size="icon" variant="destructive" onClick={stopRecording} aria-label="Stop Recording">
+                        <FaPause className="animate-pulse" />
+                    </Button>
+                )}
+                <span className="text-xs text-slate-500">
+                    {audioState === AudioState.RECORDING ? "Recording..." :
+                        audioState === AudioState.POLLING ? "Processing transcript..." :
+                            "Voice Recording"}
+                </span>
+                {audioUrl && (
+                    <audio controls src={audioUrl} className="ml-2 h-10" />
+                )}
+                <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={onLoadSample}
+                    className="ml-auto"
+                >
+                    Load Test Sample
+                </Button>
+            </div>
+            {audioState === AudioState.RECORDED && (
+                <div className="flex items-center gap-2 mb-3">
+                    <span className="text-xs text-slate-600">Looks good?</span>
+                    <Button size="sm" variant="default" onClick={submitAudio}>
+                        Submit Audio
+                    </Button>
+                </div>
+            )}
+            {audioState === AudioState.SUBMITTING && (
+                <div className="flex items-center gap-2 mb-3">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                    <span className="text-xs text-slate-600">Uploading...</span>
+                </div>
+            )}
+            {audioState === AudioState.SUBMITTED && (
+                <div className="text-xs text-green-600 mb-3">Audio submitted successfully!</div>
+            )}
+            {audioState === AudioState.ERROR && submitError && (
+                <div className="text-xs text-red-500 mb-3">{submitError}</div>
+            )}
+            {recordingError && <div className="text-xs text-red-500 mb-1">{recordingError}</div>}
+
+            {editState === NoteEditState.VIEWING ? (
+                <>
+                    <div className="whitespace-pre-wrap text-sm mb-2 border p-2 rounded">
+                        {note || "No notes yet."}
+                    </div>
+                    <Button size="sm" variant="outline" onClick={() => setEditState(NoteEditState.EDITING)}>
+                        Edit Note
+                    </Button>
+                </>
+            ) : (
+                <>
+                    <textarea
+                        ref={noteInputRef}
+                        value={editedNote}
+                        onChange={(e) => setEditedNote(e.target.value)}
+                        className="w-full border p-2 rounded text-sm mb-2 min-h-[100px]"
+                        placeholder="Type your notes here..."
+                    />
+                    <div className="flex items-center gap-2">
+                        <Button size="sm" onClick={handleSave} disabled={editState === NoteEditState.SAVING}>
+                            {editState === NoteEditState.SAVING ? "Saving..." : "Save"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancel}>
+                            Cancel
+                        </Button>
+                    </div>
+                    {saveError && <div className="text-xs text-red-500 mt-1">{saveError}</div>}
+                </>
+            )}
+        </div>
+    );
+}

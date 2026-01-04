@@ -7,7 +7,7 @@ ARG PROVIDER=local
 # ============================================================================
 # Base Stage: Common dependencies for all providers
 # ============================================================================
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 WORKDIR /app
 
@@ -23,11 +23,12 @@ RUN pip install --no-cache-dir uv
 # Copy dependency files and source code
 COPY pyproject.toml README.md ./
 COPY app ./app
+COPY prompts ./prompts
 
 # ============================================================================
 # Local LLM Stage: Install llama-cpp-python
 # ============================================================================
-FROM base as provider-local
+FROM base AS provider-local
 
 # Install llama-cpp-python (CPU-only)
 RUN uv pip install --system llama-cpp-python
@@ -44,7 +45,7 @@ COPY models/model.gguf /models/model.gguf
 # ============================================================================
 # OpenAI Stage: Install OpenAI SDK
 # ============================================================================
-FROM base as provider-openai
+FROM base AS provider-openai
 
 # Install dependencies with openai extras from pyproject.toml
 RUN uv pip install --system --no-cache ".[openai]"
@@ -52,7 +53,7 @@ RUN uv pip install --system --no-cache ".[openai]"
 # ============================================================================
 # AWS Bedrock Stage: Install boto3
 # ============================================================================
-FROM base as provider-bedrock
+FROM base AS provider-bedrock
 
 # Install dependencies with aws extras from pyproject.toml
 RUN uv pip install --system --no-cache ".[aws]"
@@ -60,7 +61,7 @@ RUN uv pip install --system --no-cache ".[aws]"
 # ============================================================================
 # Azure OpenAI Stage: Install Azure SDK
 # ============================================================================
-FROM base as provider-azure
+FROM base AS provider-azure
 
 # Install dependencies with azure extras from pyproject.toml
 RUN uv pip install --system --no-cache ".[azure]"
@@ -68,7 +69,7 @@ RUN uv pip install --system --no-cache ".[azure]"
 # ============================================================================
 # Final Stage: Select provider and copy application code
 # ============================================================================
-FROM provider-${PROVIDER} as final
+FROM provider-${PROVIDER} AS final
 
 WORKDIR /app
 

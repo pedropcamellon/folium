@@ -37,10 +37,10 @@ class Settings(BaseSettings):
     # Azure OpenAI Settings
     azure_openai_endpoint: Optional[str] = None
     azure_openai_key: Optional[str] = None
-    azure_openai_deployment: str = "gpt-4"
+    azure_openai_deployment: str = "gpt-4.1-nano"
     azure_openai_api_version: str = "2024-02-15-preview"
-    azure_openai_temperature: float = 0.3
-    azure_openai_max_tokens: int = 500
+    azure_openai_temperature: float = 1.0  # reasoning models only support 1.0
+    azure_openai_max_tokens: int = 2000  # Reasoning models need headroom
 
     # CORS Settings
     cors_origins: list[str] = [

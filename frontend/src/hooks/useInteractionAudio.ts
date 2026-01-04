@@ -158,10 +158,9 @@ export function useInteractionAudio(interactionId: string, onTranscriptUpdate?: 
                 // Check if interaction was updated (transcription completed)
                 const wasUpdated = data.updatedAt !== initialUpdatedAt;
                 const noteChanged = data.note && data.note !== initialNote;
-                const hasTranscript = data.note && data.note.includes('[Audio Transcript');
 
-                // Stop polling if: updated, note changed, or transcript already present
-                if (wasUpdated || noteChanged || hasTranscript) {
+                // Stop polling if: updated, note changed
+                if (wasUpdated || noteChanged) {
                     console.log(`Transcript updated after ${attempt + 1} poll(s)`);
                     onTranscriptUpdate?.(data.note || '');
                     setAudioState(AudioState.IDLE);

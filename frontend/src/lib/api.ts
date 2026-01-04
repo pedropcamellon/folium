@@ -11,17 +11,18 @@ export const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const API_ENDPOINTS = {
   // Health
   health: `${FASTAPI_BASE_URL}/health`,
-  
+
   // Patients
   patients: `${FASTAPI_BASE_URL}/api/v1/patients`,
   patient: (id: string) => `${FASTAPI_BASE_URL}/api/v1/patients/${id}`,
-  
+
   // Interactions
   interactions: `${FASTAPI_BASE_URL}/api/v1/interactions`,
   interaction: (id: string) => `${FASTAPI_BASE_URL}/api/v1/interactions/${id}`,
   interactionsByPatient: (patientId: string) => `${FASTAPI_BASE_URL}/api/v1/interactions?patientId=${patientId}`,
   interactionNote: (id: string) => `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/note`,
-  
+  interactionSummary: (id: string) => `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/summary`,
+
   // Clinical Documents
   documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents`,
   document: (id: string) => `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}`,
@@ -29,9 +30,9 @@ export const API_ENDPOINTS = {
     const typeParam = types ? `&types=${types.join(',')}` : '';
     return `${FASTAPI_BASE_URL}/api/v1/clinical-documents?patientId=${patientId}${typeParam}`;
   },
-  documentsByInteraction: (interactionId: string) => 
+  documentsByInteraction: (interactionId: string) =>
     `${FASTAPI_BASE_URL}/api/v1/clinical-documents?interactionId=${interactionId}`,
-  
+
   // Summarization
   summarize: `${FASTAPI_BASE_URL}/api/v1/summarization/test`,
   summarizationHealth: `${FASTAPI_BASE_URL}/api/v1/summarization/health`,

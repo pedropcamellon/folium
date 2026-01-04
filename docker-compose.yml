@@ -49,6 +49,8 @@ services:
     extends:
       file: ./services/summarize/docker-compose.yml
       service: summarize
+    env_file:
+      - ./services/summarize/.env
     networks:
       - south-drift-network
 
@@ -58,6 +60,8 @@ services:
       service: frontend
     depends_on:
       - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     networks:
       - south-drift-network
 
