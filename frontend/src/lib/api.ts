@@ -32,6 +32,9 @@ export const API_ENDPOINTS = {
   },
   documentsByInteraction: (interactionId: string) =>
     `${FASTAPI_BASE_URL}/api/v1/clinical-documents?interactionId=${interactionId}`,
+  documentUpload: `${FASTAPI_BASE_URL}/api/v1/clinical-documents/upload`,
+  documentDownload: (id: string) => `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/download`,
+  documentView: (id: string) => `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/view`,
 
   // Summarization
   summarize: `${FASTAPI_BASE_URL}/api/v1/summarization/test`,

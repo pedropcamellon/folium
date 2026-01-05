@@ -9,6 +9,8 @@ from app.services.interaction_service import InteractionService
 from app.services.document_service import DocumentService
 from app.services.transcription_service import TranscriptionService
 from app.services.summarization_service import SummarizationService
+from app.services.storage.factory import get_storage
+from app.services.storage.base import ObjectStorageProvider
 
 # Repository singletons (in-memory for MVP)
 _patient_repository = None
@@ -77,3 +79,8 @@ def get_summarization_service() -> SummarizationService:
     if _summarization_service is None:
         _summarization_service = SummarizationService()
     return _summarization_service
+
+
+async def get_storage_provider() -> ObjectStorageProvider:
+    """Get storage provider instance (singleton)"""
+    return await get_storage()

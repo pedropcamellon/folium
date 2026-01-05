@@ -23,6 +23,8 @@ services:
     extends:
       file: ./backend/docker-compose.yml
       service: backend
+    env_file:
+      - ./backend/.env
     depends_on:
       - minio
       - transcribe

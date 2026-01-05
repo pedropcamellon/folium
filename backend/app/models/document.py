@@ -39,12 +39,16 @@ def get_type_label(doc_type: ClinicalDocumentType) -> str:
 class DocumentBase(BaseModel):
     """Base document model with common fields"""
 
-    patientId: str = Field(..., min_length=1)
-    type: ClinicalDocumentType
-    title: str = Field(..., min_length=1, max_length=200)
-    summary: Optional[str] = None
+    fileName: Optional[str] = None
+    fileSize: Optional[int] = None
+    fileUrl: Optional[str] = None
     interactionId: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    mimeType: Optional[str] = None
+    patientId: str = Field(..., min_length=1)
+    summary: Optional[str] = None
+    title: str = Field(..., min_length=1, max_length=200)
+    type: ClinicalDocumentType
 
 
 class DocumentCreate(DocumentBase):

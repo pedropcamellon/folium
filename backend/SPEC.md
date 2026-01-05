@@ -12,6 +12,10 @@ This document provides a high-level overview of the backend architecture. For de
 
 - **Storage Module**: [`app/services/storage/SPEC.md`](app/services/storage/SPEC.md) - Multi-cloud storage architecture (AWS S3, Azure Blob, MinIO) using Abstract Factory pattern with native SDKs
 
+For user-facing feature documentation (workflows, use cases, business requirements), refer to:
+
+- **Document Upload Feature**: [`/docs/features/document-upload.md`](../docs/features/document-upload.md) - Clinical document upload/viewing workflows and user requirements
+
 Additional module-specific SPEC files will be added as the system evolves (e.g., authentication, caching, messaging queues).
 
 ## Application Architecture

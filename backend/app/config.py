@@ -27,7 +27,8 @@ class Settings(BaseSettings):
     STORAGE_PROVIDER: str = "minio"  # 'aws', 'azure', 'minio'
     STORAGE_BUCKET: str = "southdrift-dev"
     STORAGE_REGION: str = "us-east-2"
-    STORAGE_ENDPOINT: str | None = None  # Required for MinIO/Azure
+    STORAGE_ENDPOINT: str | None = None  # Required for MinIO/Azure (internal Docker)
+    STORAGE_PUBLIC_ENDPOINT: str | None = None  # Public-facing endpoint for browser
     STORAGE_ACCESS_KEY: str = "minioadmin"
     STORAGE_SECRET_KEY: str = "minioadmin"
     STORAGE_CDN_URL: str | None = None  # Optional CDN URL

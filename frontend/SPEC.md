@@ -5,6 +5,12 @@
 
 The frontend is built with Next.js using the App Router, TypeScript, Tailwind CSS, and shadcn/ui for UI components. It follows a modular architecture with reusable dashboard widgets located in `frontend/src/components/dashboard/widgets/`. Data fetching is handled via SWR, and charts are rendered using Recharts. Framer Motion is used for animations.
 
+## Documentation Structure
+
+For user-facing feature documentation (workflows, use cases, business requirements), refer to:
+
+- **Document Upload Feature**: [`/docs/features/document-upload.md`](../docs/features/document-upload.md) - Clinical document upload/viewing workflows and user requirements
+
 ## API Service Layer
 
 **All frontend components call FastAPI directly via centralized API configuration** (no BFF middleware).

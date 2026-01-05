@@ -4,8 +4,8 @@ FROM node:20-alpine AS base
 # Install pnpm globally
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
-# Development stage
-FROM base AS development
+# Dependencies stage (shared by development and builder)
+FROM base AS dependencies
 WORKDIR /app
 
 # Copy dependency files
@@ -13,6 +13,9 @@ COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 
 # Install dependencies with pnpm (faster than npm)
 RUN pnpm install --frozen-lockfile
+
+# Development stage
+FROM dependencies AS development
 
 # Copy application code
 COPY . .
@@ -24,14 +27,7 @@ EXPOSE 3000
 CMD ["pnpm", "dev"]
 
 # Build stage
-FROM base AS builder
-WORKDIR /app
-
-# Copy dependency files
-COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
+FROM dependencies AS builder
 
 # Copy application code
 COPY . .

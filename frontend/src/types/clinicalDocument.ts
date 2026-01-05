@@ -20,6 +20,11 @@ export interface ClinicalDocumentBase {
   createdBy: string;
   updatedBy?: string;
   metadata?: Record<string, any>;
+  // File attachment fields (optional - only present for uploaded documents)
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
 }
 
 export type ClinicalNoteFormat = 'SOAP' | 'FreeText' | 'Structured';
