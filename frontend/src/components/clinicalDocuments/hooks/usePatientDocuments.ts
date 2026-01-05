@@ -1,0 +1,100 @@
+import { useEffect, useState, useMemo } from "react";
+import { listClinicalDocuments, deleteClinicalDocument } from "@/services/clinicalDocumentService";
+import { ClinicalDocument, ClinicalDocumentType } from "@/types/clinicalDocument";
+
+type SortOption = 'createdAt-desc' | 'createdAt-asc' | 'updatedAt-desc' | 'title-asc';
+
+export function usePatientDocuments(patientId: string) {
+    const [documents, setDocuments] = useState<ClinicalDocument[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [selectedTypes, setSelectedTypes] = useState<ClinicalDocumentType[]>([]);
+    const [sortBy, setSortBy] = useState<SortOption>('createdAt-desc');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const sortDocuments = (docs: ClinicalDocument[], sortOption: SortOption): ClinicalDocument[] => {
+        return [...docs].sort((a, b) => {
+            if (sortOption === 'createdAt-desc') {
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            } else if (sortOption === 'createdAt-asc') {
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            } else if (sortOption === 'updatedAt-desc') {
+                const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : new Date(b.createdAt).getTime();
+                const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : new Date(a.createdAt).getTime();
+                return bDate - aDate;
+            } else if (sortOption === 'title-asc') {
+                return a.title.localeCompare(b.title);
+            }
+            return 0;
+        });
+    };
+
+    const fetchDocuments = () => {
+        setLoading(true);
+        setError(null);
+        const typesFilter = selectedTypes.length > 0 ? selectedTypes : undefined;
+
+        listClinicalDocuments(patientId, typesFilter)
+            .then((docs) => {
+                const sorted = sortDocuments(docs, sortBy);
+                setDocuments(sorted);
+            })
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    };
+
+    const deleteDocument = async (documentId: string): Promise<void> => {
+        await deleteClinicalDocument(documentId);
+        fetchDocuments();
+    };
+
+    const toggleType = (type: ClinicalDocumentType) => {
+        setSelectedTypes((prev) =>
+            prev.includes(type)
+                ? prev.filter((t) => t !== type)
+                : [...prev, type]
+        );
+    };
+
+    const clearFilters = () => {
+        setSelectedTypes([]);
+    };
+
+    const clearSearch = () => {
+        setSearchQuery('');
+    };
+
+    // Client-side search filtering
+    const filteredDocuments = useMemo(() => {
+        if (!searchQuery.trim()) return documents;
+
+        const query = searchQuery.toLowerCase();
+        return documents.filter((doc) => {
+            return (
+                doc.title.toLowerCase().includes(query) ||
+                doc.summary?.toLowerCase().includes(query) ||
+                doc.fileName?.toLowerCase().includes(query)
+            );
+        });
+    }, [documents, searchQuery]);
+
+    useEffect(() => {
+        fetchDocuments();
+    }, [patientId, selectedTypes, sortBy]);
+
+    return {
+        documents: filteredDocuments,
+        loading,
+        error,
+        selectedTypes,
+        sortBy,
+        searchQuery,
+        setSortBy,
+        setSearchQuery,
+        toggleType,
+        clearFilters,
+        clearSearch,
+        deleteDocument,
+        refreshDocuments: fetchDocuments,
+    };
+}
