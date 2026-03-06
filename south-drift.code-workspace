@@ -1,0 +1,112 @@
+{
+  "folders": [
+    {
+      "name": "🏠 Root",
+      "path": "."
+    },
+    {
+      "name": "🔙 Backend (FastAPI)",
+      "path": "backend"
+    },
+    {
+      "name": "Frontend (Next.js)",
+      "path": "frontend"
+    },
+    {
+      "name": "🎤 Transcribe Service",
+      "path": "services/transcribe"
+    }
+  ],
+  "settings": {
+    // Global workspace settings
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/bin": true,
+      "**/obj": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/__pycache__": true,
+      "**/bin": true,
+      "**/obj": true,
+      "**/dist": true,
+      "**/.next": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      // Python (for transcribe service)
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "charliermarsh.ruff",
+      // Python (for backend FastAPI)
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "charliermarsh.ruff",
+      // JavaScript/TypeScript (for frontend)
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      // Docker & Infrastructure
+      "ms-azuretools.vscode-docker",
+      "hashicorp.terraform",
+      // General
+      "editorconfig.editorconfig",
+      "github.copilot"
+    ]
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "🔙 Backend (FastAPI)",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": [
+          "app.main:app",
+          "--reload",
+          "--port",
+          "8000",
+          "--host",
+          "0.0.0.0"
+        ],
+        "cwd": "${workspaceFolder:🔙 Backend (FastAPI)}",
+        "env": {
+          "ENVIRONMENT": "development",
+          "STORAGE_PROVIDER": "minio",
+          "MINIO_ENDPOINT": "localhost:9000"
+        },
+        "console": "integratedTerminal"
+      },
+      {
+        "name": "🎤 Transcribe Service (Python)",
+        "type": "debugpy",
+        "request": "launch",
+        "module": "uvicorn",
+        "args": [
+          "app.main:app",
+          "--reload",
+          "--port",
+          "8001"
+        ],
+        "cwd": "${workspaceFolder:🎤 Transcribe Service}",
+        "env": {
+          "TRANSCRIPTION_PROVIDER": "whisper",
+          "WHISPER_MODEL_SIZE": "base"
+        }
+      }
+    ],
+    "compounds": [
+      {
+        "name": "Full Stack",
+        "configurations": [
+          "🔙 Backend (FastAPI)",
+          "🎤 Transcribe Service (Python)"
+        ],
+        "stopAll": true
+      }
+    ]
+  }
+}
