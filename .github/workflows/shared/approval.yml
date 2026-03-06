@@ -1,0 +1,38 @@
+name: Approval Gate
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment for approval"
+        required: true
+        type: string
+      cloud_provider:
+        description: "Target cloud provider"
+        required: true
+        type: string
+      service_name:
+        description: "Service being deployed"
+        required: false
+        type: string
+        default: "backend"
+
+jobs:
+  gate:
+    name: "🚦 Approval"
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}-approval
+
+    steps:
+      - name: Summary
+        run: |
+          echo "### 🚀 Deployment Request" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Property | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Service** | ${{ inputs.service_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Cloud** | ${{ inputs.cloud_provider }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Actor** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY

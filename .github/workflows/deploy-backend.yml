@@ -1,0 +1,122 @@
+name: Deploy Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Target environment"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+      cloud_provider:
+        description: "Cloud provider"
+        required: true
+        type: choice
+        options:
+          - azure
+          - aws
+      skip_terraform:
+        description: "Skip infrastructure provisioning"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  # ============================================
+  # Stage 1: Build
+  # ============================================
+  build:
+    name: "Build"
+    uses: ./.github/workflows/shared/build.yml
+    with:
+      context: ./backend
+      dockerfile: ./backend/Dockerfile
+      target: production
+      image_name: southdrift-backend
+
+  # ============================================
+  # Stage 2: Approval Gate
+  # ============================================
+  approval:
+    name: "Approval"
+    needs: build
+    uses: ./.github/workflows/shared/approval.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      cloud_provider: ${{ github.event.inputs.cloud_provider }}
+      service_name: backend
+
+  # ============================================
+  # Stage 3: Infrastructure
+  # ============================================
+  terraform-azure:
+    name: "Infra (Azure)"
+    needs: approval
+    if: github.event.inputs.cloud_provider == 'azure' && github.event.inputs.skip_terraform != 'true'
+    uses: ./.github/workflows/azure/terraform.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+    secrets:
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+  terraform-aws:
+    name: "Infra (AWS)"
+    needs: approval
+    if: github.event.inputs.cloud_provider == 'aws' && github.event.inputs.skip_terraform != 'true'
+    uses: ./.github/workflows/aws/terraform.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+  # ============================================
+  # Stage 4: Deploy
+  # ============================================
+  deploy-azure:
+    name: "Deploy (Azure)"
+    needs: [build, approval, terraform-azure]
+    if: |
+      always() &&
+      github.event.inputs.cloud_provider == 'azure' &&
+      needs.approval.result == 'success' &&
+      (needs.terraform-azure.result == 'success' || needs.terraform-azure.result == 'skipped')
+    uses: ./.github/workflows/azure/deploy.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      image_name: southdrift-backend
+      artifact_name: southdrift-backend-image
+      container_app_name: ${{ needs.terraform-azure.outputs.app_service_name || format('southdrift-backend-{0}', github.event.inputs.environment) }}
+      resource_group: ${{ needs.terraform-azure.outputs.resource_group_name || format('rg-southdrift-{0}', github.event.inputs.environment) }}
+      acr_name: ${{ needs.terraform-azure.outputs.acr_name || 'southdriftacr' }}
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+  deploy-aws:
+    name: "Deploy (AWS)"
+    needs: [build, approval, terraform-aws]
+    if: |
+      always() &&
+      github.event.inputs.cloud_provider == 'aws' &&
+      needs.approval.result == 'success' &&
+      (needs.terraform-aws.result == 'success' || needs.terraform-aws.result == 'skipped')
+    uses: ./.github/workflows/aws/deploy.yml
+    with:
+      environment: ${{ github.event.inputs.environment }}
+      image_name: southdrift-backend
+      artifact_name: southdrift-backend-image
+      ecs_cluster: ${{ needs.terraform-aws.outputs.ecs_cluster_name || format('southdrift-{0}', github.event.inputs.environment) }}
+      ecs_service: ${{ needs.terraform-aws.outputs.ecs_service_name || 'backend' }}
+      ecr_repository: ${{ needs.terraform-aws.outputs.ecr_repository || format('{0}.dkr.ecr.{1}.amazonaws.com/southdrift-backend', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION) }}
+    secrets:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}

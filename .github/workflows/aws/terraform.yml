@@ -1,0 +1,79 @@
+name: AWS Terraform
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      working_directory:
+        required: false
+        type: string
+        default: "./infrastructure/aws"
+      terraform_version:
+        required: false
+        type: string
+        default: "1.5.0"
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+      AWS_REGION:
+        required: true
+    outputs:
+      ecs_cluster_name:
+        value: ${{ jobs.terraform.outputs.ecs_cluster_name }}
+      ecs_service_name:
+        value: ${{ jobs.terraform.outputs.ecs_service_name }}
+      ecr_repository:
+        value: ${{ jobs.terraform.outputs.ecr_repository }}
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    outputs:
+      ecs_cluster_name: ${{ steps.outputs.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ steps.outputs.outputs.ecs_service_name }}
+      ecr_repository: ${{ steps.outputs.outputs.ecr_repository }}
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -var="environment=${{ inputs.environment }}" -out=tfplan
+
+      - name: Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Outputs
+        id: outputs
+        run: |
+          echo "ecs_cluster_name=$(terraform output -raw ecs_cluster_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "ecs_service_name=$(terraform output -raw ecs_service_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "ecr_repository=$(terraform output -raw ecr_repository 2>/dev/null || echo '')" >> $GITHUB_OUTPUT

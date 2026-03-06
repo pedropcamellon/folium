@@ -1,0 +1,80 @@
+name: Azure Terraform
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      working_directory:
+        required: false
+        type: string
+        default: "./infrastructure/azure"
+      terraform_version:
+        required: false
+        type: string
+        default: "1.5.0"
+    secrets:
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_CLIENT_SECRET:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+    outputs:
+      app_service_name:
+        value: ${{ jobs.terraform.outputs.app_service_name }}
+      resource_group_name:
+        value: ${{ jobs.terraform.outputs.resource_group_name }}
+      acr_name:
+        value: ${{ jobs.terraform.outputs.acr_name }}
+
+jobs:
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    outputs:
+      app_service_name: ${{ steps.outputs.outputs.app_service_name }}
+      resource_group_name: ${{ steps.outputs.outputs.resource_group_name }}
+      acr_name: ${{ steps.outputs.outputs.acr_name }}
+
+    env:
+      ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+          terraform_wrapper: false
+
+      - name: Init
+        run: terraform init
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -var="environment=${{ inputs.environment }}" -out=tfplan
+
+      - name: Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Outputs
+        id: outputs
+        run: |
+          echo "app_service_name=$(terraform output -raw app_service_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "resource_group_name=$(terraform output -raw resource_group_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT
+          echo "acr_name=$(terraform output -raw acr_name 2>/dev/null || echo '')" >> $GITHUB_OUTPUT

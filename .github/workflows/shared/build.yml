@@ -1,0 +1,67 @@
+name: Build Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      context:
+        description: "Docker build context path"
+        required: true
+        type: string
+      dockerfile:
+        description: "Path to Dockerfile"
+        required: true
+        type: string
+      target:
+        description: "Docker build target stage"
+        required: false
+        type: string
+        default: "production"
+      image_name:
+        description: "Name for the Docker image"
+        required: true
+        type: string
+    outputs:
+      image_tag:
+        description: "Full image tag with SHA"
+        value: ${{ jobs.build.outputs.image_tag }}
+      artifact_name:
+        description: "Name of uploaded artifact"
+        value: ${{ jobs.build.outputs.artifact_name }}
+
+jobs:
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      artifact_name: ${{ inputs.image_name }}-image
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate Image Metadata
+        id: meta
+        run: echo "image_tag=${{ inputs.image_name }}:${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
+          push: false
+          tags: ${{ inputs.image_name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          outputs: type=docker,dest=/tmp/${{ inputs.image_name }}.tar
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.image_name }}-image
+          path: /tmp/${{ inputs.image_name }}.tar
+          retention-days: 1
