@@ -23,6 +23,13 @@ class Settings(BaseSettings):
     # Database (future)
     DATABASE_URL: str = "sqlite:///./southdrift.db"
 
+    # JWT Authentication
+    JWT_SECRET: str = (
+        "CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_USE_ENV_VAR"  # TODO Use env var in production
+    )
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+
     # Multi-Cloud Storage Configuration
     STORAGE_PROVIDER: str = "minio"  # 'aws', 'azure', 'minio'
     STORAGE_BUCKET: str = "southdrift-dev"

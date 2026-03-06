@@ -3,8 +3,10 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings
+
+from app.api.v1.endpoints.auth import auth_router, users_router
 from app.api.v1.router import api_router
+from app.config import settings
 
 
 @asynccontextmanager
@@ -13,6 +15,20 @@ async def lifespan(app: FastAPI):
     # Startup
     print(f"[STARTUP] {settings.APP_NAME} v{settings.VERSION} starting...")
     print("[STARTUP] API documentation available at: /docs")
+
+    # Initialize database tables
+    from app.core.database import create_db_and_tables
+
+    await create_db_and_tables()
+    print("[STARTUP] Database tables initialized")
+
+    # Seed test users
+    try:
+        from app.seed_db import seed_users
+
+        await seed_users()
+    except Exception as e:
+        print(f"[WARNING] Failed to seed users: {e}")
 
     # Initialize storage service (creates bucket if not exists)
     from app.services.storage import get_storage
@@ -66,6 +82,10 @@ app.add_middleware(
 
 # Include API router with v1 prefix
 app.include_router(api_router, prefix="/api/v1")
+
+# Include authentication routes
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(users_router, prefix="/users", tags=["users"])
 
 
 @app.get("/health")
