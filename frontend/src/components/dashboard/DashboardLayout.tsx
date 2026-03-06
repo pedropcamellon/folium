@@ -1,7 +1,36 @@
+"use client";
+
 import { ReactNode } from "react";
 import Sidebar from "./Sidebar";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { UserRole } from "@/types/user";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const { user, logout } = useAuth();
+
+  const getRoleBadgeColor = (role: UserRole) => {
+    switch (role) {
+      case UserRole.ADMIN:
+        return "bg-purple-100 text-purple-800";
+      case UserRole.PROVIDER:
+        return "bg-blue-100 text-blue-800";
+      case UserRole.RECEPTIONIST:
+        return "bg-green-100 text-green-800";
+      case UserRole.PATIENT:
+        return "bg-gray-100 text-gray-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar />
@@ -18,9 +47,38 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 rounded-full bg-slate-200" />
-            <span className="font-medium">Dr. Admin</span>
-            <button className="ml-2 px-2 py-1 text-xs rounded bg-slate-100 hover:bg-slate-200">Logout</button>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center space-x-2 hover:bg-slate-100 rounded px-2 py-1 cursor-pointer">
+                <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-sm font-semibold">
+                  {user?.email.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex flex-col items-start">
+                  <span className="font-medium text-sm">{user?.email}</span>
+                  {user && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${getRoleBadgeColor(
+                        user.role
+                      )}`}
+                    >
+                      {user.role}
+                    </span>
+                  )}
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled>
+                  <span className="text-xs text-muted-foreground">
+                    {user?.email}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => logout()} className="cursor-pointer">
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
         {/* Main dashboard content */}

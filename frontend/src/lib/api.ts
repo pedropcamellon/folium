@@ -3,6 +3,8 @@
  * Direct calls to FastAPI (no BFF middleware)
  */
 
+import { getAuthToken } from "./auth-api";
+
 export const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
@@ -11,6 +13,12 @@ export const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const API_ENDPOINTS = {
   // Health
   health: `${FASTAPI_BASE_URL}/health`,
+
+  // Auth
+  authRegister: `${FASTAPI_BASE_URL}/auth/register`,
+  authLogin: `${FASTAPI_BASE_URL}/auth/jwt/login`,
+  authLogout: `${FASTAPI_BASE_URL}/auth/jwt/logout`,
+  usersMe: `${FASTAPI_BASE_URL}/users/me`,
 
   // Patients
   patients: `${FASTAPI_BASE_URL}/api/v1/patients`,
@@ -42,13 +50,29 @@ export const API_ENDPOINTS = {
 } as const;
 
 /**
- * Generic fetcher for SWR
+ * Generic fetcher for SWR with authentication
  */
 export const fetcher = async (url: string) => {
-  const res = await fetch(url);
+  const token = getAuthToken();
+  const headers: HeadersInit = {};
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, { headers });
+
   if (!res.ok) {
-    const error = new Error('API request failed');
+    // Handle 401 by clearing token
+    if (res.status === 401 && typeof window !== "undefined") {
+      const { clearAuthToken } = await import("./auth-api");
+      clearAuthToken();
+      window.location.href = "/login";
+    }
+
+    const error = new Error("API request failed");
     throw error;
   }
+
   return res.json();
 };
