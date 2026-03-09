@@ -55,9 +55,6 @@ services:
       # Development: Watch mode for hot reload
       - ./app:/app/app
 
-    networks:
-      - south-drift-network
-
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
       interval: 30s
@@ -74,7 +71,3 @@ services:
         reservations:
           cpus: "4.0"
           memory: 8G
-
-networks:
-  south-drift-network:
-    driver: bridge

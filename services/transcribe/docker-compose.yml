@@ -10,21 +10,21 @@ services:
     environment:
       # Provider selection
       - TRANSCRIPTION_PROVIDER=whisper  # Must match build arg
-      
+
       # Whisper settings (if provider=whisper)
       - WHISPER_MODEL_SIZE=base
       - WHISPER_DEVICE=cpu
-      
+
       # AWS settings (if provider=aws)
       # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
       # - AWS_REGION=us-east-1
       # - TEMP_S3_BUCKET=southdrift-transcribe-temp
-      
+
       # Azure settings (if provider=azure)
       # - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
       # - AZURE_SPEECH_REGION=eastus
-      
+
       # Service settings
       - PORT=8001
       - LOG_LEVEL=info
@@ -44,7 +44,18 @@ services:
             - "*.pyc"
             - .pytest_cache/
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8001/health", "||", "exit", "1"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8001/health",
+          "||",
+          "exit",
+          "1",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -53,5 +64,3 @@ services:
 volumes:
   whisper-models:
     driver: local
-
-# Network omitted - will be defined by parent docker-compose.yml

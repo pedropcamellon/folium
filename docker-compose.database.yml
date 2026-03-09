@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: southdrift-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: southdrift
+      POSTGRES_PASSWORD: dev_password_change_in_prod
+      POSTGRES_DB: southdrift_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U southdrift -d southdrift_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:

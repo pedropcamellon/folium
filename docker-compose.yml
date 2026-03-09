@@ -1,79 +1,43 @@
+include:
+  - docker-compose.database.yml
+  - docker-compose.storage.yml
+  - backend/docker-compose.yml
+  - frontend/docker-compose.yml
+  - services/transcribe/docker-compose.yml
+  - services/summarize/docker-compose.yml
+
 services:
-  minio:
-    image: minio/minio:latest
-    container_name: southdrift-minio
-    ports:
-      - "9000:9000" # S3 API
-      - "9001:9001" # Web Console
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-    networks:
-      - south-drift-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
   backend:
-    extends:
-      file: ./backend/docker-compose.yml
-      service: backend
-    env_file:
-      - ./backend/.env
     depends_on:
-      - minio
-      - transcribe
-      - summarize
-    environment:
-      - STORAGE_ENDPOINT=http://minio:9000
-      - STORAGE_ACCESS_KEY=minioadmin
-      - STORAGE_SECRET_KEY=minioadmin
-      - STORAGE_BUCKET=southdrift-dev
-      - STORAGE_REGION=us-east-1
-      - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
-      - SUMMARIZATION_SERVICE_URL=http://summarize:8002
-    networks:
-      - south-drift-network
-
-  transcribe:
-    extends:
-      file: ./services/transcribe/docker-compose.yml
-      service: transcribe
-    networks:
-      - south-drift-network
-
-  summarize:
-    extends:
-      file: ./services/summarize/docker-compose.yml
-      service: summarize
-    env_file:
-      - ./services/summarize/.env
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - south-drift-network
 
   frontend:
-    extends:
-      file: ./frontend/docker-compose.yml
-      service: frontend
     depends_on:
       - backend
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    networks:
+      - south-drift-network
+
+  postgres:
+    networks:
+      - south-drift-network
+
+  minio:
+    networks:
+      - south-drift-network
+
+  transcribe:
+    networks:
+      - south-drift-network
+
+  summarize:
     networks:
       - south-drift-network
 
 networks:
   south-drift-network:
     driver: bridge
-
-volumes:
-  backend_cache:
-  frontend_node_modules:
-  frontend_next:
-  minio_data:
-  whisper-models:
