@@ -26,8 +26,13 @@ async def list_interactions(
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Get all interactions, optionally filtered by patient ID"""
+    logger.info(f"[API] list_interactions called with patientId={patientId}")
     if patientId:
-        return await service.get_by_patient_id(patientId)
+        logger.info(f"[API] Calling service.get_by_patient_id({patientId})")
+        result = await service.get_by_patient_id(patientId)
+        logger.info(f"[API] Service returned {len(result)} interactions")
+        return result
+    logger.info("[API] No patientId filter, calling get_all")
     return await service.get_all()
 
 

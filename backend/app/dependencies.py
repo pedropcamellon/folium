@@ -16,7 +16,6 @@ from app.services.storage.factory import get_storage
 from app.services.storage.base import ObjectStorageProvider
 
 # Singletons (in-memory repos still using this pattern)
-_interaction_repository = None
 _document_repository = None
 _transcription_service = None
 _summarization_service = None
@@ -34,12 +33,9 @@ def get_patient_service(
     return PatientService(repository)
 
 
-def get_interaction_repository() -> InteractionRepository:
-    """Get or create interaction repository instance"""
-    global _interaction_repository
-    if _interaction_repository is None:
-        _interaction_repository = InteractionRepository()
-    return _interaction_repository
+def get_interaction_repository(session: AsyncSession = Depends(get_async_session)) -> InteractionRepository:
+    """Get interaction repository with database session"""
+    return InteractionRepository(session)
 
 
 def get_interaction_service(
