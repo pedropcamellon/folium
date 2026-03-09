@@ -1,45 +1,36 @@
-"""Base repository interface"""
+"""Repository protocols and base classes for SQLAlchemy repositories"""
 
-from abc import ABC, abstractmethod
-from typing import List, Optional, TypeVar, Generic
-from datetime import datetime
-import uuid
-
-T = TypeVar('T')
+from typing import Protocol
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
-class BaseRepository(ABC, Generic[T]):
-    """Abstract base repository with common CRUD operations"""
-    
-    def _generate_id(self) -> str:
-        """Generate a unique ID"""
-        return str(uuid.uuid4())
-    
-    def _now(self) -> datetime:
-        """Get current timestamp"""
-        return datetime.utcnow()
-    
-    @abstractmethod
-    async def get_all(self) -> List[T]:
+class RepositoryProtocol(Protocol):
+    """
+    Protocol defining the standard repository interface.
+
+    This uses Python's Protocol (PEP 544) for structural subtyping.
+    Any class with these methods is considered compatible - no inheritance needed.
+    Type checkers like mypy will verify the interface at static analysis time.
+    """
+
+    session: AsyncSession
+
+    async def get_all(self) -> list[dict]:
         """Get all records"""
-        pass
-    
-    @abstractmethod
-    async def get_by_id(self, id: str) -> Optional[T]:
+        ...
+
+    async def get_by_id(self, id: str) -> dict | None:
         """Get record by ID"""
-        pass
-    
-    @abstractmethod
-    async def create(self, data: dict) -> T:
+        ...
+
+    async def create(self, data: dict) -> dict:
         """Create new record"""
-        pass
-    
-    @abstractmethod
-    async def update(self, id: str, data: dict) -> Optional[T]:
+        ...
+
+    async def update(self, id: str, data: dict) -> dict | None:
         """Update existing record"""
-        pass
-    
-    @abstractmethod
+        ...
+
     async def delete(self, id: str) -> bool:
         """Delete record"""
-        pass
+        ...
