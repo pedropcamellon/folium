@@ -49,7 +49,7 @@ SouthDrift is a SaaS platform that digitizes, analyzes, and automates clinical d
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/yourusername/south-drift.git
+   git clone https://github.com/pedropcamellon/south-drift.git
    cd south-drift
    ```
 
@@ -62,7 +62,7 @@ SouthDrift is a SaaS platform that digitizes, analyzes, and automates clinical d
    
    # Backend
    cd ../backend
-   pip install -r requirements.txt
+   uv sync
    ```
 
 3. **Setup environment variables**
@@ -80,7 +80,7 @@ SouthDrift is a SaaS platform that digitizes, analyzes, and automates clinical d
    ```bash
    # Backend (FastAPI)
    cd backend
-   uvicorn main:app --reload --port 8000
+   uv run uvicorn main:app --reload --port 8000
    
    # Frontend (Next.js)
    cd frontend
@@ -100,6 +100,52 @@ docker-compose up -d
 # Stop the stack
 docker-compose down
 ```
+
+## ⚠️ Known Setup Issues
+
+### Windows 10 + WSL2 + Docker Desktop
+
+**Prerequisites**: Docker Desktop on Windows 10 requires WSL2. Ensure you have the **latest Windows 10 updates** installed (version 22H2 or higher).
+
+**Problem**: Docker Desktop fails to start or becomes stuck during initialization on Windows 10 with WSL2.
+
+**Symptoms**:
+
+- Docker Desktop won't start or hangs on "Starting..."
+- "WSL 2 installation is incomplete" error
+- Docker engine not running
+- Services fail to start with "Cannot connect to Docker daemon"
+
+**Solution**:
+
+- Ensure Windows 10 is fully updated (Settings → Update & Security)
+- Verify WSL2 is installed: `wsl --list --verbose`
+- Install/update WSL2 kernel: `wsl --update`
+- Check Docker Desktop → Settings → Resources → WSL Integration
+- Try `wsl --shutdown` then restart Docker Desktop
+- Reinstall Docker Desktop if issue persists
+
+**Workaround**: Run services directly on Windows (without Docker) for local development.
+
+### Node.js & pnpm Setup
+
+**Node.js Required**: The frontend requires Node.js 18+ to be installed. Download from [nodejs.org](https://nodejs.org/).
+
+**pnpm Installation**:
+
+```bash
+# Install pnpm globally via npm
+npm install -g pnpm
+
+# Or via standalone script (recommended)
+# Windows (PowerShell)
+iwr https://get.pnpm.io/install.ps1 -useb | iex
+
+# macOS/Linux
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
+
+For more installation options and troubleshooting, see the [official pnpm documentation](https://pnpm.io/installation).
 
 ## 🎯 Features
 
