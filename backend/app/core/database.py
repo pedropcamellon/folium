@@ -11,6 +11,9 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from app.models.user import Base
 
+# Import all models to register them with Base.metadata
+from app.models.db import Patient, Interaction, Document  # noqa: F401
+
 logger = logging.getLogger(__name__)
 
 # Database URL from environment (required)
