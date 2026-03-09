@@ -51,6 +51,7 @@ class InteractionService:
             interaction_dict["type"] = interaction_dict["type"].value
 
         interaction = await self.repository.create(interaction_dict)
+        await self.repository.session.commit()
         return InteractionResponse(**interaction)
 
     async def update(
@@ -74,6 +75,7 @@ class InteractionService:
             update_dict["type"] = update_dict["type"].value
 
         updated = await self.repository.update(interaction_id, update_dict)
+        await self.repository.session.commit()
         return InteractionResponse(**updated)
 
     async def update_note(
@@ -85,6 +87,7 @@ class InteractionService:
             raise InteractionNotFoundError(interaction_id)
 
         updated = await self.repository.update(interaction_id, {"note": note_data.note})
+        await self.repository.session.commit()
         return InteractionResponse(**updated)
 
     async def update_summary(self, interaction_id: str, summary_data) -> InteractionResponse:
@@ -94,6 +97,7 @@ class InteractionService:
             raise InteractionNotFoundError(interaction_id)
 
         updated = await self.repository.update(interaction_id, {"summary": summary_data.summary})
+        await self.repository.session.commit()
         return InteractionResponse(**updated)
 
     async def delete(self, interaction_id: str) -> bool:
@@ -102,4 +106,6 @@ class InteractionService:
         if not existing:
             raise InteractionNotFoundError(interaction_id)
 
-        return await self.repository.delete(interaction_id)
+        result = await self.repository.delete(interaction_id)
+        await self.repository.session.commit()
+        return result
