@@ -1,101 +1,123 @@
-"""Patient repository - Data access layer"""
+"""Patient repository - Database access layer"""
 
 from typing import List, Optional
-from datetime import datetime, timedelta
-from app.repositories.base import BaseRepository
+from datetime import datetime, timezone
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.db.patient import Patient
 
 
-class PatientRepository(BaseRepository):
-    """In-memory patient repository (MVP implementation)"""
+class PatientRepository:
+    """Patient repository using PostgreSQL via SQLAlchemy"""
 
-    def __init__(self):
-        self._patients = {}
-        self._seed_data()
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def get_all(self) -> List[dict]:
         """Get all patients"""
-        return list(self._patients.values())
+        result = await self.session.execute(select(Patient))
+        patients = result.scalars().all()
+        return [self._to_dict(patient) for patient in patients]
 
     async def get_by_id(self, patient_id: str) -> Optional[dict]:
         """Get patient by ID"""
-        return self._patients.get(patient_id)
+        try:
+            patient_uuid = UUID(patient_id)
+        except (ValueError, AttributeError):
+            return
+
+        result = await self.session.execute(select(Patient).where(Patient.id == patient_uuid))
+        patient = result.scalar_one_or_none()
+        return self._to_dict(patient) if patient else None
 
     async def create(self, patient_data: dict) -> dict:
         """Create new patient"""
-        patient_id = self._generate_id()
-        patient = {"id": patient_id, **patient_data, "createdAt": self._now(), "updatedAt": None}
-        self._patients[patient_id] = patient
-        return patient
+        # Convert camelCase to snake_case for database
+        db_data = self._to_db_fields(patient_data)
+
+        patient = Patient(**db_data)
+        self.session.add(patient)
+        await self.session.flush()
+        await self.session.refresh(patient)
+
+        return self._to_dict(patient)
 
     async def update(self, patient_id: str, patient_data: dict) -> Optional[dict]:
         """Update existing patient"""
-        if patient_id not in self._patients:
-            return None
+        try:
+            patient_uuid = UUID(patient_id)
+        except (ValueError, AttributeError):
+            return
 
-        # Update only provided fields
-        for key, value in patient_data.items():
-            if value is not None:
-                self._patients[patient_id][key] = value
+        result = await self.session.execute(select(Patient).where(Patient.id == patient_uuid))
+        patient = result.scalar_one_or_none()
 
-        self._patients[patient_id]["updatedAt"] = self._now()
-        return self._patients[patient_id]
+        if not patient:
+            return
+
+        # Convert camelCase to snake_case and update fields
+        db_data = self._to_db_fields(patient_data)
+        for key, value in db_data.items():
+            if value is not None and hasattr(patient, key):
+                setattr(patient, key, value)
+
+        patient.updated_at = datetime.now(timezone.utc)
+        await self.session.flush()
+        await self.session.refresh(patient)
+
+        return self._to_dict(patient)
 
     async def delete(self, patient_id: str) -> bool:
-        """Delete patient"""
-        if patient_id in self._patients:
-            del self._patients[patient_id]
+        """Delete patient (cascade deletes interactions and documents)"""
+        try:
+            patient_uuid = UUID(patient_id)
+        except (ValueError, AttributeError):
+            return False
+
+        result = await self.session.execute(select(Patient).where(Patient.id == patient_uuid))
+        patient = result.scalar_one_or_none()
+
+        if patient:
+            await self.session.delete(patient)
+            await self.session.flush()
             return True
         return False
 
-    def _seed_data(self):
-        """Seed initial patient data"""
-        sample_patients = [
-            {
-                "id": "patient-001",
-                "medicalRecordNumber": "MRN-2024-001",
-                "firstName": "John",
-                "lastName": "Doe",
-                "dateOfBirth": (datetime.now() - timedelta(days=365 * 45)).isoformat(),
-                "gender": "Male",
-                "contactInfo": "(555) 123-4567",
-                "email": "john.doe@email.com",
-                "phone": "(555) 123-4567",
-                "address": "123 Main St, Anytown, USA",
-                "emergencyContact": "Jane Doe - (555) 987-6543",
-                "createdAt": self._now().isoformat(),
-                "updatedAt": None,
-            },
-            {
-                "id": "patient-002",
-                "medicalRecordNumber": "MRN-2024-002",
-                "firstName": "Sarah",
-                "lastName": "Johnson",
-                "dateOfBirth": (datetime.now() - timedelta(days=365 * 32)).isoformat(),
-                "gender": "Female",
-                "contactInfo": "(555) 234-5678",
-                "email": "sarah.j@email.com",
-                "phone": "(555) 234-5678",
-                "address": "456 Oak Ave, Springfield, USA",
-                "emergencyContact": "Mike Johnson - (555) 876-5432",
-                "createdAt": self._now().isoformat(),
-                "updatedAt": None,
-            },
-            {
-                "id": "patient-003",
-                "medicalRecordNumber": "MRN-2024-003",
-                "firstName": "Michael",
-                "lastName": "Chen",
-                "dateOfBirth": (datetime.now() - timedelta(days=365 * 28)).isoformat(),
-                "gender": "Male",
-                "contactInfo": "(555) 345-6789",
-                "email": "m.chen@email.com",
-                "phone": "(555) 345-6789",
-                "address": "789 Pine Rd, Riverside, USA",
-                "emergencyContact": "Lisa Chen - (555) 765-4321",
-                "createdAt": self._now().isoformat(),
-                "updatedAt": None,
-            },
-        ]
+    def _to_dict(self, patient: Patient) -> dict:
+        """Convert Patient model to API dict (snake_case -> camelCase)"""
+        return {
+            "id": str(patient.id),
+            "medicalRecordNumber": patient.medical_record_number,
+            "firstName": patient.first_name,
+            "lastName": patient.last_name,
+            "dateOfBirth": patient.date_of_birth.isoformat(),
+            "gender": patient.gender,
+            "contactInfo": patient.contact_info,
+            "email": patient.email,
+            "phone": patient.phone,
+            "address": patient.address,
+            "emergencyContact": patient.emergency_contact,
+            "createdAt": patient.created_at.isoformat(),
+            "updatedAt": patient.updated_at.isoformat() if patient.updated_at else None,
+        }
 
-        for patient in sample_patients:
-            self._patients[patient["id"]] = patient
+    def _to_db_fields(self, api_data: dict) -> dict:
+        """Convert API data (camelCase) to database fields (snake_case)"""
+        field_mapping = {
+            "medicalRecordNumber": "medical_record_number",
+            "firstName": "first_name",
+            "lastName": "last_name",
+            "dateOfBirth": "date_of_birth",
+            "contactInfo": "contact_info",
+            "emergencyContact": "emergency_contact",
+        }
+
+        db_data = {}
+        for api_key, value in api_data.items():
+            db_key = field_mapping.get(api_key, api_key)
+            db_data[db_key] = value
+
+        return db_data

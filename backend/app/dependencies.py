@@ -1,6 +1,9 @@
 """Dependency injection for FastAPI"""
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_async_session
 from app.repositories.patient_repository import PatientRepository
 from app.repositories.interaction_repository import InteractionRepository
 from app.repositories.document_repository import DocumentRepository
@@ -12,20 +15,16 @@ from app.services.summarization_service import SummarizationService
 from app.services.storage.factory import get_storage
 from app.services.storage.base import ObjectStorageProvider
 
-# Repository singletons (in-memory for MVP)
-_patient_repository = None
+# Singletons (in-memory repos still using this pattern)
 _interaction_repository = None
 _document_repository = None
 _transcription_service = None
 _summarization_service = None
 
 
-def get_patient_repository() -> PatientRepository:
-    """Get or create patient repository instance"""
-    global _patient_repository
-    if _patient_repository is None:
-        _patient_repository = PatientRepository()
-    return _patient_repository
+def get_patient_repository(session: AsyncSession = Depends(get_async_session)) -> PatientRepository:
+    """Get patient repository with database session"""
+    return PatientRepository(session)
 
 
 def get_patient_service(
