@@ -1,5 +1,6 @@
 """FastAPI application entry point"""
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,19 +9,20 @@ from app.api.v1.endpoints.auth import auth_router, users_router
 from app.api.v1.router import api_router
 from app.config import settings
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan event handler"""
     # Startup
-    print(f"[STARTUP] {settings.APP_NAME} v{settings.VERSION} starting...")
-    print("[STARTUP] API documentation available at: /docs")
+    logger.info(f"{settings.APP_NAME} v{settings.VERSION} starting...")
+    logger.info("API documentation available at: /docs")
 
     # Initialize database tables
     from app.core.database import create_db_and_tables
 
     await create_db_and_tables()
-    print("[STARTUP] Database tables initialized")
 
     # Seed test users
     try:
@@ -28,18 +30,18 @@ async def lifespan(app: FastAPI):
 
         await seed_users()
     except Exception as e:
-        print(f"[WARNING] Failed to seed users: {e}")
+        logger.warning(f"Failed to seed users: {e}")
 
     # Initialize storage service (creates bucket if not exists)
     from app.services.storage import get_storage
 
     try:
         storage = await get_storage()
-        print(
-            f"[STARTUP] Storage initialized: {storage.config.provider.upper()} - {storage.config.bucket}"
+        logger.info(
+            f"Storage initialized: {storage.config.provider.upper()} - {storage.config.bucket}"
         )
     except Exception as e:
-        print(f"[WARNING] Storage initialization failed: {e}")
+        logger.warning(f"Storage initialization failed: {e}")
 
     # Check transcription service health
     from app.services.transcription_service import get_transcription_service
@@ -49,16 +51,16 @@ async def lifespan(app: FastAPI):
         health = await transcription_svc.health_check()
         if health.get("status") == "healthy":
             provider = health.get("provider", "unknown")
-            print(f"[STARTUP] Transcription service healthy: {provider}")
+            logger.info(f"Transcription service healthy: {provider}")
         else:
-            print(f"[WARNING] Transcription service unhealthy: {health.get('error', 'Unknown')}")
+            logger.warning(f"Transcription service unhealthy: {health.get('error', 'Unknown')}")
     except Exception as e:
-        print(f"[WARNING] Transcription service unavailable: {e}")
+        logger.warning(f"Transcription service unavailable: {e}")
 
     yield
 
     # Shutdown
-    print(f"[SHUTDOWN] {settings.APP_NAME} shutting down...")
+    logger.info(f"{settings.APP_NAME} shutting down...")
 
 
 # Create FastAPI app
