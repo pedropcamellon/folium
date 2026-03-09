@@ -22,11 +22,19 @@ async def main():
 
     # Seed patients, interactions, and documents
     async with async_session_maker() as session:
+        print("[DEBUG seed_db] Calling seed_patients...")
         patients = await seed_patients(session)
+        print(f"[DEBUG seed_db] seed_patients returned {len(patients) if patients else 0} patients")
+        print(f"[DEBUG seed_db] patients is: {patients}")
+        print(f"[DEBUG seed_db] bool(patients) = {bool(patients)}")
 
         if patients:
+            print("[DEBUG seed_db] Patients exist, calling seed_interactions...")
             interactions = await seed_interactions(session, patients)
+            print("[DEBUG seed_db] Calling seed_documents...")
             await seed_documents(session, patients, interactions)
+        else:
+            print("[DEBUG seed_db] No patients found, skipping interactions and documents")
 
     print("\n✅ Database seeding complete!")
 

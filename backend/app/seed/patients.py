@@ -12,10 +12,18 @@ from app.models.db import Patient
 async def seed_patients(session: AsyncSession) -> List[Patient]:
     """Seed initial patient data with realistic Miami names (bilingual context)."""
     # Check if patients already exist
-    result = await session.execute(select(Patient).limit(1))
-    if result.scalar_one_or_none():
+    print("[DEBUG seed_patients] Querying for existing patients...")
+    result = await session.execute(select(Patient))
+    existing_patients = result.scalars().all()
+    print(f"[DEBUG seed_patients] Found {len(existing_patients)} existing patients")
+
+    if existing_patients:
         print("Patients already seeded")
-        return []
+        patients_list = list(existing_patients)
+        print(f"[DEBUG seed_patients] Returning {len(patients_list)} patients")
+        for i, p in enumerate(patients_list[:3]):
+            print(f"[DEBUG seed_patients] Patient {i}: {p.id} - {p.first_name} {p.last_name}")
+        return patients_list
 
     # Create patients with realistic Miami names
     patients = [

@@ -20,17 +20,23 @@ async def lifespan(app: FastAPI):
     logger.info("API documentation available at: /docs")
 
     # Initialize database tables
-    from app.core.database import create_db_and_tables
+    from app.core.database import create_db_and_tables, async_session_maker
 
     await create_db_and_tables()
 
-    # Seed test users
+    # Seed test data
     try:
-        from app.seed_db import seed_users
+        from app.seed import seed_users, seed_patients, seed_interactions, seed_documents
 
-        await seed_users()
+        async with async_session_maker() as session:
+            await seed_users(session)
+            patients = await seed_patients(session)
+            if patients:
+                interactions = await seed_interactions(session, patients)
+                await seed_documents(session, patients, interactions)
+        logger.info("Database seeding complete")
     except Exception as e:
-        logger.warning(f"Failed to seed users: {e}")
+        logger.warning(f"Failed to seed database: {e}")
 
     # Initialize storage service (creates bucket if not exists)
     from app.services.storage import get_storage
