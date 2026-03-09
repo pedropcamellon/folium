@@ -2,7 +2,7 @@
 
 from pydantic import BaseModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, date
 
 
 class PatientBase(BaseModel):
@@ -10,7 +10,7 @@ class PatientBase(BaseModel):
     medicalRecordNumber: str = Field(..., min_length=1, max_length=50)
     firstName: str = Field(..., min_length=1, max_length=100)
     lastName: str = Field(..., min_length=1, max_length=100)
-    dateOfBirth: datetime
+    dateOfBirth: date
     gender: str = Field(..., min_length=1, max_length=20)
     contactInfo: str = Field(..., min_length=1, max_length=200)
     email: Optional[str] = None
@@ -29,7 +29,7 @@ class PatientUpdate(BaseModel):
     medicalRecordNumber: Optional[str] = Field(None, min_length=1, max_length=50)
     firstName: Optional[str] = Field(None, min_length=1, max_length=100)
     lastName: Optional[str] = Field(None, min_length=1, max_length=100)
-    dateOfBirth: Optional[datetime] = None
+    dateOfBirth: Optional[date] = None
     gender: Optional[str] = Field(None, min_length=1, max_length=20)
     contactInfo: Optional[str] = Field(None, min_length=1, max_length=200)
     email: Optional[str] = None

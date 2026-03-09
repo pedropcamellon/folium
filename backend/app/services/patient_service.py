@@ -28,12 +28,10 @@ class PatientService:
         """Create new patient"""
         # Could add business logic here (e.g., duplicate checking)
         patient_dict = patient_data.model_dump()
-        # Convert datetime to ISO string for storage
-        if patient_dict.get("dateOfBirth"):
-            patient_dict["dateOfBirth"] = patient_dict["dateOfBirth"].isoformat()
 
         patient = await self.repository.create(patient_dict)
         await self.repository.session.commit()
+
         return PatientResponse(**patient)
 
     async def update(self, patient_id: str, patient_data: PatientUpdate) -> PatientResponse:
@@ -45,9 +43,6 @@ class PatientService:
 
         # Get only fields that were provided
         update_dict = patient_data.model_dump(exclude_unset=True)
-        # Convert datetime to ISO string if present
-        if update_dict.get("dateOfBirth"):
-            update_dict["dateOfBirth"] = update_dict["dateOfBirth"].isoformat()
 
         updated = await self.repository.update(patient_id, update_dict)
         await self.repository.session.commit()
