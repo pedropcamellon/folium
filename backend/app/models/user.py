@@ -20,10 +20,10 @@ class Base(DeclarativeBase):
 class UserRole(str, Enum):
     """User roles for role-based access control."""
 
+    ADMIN = "admin"
     PATIENT = "patient"
     PROVIDER = "provider"
-    ADMIN = "admin"
-    RECEPTIONIST = "receptionist"
+    STAFF = "staff"
 
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
