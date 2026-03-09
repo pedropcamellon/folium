@@ -15,8 +15,7 @@ from app.services.summarization_service import SummarizationService
 from app.services.storage.factory import get_storage
 from app.services.storage.base import ObjectStorageProvider
 
-# Singletons (in-memory repos still using this pattern)
-_document_repository = None
+# Singletons (for services without database dependencies)
 _transcription_service = None
 _summarization_service = None
 
@@ -33,7 +32,9 @@ def get_patient_service(
     return PatientService(repository)
 
 
-def get_interaction_repository(session: AsyncSession = Depends(get_async_session)) -> InteractionRepository:
+def get_interaction_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> InteractionRepository:
     """Get interaction repository with database session"""
     return InteractionRepository(session)
 
@@ -45,12 +46,11 @@ def get_interaction_service(
     return InteractionService(repository)
 
 
-def get_document_repository() -> DocumentRepository:
-    """Get or create document repository instance"""
-    global _document_repository
-    if _document_repository is None:
-        _document_repository = DocumentRepository()
-    return _document_repository
+def get_document_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> DocumentRepository:
+    """Get document repository with database session"""
+    return DocumentRepository(session)
 
 
 def get_document_service(

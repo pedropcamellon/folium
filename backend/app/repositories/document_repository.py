@@ -1,184 +1,183 @@
 """Clinical document repository - Data access layer"""
 
-from typing import Optional
-from datetime import datetime, timedelta
-from app.repositories.base import BaseRepository
+import logging
+from datetime import datetime, timezone
+from uuid import UUID
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
+from app.models.db import Document
 from app.models.document import ClinicalDocumentType, get_type_label
 
+logger = logging.getLogger(__name__)
 
-class DocumentRepository(BaseRepository):
-    """In-memory document repository (MVP implementation)"""
 
-    def __init__(self):
-        self._documents = {}
-        self._seed_data()
+class DocumentRepository:
+    """Database-backed document repository"""
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
     async def get_all(self) -> list[dict]:
         """Get all documents"""
-        return list(self._documents.values())
+        result = await self.session.execute(
+            select(Document).options(selectinload(Document.patient))
+        )
+        documents = result.scalars().all()
+        return [self._to_dict(doc) for doc in documents]
 
-    async def get_by_id(self, document_id: str) -> Optional[dict]:
+    async def get_by_id(self, id: str) -> dict | None:
         """Get document by ID"""
-        return self._documents.get(document_id)
+        try:
+            document_id = UUID(id)
+        except ValueError:
+            return
+
+        result = await self.session.execute(
+            select(Document)
+            .where(Document.id == document_id)
+            .options(selectinload(Document.patient))
+        )
+        document = result.scalar_one_or_none()
+        return self._to_dict(document) if document else None
 
     async def get_by_patient_id(
-        self, patient_id: str, types: Optional[list[str]] = None
+        self, patient_id: str, types: list[str] | None = None
     ) -> list[dict]:
         """Get all documents for a specific patient, optionally filtered by type"""
-        documents = [doc for doc in self._documents.values() if doc.get("patientId") == patient_id]
+        try:
+            patient_uuid = UUID(patient_id)
+        except ValueError:
+            return []
+
+        query = select(Document).where(Document.patient_id == patient_uuid)
 
         if types:
-            documents = [doc for doc in documents if doc.get("type") in types]
+            query = query.where(Document.type.in_(types))
 
-        return documents
+        result = await self.session.execute(query.options(selectinload(Document.patient)))
+        documents = result.scalars().all()
+        return [self._to_dict(doc) for doc in documents]
 
     async def get_by_interaction_id(self, interaction_id: str) -> list[dict]:
         """Get all documents linked to a specific interaction"""
-        return [
-            doc for doc in self._documents.values() if doc.get("interactionId") == interaction_id
-        ]
+        try:
+            interaction_uuid = UUID(interaction_id)
+        except ValueError:
+            return []
+
+        result = await self.session.execute(
+            select(Document)
+            .where(Document.interaction_id == interaction_uuid)
+            .options(selectinload(Document.patient))
+        )
+        documents = result.scalars().all()
+        return [self._to_dict(doc) for doc in documents]
 
     async def create(self, document_data: dict) -> dict:
         """Create new document"""
-        document_id = self._generate_id()
+        db_data = self._to_db_fields(document_data)
+        document = Document(**db_data)
+        self.session.add(document)
+        await self.session.flush()
+        await self.session.refresh(document)
+        return self._to_dict(document)
 
-        # Generate type label
-        doc_type = document_data.get("type")
-        type_label = get_type_label(ClinicalDocumentType(doc_type)) if doc_type else "Document"
-
-        document = {
-            "id": document_id,
-            **document_data,
-            "typeLabel": type_label,
-            "createdAt": self._now().isoformat(),
-            "updatedAt": None,
-            "createdBy": "system",  # TODO: Get from auth context
-            "updatedBy": None,
-        }
-        self._documents[document_id] = document
-        return document
-
-    async def update(self, document_id: str, document_data: dict) -> Optional[dict]:
+    async def update(self, id: str, document_data: dict) -> dict | None:
         """Update existing document"""
-        if document_id not in self._documents:
-            return None
+        try:
+            document_id = UUID(id)
+        except ValueError:
+            logger.warning(f"Invalid document ID format: {id}")
+            return
 
-        # Update only provided fields
-        for key, value in document_data.items():
-            if value is not None:
-                self._documents[document_id][key] = value
+        result = await self.session.execute(select(Document).where(Document.id == document_id))
+        document = result.scalar_one_or_none()
 
-        # Update type label if type changed
-        if "type" in document_data:
-            doc_type = document_data["type"]
-            self._documents[document_id]["typeLabel"] = get_type_label(
-                ClinicalDocumentType(doc_type)
-            )
+        if not document:
+            return
 
-        self._documents[document_id]["updatedAt"] = self._now().isoformat()
-        self._documents[document_id]["updatedBy"] = "system"  # TODO: Get from auth context
-        return self._documents[document_id]
+        # Update fields
+        db_data = self._to_db_fields(document_data)
+        for key, value in db_data.items():
+            if value is not None and hasattr(document, key):
+                setattr(document, key, value)
 
-    async def delete(self, document_id: str) -> bool:
+        document.updated_at = datetime.now(timezone.utc)
+        await self.session.flush()
+        await self.session.refresh(document)
+        return self._to_dict(document)
+
+    async def delete(self, id: str) -> bool:
         """Delete document"""
-        if document_id in self._documents:
-            del self._documents[document_id]
+        try:
+            document_id = UUID(id)
+        except ValueError:
+            return False
+
+        result = await self.session.execute(select(Document).where(Document.id == document_id))
+        document = result.scalar_one_or_none()
+
+        if document:
+            await self.session.delete(document)
+            await self.session.flush()
             return True
         return False
 
-    def _seed_data(self):
-        """Seed initial document data"""
-        base_time = datetime.now()
+    def _to_dict(self, document: Document) -> dict:
+        """Convert Document model to dict with camelCase fields"""
+        # Generate type label
+        try:
+            doc_type = ClinicalDocumentType(document.type)
+            type_label = get_type_label(doc_type)
+        except ValueError:
+            type_label = document.type
 
-        sample_documents = [
-            {
-                "id": "doc-001",
-                "patientId": "patient-001",
-                "type": "ClinicalNote",
-                "typeLabel": "Note",
-                "title": "Annual Physical Exam Notes",
-                "summary": "Patient in good health. Vital signs normal.",
-                "interactionId": "interaction-001",
-                "metadata": {"format": "SOAP", "signed": True},
-                "createdAt": (base_time - timedelta(days=30)).isoformat(),
-                "updatedAt": None,
-                "createdBy": "provider-001",
-                "updatedBy": None,
-            },
-            {
-                "id": "doc-002",
-                "patientId": "patient-001",
-                "type": "LabResult",
-                "typeLabel": "Labs",
-                "title": "Lipid Panel Results",
-                "summary": "Cholesterol levels slightly elevated. Recommend dietary changes.",
-                "interactionId": "interaction-002",
-                "metadata": {
-                    "results": {
-                        "totalCholesterol": 215,
-                        "HDL": 45,
-                        "LDL": 145,
-                        "triglycerides": 125,
-                    },
-                    "status": "Final",
-                },
-                "createdAt": (base_time - timedelta(days=23)).isoformat(),
-                "updatedAt": None,
-                "createdBy": "lab-system",
-                "updatedBy": None,
-            },
-            {
-                "id": "doc-003",
-                "patientId": "patient-002",
-                "type": "Prescription",
-                "typeLabel": "Prescription",
-                "title": "Lisinopril 10mg Prescription",
-                "summary": "Blood pressure medication. Take once daily.",
-                "interactionId": None,
-                "metadata": {
-                    "medication": "Lisinopril",
-                    "dosage": "10mg",
-                    "frequency": "Once daily",
-                    "refills": 3,
-                    "expires": (base_time + timedelta(days=365)).isoformat(),
-                },
-                "createdAt": (base_time - timedelta(days=60)).isoformat(),
-                "updatedAt": None,
-                "createdBy": "provider-001",
-                "updatedBy": None,
-            },
-            {
-                "id": "doc-004",
-                "patientId": "patient-003",
-                "type": "AdministrativeForm",
-                "typeLabel": "Form",
-                "title": "HIPAA Privacy Notice - Signed",
-                "summary": "Patient acknowledged HIPAA privacy practices.",
-                "interactionId": None,
-                "metadata": {
-                    "formType": "HIPAA",
-                    "signedDate": (base_time - timedelta(days=90)).isoformat(),
-                },
-                "createdAt": (base_time - timedelta(days=90)).isoformat(),
-                "updatedAt": None,
-                "createdBy": "front-desk",
-                "updatedBy": None,
-            },
-            {
-                "id": "doc-005",
-                "patientId": "patient-001",
-                "type": "PatientUpload",
-                "typeLabel": "Upload",
-                "title": "Insurance Card - Front",
-                "summary": "Patient uploaded insurance card image.",
-                "interactionId": None,
-                "metadata": {"fileType": "image/jpeg", "uploadedBy": "patient"},
-                "createdAt": (base_time - timedelta(days=45)).isoformat(),
-                "updatedAt": None,
-                "createdBy": "patient-001",
-                "updatedBy": None,
-            },
-        ]
+        return {
+            "id": str(document.id),
+            "patientId": str(document.patient_id),
+            "interactionId": str(document.interaction_id) if document.interaction_id else None,
+            "title": document.title,
+            "type": document.type,
+            "typeLabel": type_label,
+            "fileName": document.file_name,
+            "fileSize": document.file_size,
+            "fileUrl": document.file_url,
+            "mimeType": document.mime_type,
+            "summary": document.summary,
+            "metadata": document.metadata_json,
+            "createdBy": document.created_by,
+            "updatedBy": document.updated_by,
+            "createdAt": document.created_at.isoformat() if document.created_at else None,
+            "updatedAt": document.updated_at.isoformat() if document.updated_at else None,
+        }
 
-        for document in sample_documents:
-            self._documents[document["id"]] = document
+    def _to_db_fields(self, data: dict) -> dict:
+        """Convert camelCase dict to snake_case for database model"""
+        field_mapping = {
+            "patientId": "patient_id",
+            "interactionId": "interaction_id",
+            "fileName": "file_name",
+            "fileSize": "file_size",
+            "fileUrl": "file_url",
+            "mimeType": "mime_type",
+            "createdBy": "created_by",
+            "updatedBy": "updated_by",
+            "metadata": "metadata_json",
+        }
+
+        db_data = {}
+        for key, value in data.items():
+            db_key = field_mapping.get(key, key)
+            if value is not None:
+                # Convert UUID strings to UUID objects for foreign keys
+                if db_key in ("patient_id", "interaction_id") and isinstance(value, str):
+                    try:
+                        db_data[db_key] = UUID(value)
+                    except ValueError:
+                        pass
+                else:
+                    db_data[db_key] = value
+
+        return db_data

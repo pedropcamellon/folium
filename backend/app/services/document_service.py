@@ -47,6 +47,7 @@ class DocumentService:
             document_dict["type"] = document_dict["type"].value
 
         document = await self.repository.create(document_dict)
+        await self.repository.session.commit()
         return DocumentResponse(**document)
 
     async def update(self, document_id: str, document_data: DocumentUpdate) -> DocumentResponse:
@@ -64,6 +65,7 @@ class DocumentService:
             update_dict["type"] = update_dict["type"].value
 
         updated = await self.repository.update(document_id, update_dict)
+        await self.repository.session.commit()
         return DocumentResponse(**updated)
 
     async def delete(self, document_id: str) -> bool:
@@ -72,4 +74,6 @@ class DocumentService:
         if not existing:
             raise DocumentNotFoundError(document_id)
 
-        return await self.repository.delete(document_id)
+        result = await self.repository.delete(document_id)
+        await self.repository.session.commit()
+        return result
