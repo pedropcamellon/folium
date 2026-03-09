@@ -8,30 +8,24 @@
 
 ## Project Architecture
 
-- API Pattern: Frontend calls FastAPI directly via service layer (no BFF middleware) - matches Angular+FastAPI pattern used in production environments.
-- Backend: FastAPI (Python 3.11+), async patterns, in-memory repos (will migrate to DB later)
+- API Pattern: Frontend calls FastAPI directly via service layer
+- Backend: FastAPI (Python 3.11+), async patterns, SQLAlchemy with async PostgreSQL, Alembic for migrations, repository pattern for data access
 - Data Flow: All dummy/mock data lives in the backend. The frontend fetches via service modules that call FastAPI endpoints.
-- Frontend: Next.js App Router, TypeScript, Tailwind, shadcn/ui, SWR for data fetching, Recharts for charts, Framer Motion for animation. Modular dashboard widgets in `frontend/src/components/dashboard/widgets/`.
+- Frontend: Next.js App Router, TypeScript, Tailwind, shadcn/ui, SWR for data fetching, Recharts for charts, Framer Motion for animation.
 - Monorepo: Contains `backend/` (FastAPI), `frontend/` (Next.js + shadcn/ui)
-- Pattern: Frontend → FastAPI direct (no BFF middleware)
+- AI Services: Separate microservices for voice transcription and medical imaging analysis, orchestrated by the backend.
+- Deployment: Docker Compose for local dev, GitHub Actions for CI/CD, Terraform for IaC, multi-cloud support (Azure + AWS)
 
 ## Rules
 
-- Always include the current date and time in footer, e.g. `2025-12-30 14:46:00`
-- API Calls: Always use `API_ENDPOINTS` from `frontend/src/lib/api.ts`. Never hardcode URLs
-- API Calls: Use centralized API configuration (`frontend/src/lib/api.ts`) with `API_ENDPOINTS` constants. Never hardcode API URLs in components.
-- API Pattern: Direct FastAPI calls (no BFF) - use `API_ENDPOINTS.patients`, `API_ENDPOINTS.patient(id)`, etc.
-- Assistant Responses: Always include datetime footer in ISO 8601 format (YYYY-MM-DD HH:MM)
+- API Calls: Use centralized API configuration never hardcode API URLs in components.
 - Be explicit about required vs optional fields in both backend and frontend
 - Code examples in docs: Only short snippets (5-10 lines) to illustrate patterns
-- Documentation: SPEC.md = high-level only, no full code. README.md = setup and workflows
-- Frontend types must match backend models exactly (field names, data types)
 - No PII: Never include personal names, company names, or identifiable information in public repo files
-- README.md: Setup, workflows, architecture overview only
-- SPEC.md: High-level descriptions and decisions only. NO full code implementations
 - Types: Frontend types must match backend models exactly. Update both when changing either
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
-- When changing backend models, update frontend types immediately
+- Frontend types must match backend models exactly (field names, data types). When changing backend models, update frontend types immediately
+- Assistant Responses: Always include datetime footer in ISO 8601 format (YYYY-MM-DD HH:MM)
 
 ## UI/UX Rules
 
