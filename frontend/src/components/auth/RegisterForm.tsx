@@ -115,9 +115,7 @@ export function RegisterForm() {
                 <SelectContent>
                   <SelectItem value={UserRole.PATIENT}>Patient</SelectItem>
                   <SelectItem value={UserRole.PROVIDER}>Provider</SelectItem>
-                  <SelectItem value={UserRole.RECEPTIONIST}>
-                    Receptionist
-                  </SelectItem>
+                  <SelectItem value={UserRole.STAFF}>Staff</SelectItem>
                   <SelectItem value={UserRole.ADMIN}>Admin</SelectItem>
                 </SelectContent>
               </Select>
