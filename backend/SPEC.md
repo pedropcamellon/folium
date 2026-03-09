@@ -4,7 +4,7 @@
 
 ## Overview
 
-The backend is built with FastAPI using Python 3.11+. It follows a 3-layer architecture pattern (API routes, service layer, repository layer) with clear separation of concerns. Currently, it uses in-memory repositories for data storage to facilitate rapid development and prototyping. The architecture is designed to be easily migrated to a persistent database (PostgreSQL or Cosmos DB) in the future.
+The backend is built with FastAPI using Python 3.11+. It follows a 3-layer architecture pattern (API routes, service layer, repository layer) with clear separation of concerns. Data persistence is handled by PostgreSQL with SQLAlchemy ORM and Alembic migrations. All repositories use Protocol-based interfaces for structural typing without inheritance, with AsyncSession injection per request and field mapping between camelCase (API) and snake_case (database).
 
 ## Documentation Structure
 
@@ -58,21 +58,32 @@ Additional module-specific SPEC files will be added as the system evolves (e.g.,
 **Layer 3: Repository Layer (repositories/)**
 
 - Pure data access with no business logic
-- Currently uses in-memory dictionaries for MVP (easy to migrate to SQLAlchemy later)
-- Inherits from `BaseRepository` abstract class for consistent interface
+- Uses Protocol-based interfaces (PEP 544) for structural typing without inheritance
+- AsyncSession injected per request via FastAPI dependencies
+- Field mapping only: converts camelCase (API) ↔ snake_case (database)
+- Pydantic handles type validation at API boundary
 - Provides CRUD operations: `get_all()`, `get_by_id()`, `create()`, `update()`, `delete()`
-- Seed data in `_seed_data()` method for development/demo purposes
+- Service layer handles `session.commit()` after mutations
 
 ### Dependency Injection Pattern
 
 **Design Decision**: Use FastAPI's built-in DI system instead of external frameworks
 
-- Repository instances created as module-level singletons (for in-memory storage)
+- AsyncSession injected per request via `Depends(get_async_session)`
+- Repository instances created per request with session injection
 - Dependency functions (e.g., `get_patient_service()`) use `Depends()` to chain dependencies
 - Service functions receive repository via `Depends(get_patient_repository)`
 - Benefits: Testable (easy to mock), explicit dependencies, automatic injection by FastAPI
 
-**Migration Path**: When moving to database, replace singleton pattern with connection pooling using `async_session_maker()` to yield database sessions.
+**Example Pattern**:
+
+```python
+def get_patient_repository(session: AsyncSession = Depends(get_async_session)):
+    return PatientRepository(session)
+
+def get_patient_service(repo: PatientRepository = Depends(get_patient_repository)):
+    return PatientService(repo)
+```
 
 ### Data Modeling Strategy
 
@@ -337,20 +348,41 @@ Not yet implemented (Phase 3).
 - **Cost predictable**: No per-invocation billing, reserved instances for baseline
 - **Observability**: Standard container metrics (Prometheus) vs. serverless limitations
 
-## Database Strategy
+## Database Architecture
 
-**Current**: In-memory repositories for MVP
+**Database**: PostgreSQL (async via asyncpg)
 
-- `InMemoryPatientRepository`
-- `InMemoryPatientInteractionRepository`
-- `InMemoryClinicalDocumentRepository`
+**ORM**: SQLAlchemy 2.0 with async support
 
-**Future**: PostgreSQL or Cosmos DB
+**Migrations**: Alembic for schema versioning
 
-- Patient records
-- Clinical documents (with blob storage for files)
-- Interaction history
-- AI processing results
+**Tables**:
+
+- `user` - Authentication and RBAC (4 roles: admin, provider, staff, patient)
+- `patient` - Patient demographics and profiles
+- `interaction` - Patient encounters (appointments, calls, voice notes, lab work, vaccinations)
+- `document` - Clinical documents (imaging reports, forms, lab results, notes)
+- `alembic_version` - Migration history
+
+**Relationships**:
+
+- Patient → Interactions (one-to-many, cascade delete)
+- Patient → Documents (one-to-many, cascade delete)
+- Interaction → Documents (one-to-many, cascade set null)
+
+**Repository Pattern**:
+
+- Protocol-based interfaces (RepositoryProtocol) for structural typing
+- AsyncSession injection per request
+- Field mapping: `_to_dict()` for DB→API, `_to_db_fields()` for API→DB
+- UUID validation and timezone-aware timestamps
+
+**Seed Data** (auto-populated on startup):
+
+- 4 users (admin, provider, staff, patient)
+- 4 patients (María García, James Thompson, Luis Fernández, jon d)
+- 10 interactions across 3 patients (diverse encounter types)
+- 3 documents (imaging reports, forms, lab results)
 
 ## Security Implementation
 
