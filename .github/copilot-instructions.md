@@ -19,12 +19,16 @@
 ## Rules
 
 - API Calls: Use centralized API configuration never hardcode API URLs in components.
+- Frontend types must match backend models exactly (field names, data types). When changing backend models, update frontend types immediately
+- Types: Frontend types must match backend models exactly. Update both when changing either
+- Use Pydantic models in FastAPI for request/response validation. Repositories should trust validated data and not perform additional type checks.
+- Use Protocols for repository interfaces to allow flexibility in implementation without inheritance constraints.
+- Use async SQLAlchemy sessions injected via FastAPI dependencies for all database operations in repositories.
+- Use logger from logging instead of print
 - Be explicit about required vs optional fields in both backend and frontend
 - Code examples in docs: Only short snippets (5-10 lines) to illustrate patterns
 - No PII: Never include personal names, company names, or identifiable information in public repo files
-- Types: Frontend types must match backend models exactly. Update both when changing either
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
-- Frontend types must match backend models exactly (field names, data types). When changing backend models, update frontend types immediately
 - Assistant Responses: Always include datetime footer in ISO 8601 format (YYYY-MM-DD HH:MM)
 
 ## UI/UX Rules
