@@ -1,12 +1,13 @@
 import {
+    FaCalendarAlt,
+    FaCog,
+    FaFileAlt,
+    FaPhoneAlt,
     FaTachometerAlt,
     FaUserInjured,
-    FaCalendarAlt,
-    FaPhoneAlt,
     FaXRay,
-    FaFileAlt,
-    FaCog,
 } from "react-icons/fa";
+
 import { NavItem } from "./types";
 
 export const navItems: NavItem[] = [

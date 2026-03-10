@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+
+import SidebarFooter from "./sidebar/SidebarFooter";
 import SidebarHeader from "./sidebar/SidebarHeader";
 import SidebarNav from "./sidebar/SidebarNav";
-import SidebarFooter from "./sidebar/SidebarFooter";
 import { navItems } from "./sidebar/navConfig";
 
 export default function Sidebar() {

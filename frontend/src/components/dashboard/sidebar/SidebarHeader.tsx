@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 interface SidebarHeaderProps {

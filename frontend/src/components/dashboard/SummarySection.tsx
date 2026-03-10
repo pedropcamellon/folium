@@ -1,13 +1,20 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { useInteractionSummary, SummaryState } from "@/hooks/useInteractionSummary";
+
 import { API_ENDPOINTS } from "@/lib/api";
+
+import {
+    SummaryState,
+    useInteractionSummary,
+} from "@/hooks/useInteractionSummary";
+
 import { PatientInteraction } from "@/types";
 
 enum SummaryEditState {
-    VIEWING = 'viewing',
-    EDITING = 'editing',
-    SAVING = 'saving',
+    VIEWING = "viewing",
+    EDITING = "editing",
+    SAVING = "saving",
 }
 
 interface SummarySectionProps {
@@ -17,8 +24,15 @@ interface SummarySectionProps {
     onLoadSample: () => void;
 }
 
-export function SummarySection({ interaction, note, onInteractionUpdate, onLoadSample }: SummarySectionProps) {
-    const [editState, setEditState] = useState<SummaryEditState>(SummaryEditState.VIEWING);
+export function SummarySection({
+    interaction,
+    note,
+    onInteractionUpdate,
+    onLoadSample,
+}: SummarySectionProps) {
+    const [editState, setEditState] = useState<SummaryEditState>(
+        SummaryEditState.VIEWING
+    );
     const [editedSummary, setEditedSummary] = useState("");
     const [saveError, setSaveError] = useState<string | null>(null);
     const summaryInputRef = useRef<HTMLTextAreaElement>(null);
@@ -59,12 +73,15 @@ export function SummarySection({ interaction, note, onInteractionUpdate, onLoadS
         setEditState(SummaryEditState.SAVING);
         setSaveError(null);
         try {
-            const res = await fetch(API_ENDPOINTS.interactionSummary(interaction.id), {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ summary: editedSummary }),
-            });
-            if (!res.ok) throw new Error('Failed to save summary');
+            const res = await fetch(
+                API_ENDPOINTS.interactionSummary(interaction.id),
+                {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ summary: editedSummary }),
+                }
+            );
+            if (!res.ok) throw new Error("Failed to save summary");
             setSummary(editedSummary);
             onInteractionUpdate({ ...interaction, summary: editedSummary });
             setEditState(SummaryEditState.VIEWING);
@@ -88,9 +105,13 @@ export function SummarySection({ interaction, note, onInteractionUpdate, onLoadS
                         size="sm"
                         variant="outline"
                         onClick={handleGenerate}
-                        disabled={summaryState === SummaryState.GENERATING || !note}
+                        disabled={
+                            summaryState === SummaryState.GENERATING || !note
+                        }
                     >
-                        {summaryState === SummaryState.GENERATING ? "Generating..." : "Generate Summary"}
+                        {summaryState === SummaryState.GENERATING
+                            ? "Generating..."
+                            : "Generate Summary"}
                     </Button>
                 </div>
             </div>
@@ -102,10 +123,17 @@ export function SummarySection({ interaction, note, onInteractionUpdate, onLoadS
             {editState === SummaryEditState.VIEWING ? (
                 <>
                     <div className="whitespace-pre-wrap text-sm mb-2 border p-3 rounded bg-slate-50">
-                        {summary || "No summary available. Generate one from your notes."}
+                        {summary ||
+                            "No summary available. Generate one from your notes."}
                     </div>
                     {summary && (
-                        <Button size="sm" variant="outline" onClick={() => setEditState(SummaryEditState.EDITING)}>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                                setEditState(SummaryEditState.EDITING)
+                            }
+                        >
                             Edit Summary
                         </Button>
                     )}
@@ -120,14 +148,28 @@ export function SummarySection({ interaction, note, onInteractionUpdate, onLoadS
                         placeholder="Edit summary..."
                     />
                     <div className="flex items-center gap-2">
-                        <Button size="sm" onClick={handleSave} disabled={editState === SummaryEditState.SAVING}>
-                            {editState === SummaryEditState.SAVING ? "Saving..." : "Save"}
+                        <Button
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={editState === SummaryEditState.SAVING}
+                        >
+                            {editState === SummaryEditState.SAVING
+                                ? "Saving..."
+                                : "Save"}
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={handleCancel}>
+                        <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={handleCancel}
+                        >
                             Cancel
                         </Button>
                     </div>
-                    {saveError && <div className="text-xs text-red-500 mt-1">{saveError}</div>}
+                    {saveError && (
+                        <div className="text-xs text-red-500 mt-1">
+                            {saveError}
+                        </div>
+                    )}
                 </>
             )}
         </div>

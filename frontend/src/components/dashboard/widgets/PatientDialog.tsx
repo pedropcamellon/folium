@@ -1,6 +1,12 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 import type { Patient } from "@/types";
@@ -79,7 +85,9 @@ export function PatientDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{isEditing ? "Edit Patient" : "Add New Patient"}</DialogTitle>
+                    <DialogTitle>
+                        {isEditing ? "Edit Patient" : "Add New Patient"}
+                    </DialogTitle>
                 </DialogHeader>
                 <form className="space-y-3 mt-2" onSubmit={handleSubmit}>
                     <Input
@@ -134,7 +142,9 @@ export function PatientDialog({
                         onChange={handleFormChange}
                         required
                     />
-                    {errorMsg && <div className="text-red-600 text-sm">{errorMsg}</div>}
+                    {errorMsg && (
+                        <div className="text-red-600 text-sm">{errorMsg}</div>
+                    )}
                     <div className="flex justify-end">
                         <Button type="submit" disabled={submitting}>
                             {submitting
@@ -142,8 +152,8 @@ export function PatientDialog({
                                     ? "Updating..."
                                     : "Adding..."
                                 : isEditing
-                                    ? "Update Patient"
-                                    : "Add Patient"}
+                                  ? "Update Patient"
+                                  : "Add Patient"}
                         </Button>
                     </div>
                 </form>
