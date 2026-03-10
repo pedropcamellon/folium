@@ -4,21 +4,24 @@
  * Protected Route component
  * Wraps content that requires authentication and optional role-based access
  */
-
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
-import { useAuth } from "@/hooks/useAuth";
+import { useRouter } from "next/navigation";
 
 // Types
 import { UserRole } from "@/types/user";
+
+import { useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
     children: React.ReactNode;
     allowedRoles?: UserRole[];
 }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
+export function ProtectedRoute({
+    children,
+    allowedRoles,
+}: ProtectedRouteProps) {
     const { isAuthenticated, loading, user, hasRole } = useAuth();
     const router = useRouter();
 
@@ -28,7 +31,12 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
             return;
         }
 
-        if (!loading && isAuthenticated && allowedRoles && !hasRole(allowedRoles)) {
+        if (
+            !loading &&
+            isAuthenticated &&
+            allowedRoles &&
+            !hasRole(allowedRoles)
+        ) {
             // Redirect to home if user lacks required role
             // TODO: Consider redirecting to a dedicated "Access Denied" page instead
             router.push("/");
@@ -49,9 +57,18 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
                             Authenticating...
                         </p>
                         <div className="flex gap-1 justify-center">
-                            <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                            <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                            <div className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                            <div
+                                className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce"
+                                style={{ animationDelay: "0ms" }}
+                            />
+                            <div
+                                className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce"
+                                style={{ animationDelay: "150ms" }}
+                            />
+                            <div
+                                className="h-1.5 w-1.5 bg-primary rounded-full animate-bounce"
+                                style={{ animationDelay: "300ms" }}
+                            />
                         </div>
                     </div>
                 </div>
