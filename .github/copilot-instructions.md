@@ -31,6 +31,12 @@
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
 - Assistant Responses: Always include datetime footer in ISO 8601 format (YYYY-MM-DD HH:MM)
 
+## Input Sanitization
+
+- **Repository layer**: Sanitize at repository as defense-in-depth. Strip whitespace, validate UUIDs (try/except), normalize "null" → None, isinstance() checks for datetime/UUID/JSON, log warnings when catching Pydantic misses
+- **Datetime handling**: SQLAlchemy expects datetime objects, not ISO strings. Pydantic handles conversion; service layer should NOT call .isoformat()
+- **Constraints**: Max lengths in Pydantic models (not repos). SQL injection prevented by ORM parameterized queries. Frontend handles XSS (backend stores raw)
+
 ## UI/UX Rules
 
 - Error Handling: UI components must gracefully handle backend/API downtime (show user-friendly errors, never crash on null/invalid data).
