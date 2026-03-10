@@ -7,6 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
+        "lint:fix": "eslint \"src/**/*.{ts,tsx,js,jsx}\" --fix",
         "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
         "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
         "type-check": "tsc --noEmit",
@@ -43,7 +44,9 @@
     "devDependencies": {
         "@eslint/eslintrc": "3.3.1",
         "@eslint/js": "^10.0.1",
+        "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
         "@tailwindcss/postcss": "4.1.12",
+        "@trivago/prettier-plugin-sort-imports": "^6.0.2",
         "@types/node": "20.19.11",
         "@types/react": "19.1.10",
         "@types/react-dom": "19.1.7",
