@@ -1,28 +1,55 @@
-import { useEffect, useState, useMemo } from "react";
-import { listClinicalDocuments, deleteClinicalDocument } from "@/services/clinicalDocumentService";
-import { ClinicalDocument, ClinicalDocumentType } from "@/types/clinicalDocument";
+import { useEffect, useMemo, useState } from "react";
 
-type SortOption = 'createdAt-desc' | 'createdAt-asc' | 'updatedAt-desc' | 'title-asc';
+import {
+    ClinicalDocument,
+    ClinicalDocumentType,
+} from "@/types/clinicalDocument";
+
+import {
+    deleteClinicalDocument,
+    listClinicalDocuments,
+} from "@/services/clinicalDocumentService";
+
+type SortOption =
+    | "createdAt-desc"
+    | "createdAt-asc"
+    | "updatedAt-desc"
+    | "title-asc";
 
 export function usePatientDocuments(patientId: string) {
     const [documents, setDocuments] = useState<ClinicalDocument[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedTypes, setSelectedTypes] = useState<ClinicalDocumentType[]>([]);
-    const [sortBy, setSortBy] = useState<SortOption>('createdAt-desc');
-    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedTypes, setSelectedTypes] = useState<ClinicalDocumentType[]>(
+        []
+    );
+    const [sortBy, setSortBy] = useState<SortOption>("createdAt-desc");
+    const [searchQuery, setSearchQuery] = useState("");
 
-    const sortDocuments = (docs: ClinicalDocument[], sortOption: SortOption): ClinicalDocument[] => {
+    const sortDocuments = (
+        docs: ClinicalDocument[],
+        sortOption: SortOption
+    ): ClinicalDocument[] => {
         return [...docs].sort((a, b) => {
-            if (sortOption === 'createdAt-desc') {
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            } else if (sortOption === 'createdAt-asc') {
-                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            } else if (sortOption === 'updatedAt-desc') {
-                const bDate = b.updatedAt ? new Date(b.updatedAt).getTime() : new Date(b.createdAt).getTime();
-                const aDate = a.updatedAt ? new Date(a.updatedAt).getTime() : new Date(a.createdAt).getTime();
+            if (sortOption === "createdAt-desc") {
+                return (
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime()
+                );
+            } else if (sortOption === "createdAt-asc") {
+                return (
+                    new Date(a.createdAt).getTime() -
+                    new Date(b.createdAt).getTime()
+                );
+            } else if (sortOption === "updatedAt-desc") {
+                const bDate = b.updatedAt
+                    ? new Date(b.updatedAt).getTime()
+                    : new Date(b.createdAt).getTime();
+                const aDate = a.updatedAt
+                    ? new Date(a.updatedAt).getTime()
+                    : new Date(a.createdAt).getTime();
                 return bDate - aDate;
-            } else if (sortOption === 'title-asc') {
+            } else if (sortOption === "title-asc") {
                 return a.title.localeCompare(b.title);
             }
             return 0;
@@ -32,7 +59,8 @@ export function usePatientDocuments(patientId: string) {
     const fetchDocuments = () => {
         setLoading(true);
         setError(null);
-        const typesFilter = selectedTypes.length > 0 ? selectedTypes : undefined;
+        const typesFilter =
+            selectedTypes.length > 0 ? selectedTypes : undefined;
 
         listClinicalDocuments(patientId, typesFilter)
             .then((docs) => {
@@ -61,7 +89,7 @@ export function usePatientDocuments(patientId: string) {
     };
 
     const clearSearch = () => {
-        setSearchQuery('');
+        setSearchQuery("");
     };
 
     // Client-side search filtering

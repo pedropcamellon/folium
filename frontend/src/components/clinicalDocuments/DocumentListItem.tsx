@@ -1,6 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Eye, Download, Trash2, Paperclip } from "lucide-react";
 import { ClinicalDocument } from "@/types/clinicalDocument";
+import { Download, Eye, Paperclip, Trash2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 
 interface DocumentListItemProps {
     document: ClinicalDocument;
@@ -9,12 +10,19 @@ interface DocumentListItemProps {
     onDelete: (doc: ClinicalDocument) => void;
 }
 
-export function DocumentListItem({ document, onView, onDownload, onDelete }: DocumentListItemProps) {
+export function DocumentListItem({
+    document,
+    onView,
+    onDownload,
+    onDelete,
+}: DocumentListItemProps) {
     return (
         <li className="py-2 flex justify-between items-start">
             <div className="flex-1">
                 <span className="font-medium">{document.title}</span>
-                <span className="ml-2 text-xs bg-slate-100 rounded px-2 py-0.5">{document.type}</span>
+                <span className="ml-2 text-xs bg-slate-100 rounded px-2 py-0.5">
+                    {document.type}
+                </span>
                 <span className="ml-2 text-xs text-slate-500">
                     {new Date(document.createdAt).toLocaleDateString()}
                 </span>
@@ -24,7 +32,9 @@ export function DocumentListItem({ document, onView, onDownload, onDelete }: Doc
                         {document.fileName}
                     </span>
                 )}
-                <div className="text-slate-600 text-sm mt-1">{document.summary || "No summary."}</div>
+                <div className="text-slate-600 text-sm mt-1">
+                    {document.summary || "No summary."}
+                </div>
             </div>
 
             <div className="flex gap-1 ml-2">

@@ -1,24 +1,29 @@
 "use client";
 
 import { useState } from "react";
+
+import { ClinicalDocument } from "@/types/clinicalDocument";
 import { Upload } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { DeleteDocumentDialog } from "@/components/documents/DeleteDocumentDialog";
 import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal";
 import { DocumentViewerModal } from "@/components/documents/DocumentViewerModal";
-import { DeleteDocumentDialog } from "@/components/documents/DeleteDocumentDialog";
-import { DocumentSortFilterMenu } from "./DocumentSortFilterMenu";
-import { DocumentSearchInput } from "./DocumentSearchInput";
-import { DocumentList } from "./DocumentList";
-import { usePatientDocuments } from "./hooks/usePatientDocuments";
+import { Button } from "@/components/ui/button";
+
 import { API_ENDPOINTS } from "@/lib/api";
-import { ClinicalDocument } from "@/types/clinicalDocument";
+
+import { DocumentList } from "./DocumentList";
+import { DocumentSearchInput } from "./DocumentSearchInput";
+import { DocumentSortFilterMenu } from "./DocumentSortFilterMenu";
+import { usePatientDocuments } from "./hooks/usePatientDocuments";
 
 interface PatientClinicalDocumentsPanelProps {
     patientId: string;
 }
 
-export function PatientClinicalDocumentsPanel({ patientId }: PatientClinicalDocumentsPanelProps) {
+export function PatientClinicalDocumentsPanel({
+    patientId,
+}: PatientClinicalDocumentsPanelProps) {
     const {
         documents,
         loading,
@@ -38,8 +43,10 @@ export function PatientClinicalDocumentsPanel({ patientId }: PatientClinicalDocu
     const [uploadModalOpen, setUploadModalOpen] = useState(false);
     const [viewerModalOpen, setViewerModalOpen] = useState(false);
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [selectedDocument, setSelectedDocument] = useState<ClinicalDocument | null>(null);
-    const [documentToDelete, setDocumentToDelete] = useState<ClinicalDocument | null>(null);
+    const [selectedDocument, setSelectedDocument] =
+        useState<ClinicalDocument | null>(null);
+    const [documentToDelete, setDocumentToDelete] =
+        useState<ClinicalDocument | null>(null);
 
     const handleUploadSuccess = () => {
         refreshDocuments();

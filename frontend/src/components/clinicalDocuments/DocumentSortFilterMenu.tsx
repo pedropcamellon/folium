@@ -1,3 +1,6 @@
+import { ClinicalDocumentType } from "@/types/clinicalDocument";
+import { ArrowUpDown, ChevronDown } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -9,34 +12,36 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ArrowUpDown, ChevronDown } from "lucide-react";
-import { ClinicalDocumentType } from "@/types/clinicalDocument";
 
 const DOCUMENT_TYPES: ClinicalDocumentType[] = [
-    'ClinicalNote',
-    'LabResult',
-    'ImagingReport',
-    'Prescription',
-    'AdministrativeForm',
-    'VisitSummary',
-    'PatientUpload',
-    'BillingCoding',
-    'CommunicationMessage'
+    "ClinicalNote",
+    "LabResult",
+    "ImagingReport",
+    "Prescription",
+    "AdministrativeForm",
+    "VisitSummary",
+    "PatientUpload",
+    "BillingCoding",
+    "CommunicationMessage",
 ];
 
 const TYPE_LABELS: Record<ClinicalDocumentType, string> = {
-    ClinicalNote: 'Clinical Note',
-    LabResult: 'Lab Result',
-    ImagingReport: 'Imaging Report',
-    Prescription: 'Prescription',
-    AdministrativeForm: 'Admin Form',
-    VisitSummary: 'Visit Summary',
-    PatientUpload: 'Patient Upload',
-    BillingCoding: 'Billing/Coding',
-    CommunicationMessage: 'Communication'
+    ClinicalNote: "Clinical Note",
+    LabResult: "Lab Result",
+    ImagingReport: "Imaging Report",
+    Prescription: "Prescription",
+    AdministrativeForm: "Admin Form",
+    VisitSummary: "Visit Summary",
+    PatientUpload: "Patient Upload",
+    BillingCoding: "Billing/Coding",
+    CommunicationMessage: "Communication",
 };
 
-type SortOption = 'createdAt-desc' | 'createdAt-asc' | 'updatedAt-desc' | 'title-asc';
+type SortOption =
+    | "createdAt-desc"
+    | "createdAt-asc"
+    | "updatedAt-desc"
+    | "title-asc";
 
 interface DocumentSortFilterMenuProps {
     sortBy: SortOption;
@@ -53,7 +58,8 @@ export function DocumentSortFilterMenu({
     onTypeToggle,
     onClearFilters,
 }: DocumentSortFilterMenuProps) {
-    const hasActiveFilters = selectedTypes.length > 0 || sortBy !== 'createdAt-desc';
+    const hasActiveFilters =
+        selectedTypes.length > 0 || sortBy !== "createdAt-desc";
 
     return (
         <DropdownMenu>
@@ -63,7 +69,7 @@ export function DocumentSortFilterMenu({
                     Sort & Filter
                     {hasActiveFilters && (
                         <span className="ml-1 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
-                            {selectedTypes.length || '•'}
+                            {selectedTypes.length || "•"}
                         </span>
                     )}
                     <ChevronDown className="w-4 h-4 ml-1" />
@@ -71,7 +77,10 @@ export function DocumentSortFilterMenu({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-                <DropdownMenuRadioGroup value={sortBy} onValueChange={(value) => onSortChange(value as SortOption)}>
+                <DropdownMenuRadioGroup
+                    value={sortBy}
+                    onValueChange={(value) => onSortChange(value as SortOption)}
+                >
                     <DropdownMenuRadioItem value="createdAt-desc">
                         Date Created (Newest)
                     </DropdownMenuRadioItem>

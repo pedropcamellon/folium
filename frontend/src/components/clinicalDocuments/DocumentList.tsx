@@ -1,4 +1,5 @@
 import { ClinicalDocument } from "@/types/clinicalDocument";
+
 import { DocumentListItem } from "./DocumentListItem";
 
 interface DocumentListProps {
@@ -8,9 +9,18 @@ interface DocumentListProps {
     onDelete: (doc: ClinicalDocument) => void;
 }
 
-export function DocumentList({ documents, onView, onDownload, onDelete }: DocumentListProps) {
+export function DocumentList({
+    documents,
+    onView,
+    onDownload,
+    onDelete,
+}: DocumentListProps) {
     if (documents.length === 0) {
-        return <div className="text-slate-500 text-sm py-4">No documents found.</div>;
+        return (
+            <div className="text-slate-500 text-sm py-4">
+                No documents found.
+            </div>
+        );
     }
 
     return (

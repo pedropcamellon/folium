@@ -1,5 +1,6 @@
-import { Input } from "@/components/ui/input";
 import { Search, X } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
 
 interface DocumentSearchInputProps {
     value: string;
@@ -7,7 +8,11 @@ interface DocumentSearchInputProps {
     onClear: () => void;
 }
 
-export function DocumentSearchInput({ value, onChange, onClear }: DocumentSearchInputProps) {
+export function DocumentSearchInput({
+    value,
+    onChange,
+    onClear,
+}: DocumentSearchInputProps) {
     return (
         <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
