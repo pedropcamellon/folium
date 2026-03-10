@@ -42,10 +42,6 @@ class InteractionService:
         # Business logic: validate patient exists, check constraints, etc.
         interaction_dict = interaction_data.model_dump()
 
-        # Convert datetime to ISO string for storage
-        if interaction_dict.get("interactionDate"):
-            interaction_dict["interactionDate"] = interaction_dict["interactionDate"].isoformat()
-
         # Convert enum to string value
         if interaction_dict.get("type"):
             interaction_dict["type"] = interaction_dict["type"].value
@@ -65,10 +61,6 @@ class InteractionService:
 
         # Get only fields that were provided
         update_dict = interaction_data.model_dump(exclude_unset=True)
-
-        # Convert datetime to ISO string if present
-        if update_dict.get("interactionDate"):
-            update_dict["interactionDate"] = update_dict["interactionDate"].isoformat()
 
         # Convert enum to string value if present
         if update_dict.get("type"):

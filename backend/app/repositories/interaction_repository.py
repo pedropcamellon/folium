@@ -148,7 +148,11 @@ class InteractionRepository:
         }
 
     def _to_db_fields(self, api_data: dict) -> dict:
-        """Convert API data (camelCase) to database fields (snake_case)"""
+        """
+        Convert API data (camelCase) to database fields (snake_case) and sanitize/validate as needed.
+        """
+        from datetime import datetime
+
         field_mapping = {
             "patientId": "patient_id",
             "interactionDate": "interaction_date",
@@ -165,4 +169,32 @@ class InteractionRepository:
             "updatedBy": "updated_by",
         }
 
-        return {field_mapping.get(k, k): v for k, v in api_data.items()}
+        db_data = {field_mapping.get(k, k): v for k, v in api_data.items()}
+
+        # Sanitize: Convert ISO string to datetime if needed (defense in depth)
+        if "interaction_date" in db_data and isinstance(db_data["interaction_date"], str):
+            logger.warning("Converting string to datetime (should be handled by Pydantic)")
+            db_data["interaction_date"] = datetime.fromisoformat(db_data["interaction_date"])
+
+        # Sanitize: Strip whitespace from string fields
+        text_fields = [
+            "title",
+            "description",
+            "location",
+            "provider_name",
+            "provider_id",
+            "audio_document_id",
+            "created_by",
+            "updated_by",
+        ]
+        for field in text_fields:
+            if field in db_data and isinstance(db_data[field], str):
+                db_data[field] = db_data[field].strip()
+
+        # Sanitize: Ensure metadata fields are valid JSON-serializable
+        if "metadata_json" in db_data and db_data["metadata_json"] == "null":
+            db_data["metadata_json"] = None
+        if "structured_summary" in db_data and db_data["structured_summary"] == "null":
+            db_data["structured_summary"] = None
+
+        return db_data
