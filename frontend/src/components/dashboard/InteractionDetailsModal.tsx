@@ -1,11 +1,21 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { API_ENDPOINTS } from "@/lib/api";
+import { useEffect, useState } from "react";
+
 import { SAMPLE_CLINICAL_TRANSCRIPT } from "@/data/sampleTranscripts";
-import { SummarySection } from "./SummarySection";
-import { NotesSection } from "./NotesSection";
+
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+
+import { API_ENDPOINTS } from "@/lib/api";
+
 import { PatientInteraction } from "@/types";
+
+import { NotesSection } from "./NotesSection";
+import { SummarySection } from "./SummarySection";
 
 interface PatientInteractionDetailsModalProps {
     interactionId: string;
@@ -13,14 +23,19 @@ interface PatientInteractionDetailsModalProps {
     onClose: () => void;
 }
 
-export default function PatientInteractionDetailsModal({ interactionId, open, onClose }: PatientInteractionDetailsModalProps) {
-    const [currentInteraction, setCurrentInteraction] = useState<PatientInteraction | null>(null);
+export default function PatientInteractionDetailsModal({
+    interactionId,
+    open,
+    onClose,
+}: PatientInteractionDetailsModalProps) {
+    const [currentInteraction, setCurrentInteraction] =
+        useState<PatientInteraction | null>(null);
 
     useEffect(() => {
         if (open && interactionId) {
             fetch(API_ENDPOINTS.interaction(interactionId))
                 .then(async (res) => {
-                    if (!res.ok) throw new Error('Failed to fetch interaction');
+                    if (!res.ok) throw new Error("Failed to fetch interaction");
                     const data = await res.json();
                     setCurrentInteraction(data);
                 })
@@ -34,7 +49,10 @@ export default function PatientInteractionDetailsModal({ interactionId, open, on
 
     const handleLoadSample = () => {
         if (currentInteraction) {
-            setCurrentInteraction({ ...currentInteraction, note: SAMPLE_CLINICAL_TRANSCRIPT });
+            setCurrentInteraction({
+                ...currentInteraction,
+                note: SAMPLE_CLINICAL_TRANSCRIPT,
+            });
         }
     };
 
