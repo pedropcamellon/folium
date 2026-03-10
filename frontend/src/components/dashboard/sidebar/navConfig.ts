@@ -27,30 +27,34 @@ export const navItems: NavItem[] = [
         label: "Appointments",
         href: "#",
         icon: FaCalendarAlt,
-        // comingSoon: true, # TODO Add comming soon badge when we have more features to show
+        comingSoon: true,
     },
     {
         id: "medical-calls",
         label: "Medical Calls",
         href: "#",
         icon: FaPhoneAlt,
+        comingSoon: true,
     },
     {
         id: "imaging-ai",
         label: "Imaging AI",
         href: "#",
         icon: FaXRay,
+        comingSoon: true,
     },
     {
         id: "reports",
         label: "Reports",
         href: "#",
         icon: FaFileAlt,
+        comingSoon: true,
     },
     {
         id: "settings",
         label: "Settings",
         href: "#",
         icon: FaCog,
+        comingSoon: true,
     },
 ];

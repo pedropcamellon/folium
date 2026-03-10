@@ -26,31 +26,44 @@ export default function SidebarNav({ items, collapsed }: SidebarNavProps) {
                     const Icon = item.icon;
                     const active = isActive(item.href);
 
-                    // Use Link for real hrefs, <a> for placeholders
-                    const Component = item.comingSoon ? "a" : Link;
+                    const className = `flex items-center px-3 py-2 rounded font-medium transition-colors ${
+                        item.comingSoon
+                            ? "text-gray-400 cursor-not-allowed"
+                            : active
+                              ? "bg-blue-50 text-blue-700"
+                              : "hover:bg-slate-100 text-gray-700 cursor-pointer"
+                    }`;
+
+                    const content = (
+                        <>
+                            <Icon size={20} />
+                            <span
+                                className={`ml-3 ${collapsed ? "hidden" : "inline"}`}
+                            >
+                                {item.label}
+                            </span>
+                            {!collapsed && item.comingSoon && (
+                                <span className="ml-auto bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">
+                                    Soon
+                                </span>
+                            )}
+                            {!collapsed && item.badge !== undefined && (
+                                <span className="ml-auto bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
+                                    {item.badge}
+                                </span>
+                            )}
+                        </>
+                    );
 
                     return (
                         <li key={item.id}>
-                            <Component
-                                className={`flex items-center px-3 py-2 rounded font-medium transition-colors ${
-                                    active
-                                        ? "bg-blue-50 text-blue-700"
-                                        : "hover:bg-slate-100 text-gray-700"
-                                }`}
-                                href={item.href}
-                            >
-                                <Icon size={20} />
-                                <span
-                                    className={`ml-3 ${collapsed ? "hidden" : "inline"}`}
-                                >
-                                    {item.label}
-                                </span>
-                                {!collapsed && item.badge !== undefined && (
-                                    <span className="ml-auto bg-blue-500 text-white text-xs px-2 py-1 rounded-full">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </Component>
+                            {item.comingSoon ? (
+                                <span className={className}>{content}</span>
+                            ) : (
+                                <Link href={item.href} className={className}>
+                                    {content}
+                                </Link>
+                            )}
                         </li>
                     );
                 })}
