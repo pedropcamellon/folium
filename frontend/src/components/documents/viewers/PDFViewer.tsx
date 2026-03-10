@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
+
 import { Document, Page, pdfjs } from "react-pdf";
 
 // Types
 import { DocumentViewerProps } from "./types";
 
 // Configure PDF.js worker (client-side only)
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 }
 
@@ -15,7 +16,13 @@ interface PDFViewerProps extends DocumentViewerProps {
     onPageChange?: (pageNumber: number, totalPages: number) => void;
 }
 
-export function PDFViewer({ document, scale, onLoadSuccess, onLoadError, onPageChange }: PDFViewerProps) {
+export function PDFViewer({
+    document,
+    scale,
+    onLoadSuccess,
+    onLoadError,
+    onPageChange,
+}: PDFViewerProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState(1);
     const [loading, setLoading] = useState(true);
@@ -42,7 +49,12 @@ export function PDFViewer({ document, scale, onLoadSuccess, onLoadError, onPageC
                 onLoadError={handleDocumentLoadError}
                 loading=""
             >
-                <Page pageNumber={pageNumber} scale={scale} renderTextLayer={false} renderAnnotationLayer={false} />
+                <Page
+                    pageNumber={pageNumber}
+                    scale={scale}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                />
             </Document>
 
             {!loading && numPages > 0 && (

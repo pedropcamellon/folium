@@ -1,20 +1,33 @@
-import { ClinicalDocument, ClinicalNoteDocument, ClinicalDocumentType } from "@/types/clinicalDocument";
+import {
+    ClinicalDocument,
+    ClinicalDocumentType,
+    ClinicalNoteDocument,
+} from "@/types/clinicalDocument";
+
 import { API_ENDPOINTS } from "@/lib/api";
 
-export async function listClinicalDocuments(patientId: string, types?: string[]): Promise<ClinicalDocument[]> {
+export async function listClinicalDocuments(
+    patientId: string,
+    types?: string[]
+): Promise<ClinicalDocument[]> {
     const url = API_ENDPOINTS.documentsByPatient(patientId, types);
     const res = await fetch(url);
     if (!res.ok) throw new Error("Failed to fetch documents");
     return res.json();
 }
 
-export async function getClinicalDocument(id: string): Promise<ClinicalDocument> {
+export async function getClinicalDocument(
+    id: string
+): Promise<ClinicalDocument> {
     const res = await fetch(API_ENDPOINTS.document(id));
     if (!res.ok) throw new Error("Failed to fetch document");
     return res.json();
 }
 
-export async function updateClinicalNote(id: string, doc: Partial<ClinicalNoteDocument>): Promise<ClinicalNoteDocument> {
+export async function updateClinicalNote(
+    id: string,
+    doc: Partial<ClinicalNoteDocument>
+): Promise<ClinicalNoteDocument> {
     const res = await fetch(API_ENDPOINTS.document(id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -30,8 +43,16 @@ export async function deleteClinicalDocument(id: string): Promise<void> {
 }
 
 export async function createClinicalNote(
-    patientId: string, 
-    doc: Omit<ClinicalNoteDocument, "id" | "createdAt" | "updatedAt" | "createdBy" | "updatedBy" | "typeLabel">
+    patientId: string,
+    doc: Omit<
+        ClinicalNoteDocument,
+        | "id"
+        | "createdAt"
+        | "updatedAt"
+        | "createdBy"
+        | "updatedBy"
+        | "typeLabel"
+    >
 ): Promise<ClinicalNoteDocument> {
     const res = await fetch(API_ENDPOINTS.documents, {
         method: "POST",
@@ -52,16 +73,19 @@ export interface UploadDocumentParams {
     onProgress?: (progress: number) => void;
 }
 
-export async function uploadDocument(params: UploadDocumentParams): Promise<ClinicalDocument> {
-    const { file, patientId, type, title, summary, interactionId, onProgress } = params;
+export async function uploadDocument(
+    params: UploadDocumentParams
+): Promise<ClinicalDocument> {
+    const { file, patientId, type, title, summary, interactionId, onProgress } =
+        params;
 
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('patientId', patientId);
-    formData.append('type', type);
-    formData.append('title', title);
-    if (summary) formData.append('summary', summary);
-    if (interactionId) formData.append('interactionId', interactionId);
+    formData.append("file", file);
+    formData.append("patientId", patientId);
+    formData.append("type", type);
+    formData.append("title", title);
+    if (summary) formData.append("summary", summary);
+    if (interactionId) formData.append("interactionId", interactionId);
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -81,7 +105,7 @@ export async function uploadDocument(params: UploadDocumentParams): Promise<Clin
                     const response = JSON.parse(xhr.responseText);
                     resolve(response);
                 } catch (error) {
-                    reject(new Error('Failed to parse response'));
+                    reject(new Error("Failed to parse response"));
                 }
             } else {
                 reject(new Error(`Upload failed with status ${xhr.status}`));
@@ -89,11 +113,11 @@ export async function uploadDocument(params: UploadDocumentParams): Promise<Clin
         };
 
         // Handle errors
-        xhr.onerror = () => reject(new Error('Network error during upload'));
-        xhr.onabort = () => reject(new Error('Upload aborted'));
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onabort = () => reject(new Error("Upload aborted"));
 
         // Send request
-        xhr.open('POST', API_ENDPOINTS.documentUpload);
+        xhr.open("POST", API_ENDPOINTS.documentUpload);
         xhr.send(formData);
     });
 }

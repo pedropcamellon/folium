@@ -1,20 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { useDropzone } from "react-dropzone";
-import { Upload, X, FileText, Image as ImageIcon, AlertCircle, CheckCircle2 } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { uploadDocument } from "@/services/clinicalDocumentService";
 
 // Types
 import { ClinicalDocumentType } from "@/types/clinicalDocument";
+import {
+    AlertCircle,
+    CheckCircle2,
+    FileText,
+    Image as ImageIcon,
+    Upload,
+    X,
+} from "lucide-react";
+import { useDropzone } from "react-dropzone";
+
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+import { uploadDocument } from "@/services/clinicalDocumentService";
 
 interface DocumentUploadModalProps {
     open: boolean;
@@ -37,7 +57,15 @@ const DOCUMENT_TYPES: { value: ClinicalDocumentType; label: string }[] = [
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const ALLOWED_EXTENSIONS = [".pdf", ".jpg", ".jpeg", ".png", ".txt", ".docx", ".doc"];
+const ALLOWED_EXTENSIONS = [
+    ".pdf",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".txt",
+    ".docx",
+    ".doc",
+];
 
 export function DocumentUploadModal({
     open,
@@ -47,7 +75,8 @@ export function DocumentUploadModal({
     onUploadSuccess,
 }: DocumentUploadModalProps) {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [documentType, setDocumentType] = useState<ClinicalDocumentType>("LabResult");
+    const [documentType, setDocumentType] =
+        useState<ClinicalDocumentType>("LabResult");
     const [title, setTitle] = useState("");
     const [summary, setSummary] = useState("");
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -61,14 +90,18 @@ export function DocumentUploadModal({
 
         // Validate file size
         if (file.size > MAX_FILE_SIZE) {
-            setUploadError(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+            setUploadError(
+                `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`
+            );
             return;
         }
 
         // Validate file extension
         const extension = `.${file.name.split(".").pop()?.toLowerCase()}`;
         if (!ALLOWED_EXTENSIONS.includes(extension)) {
-            setUploadError(`File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(", ")}`);
+            setUploadError(
+                `File type not allowed. Allowed types: ${ALLOWED_EXTENSIONS.join(", ")}`
+            );
             return;
         }
 
@@ -86,7 +119,8 @@ export function DocumentUploadModal({
             "image/png": [".png"],
             "text/plain": [".txt"],
             "application/msword": [".doc"],
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                [".docx"],
         },
         multiple: false,
         maxSize: MAX_FILE_SIZE,
@@ -119,7 +153,9 @@ export function DocumentUploadModal({
                 handleClose();
             }, 1500);
         } catch (error) {
-            setUploadError(error instanceof Error ? error.message : "Upload failed");
+            setUploadError(
+                error instanceof Error ? error.message : "Upload failed"
+            );
             setUploadProgress(0);
         } finally {
             setIsUploading(false);
@@ -138,7 +174,8 @@ export function DocumentUploadModal({
     };
 
     const getFileIcon = () => {
-        if (!selectedFile) return <FileText className="w-8 h-8 text-muted-foreground" />;
+        if (!selectedFile)
+            return <FileText className="w-8 h-8 text-muted-foreground" />;
 
         const mimeType = selectedFile.type;
         if (mimeType.startsWith("image/")) {
@@ -153,7 +190,8 @@ export function DocumentUploadModal({
                 <DialogHeader>
                     <DialogTitle>Upload Clinical Document</DialogTitle>
                     <DialogDescription>
-                        Upload a file and provide document details. Maximum file size: 10MB
+                        Upload a file and provide document details. Maximum file
+                        size: 10MB
                     </DialogDescription>
                 </DialogHeader>
 
@@ -162,18 +200,27 @@ export function DocumentUploadModal({
                     {!selectedFile && (
                         <div
                             {...getRootProps()}
-                            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25 hover:border-primary"
-                                }`}
+                            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
+                                isDragActive
+                                    ? "border-primary bg-primary/5"
+                                    : "border-muted-foreground/25 hover:border-primary"
+                            }`}
                         >
                             <input {...getInputProps()} />
                             <Upload className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
                             {isDragActive ? (
-                                <p className="text-sm text-muted-foreground">Drop the file here...</p>
+                                <p className="text-sm text-muted-foreground">
+                                    Drop the file here...
+                                </p>
                             ) : (
                                 <div>
-                                    <p className="text-sm font-medium mb-1">Drag & drop a file here, or click to select</p>
+                                    <p className="text-sm font-medium mb-1">
+                                        Drag & drop a file here, or click to
+                                        select
+                                    </p>
                                     <p className="text-xs text-muted-foreground">
-                                        PDF, JPEG, PNG, TXT, DOC, DOCX (max 10MB)
+                                        PDF, JPEG, PNG, TXT, DOC, DOCX (max
+                                        10MB)
                                     </p>
                                 </div>
                             )}
@@ -185,7 +232,9 @@ export function DocumentUploadModal({
                         <div className="border rounded-lg p-4 flex items-center gap-3">
                             {getFileIcon()}
                             <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate">{selectedFile.name}</p>
+                                <p className="font-medium truncate">
+                                    {selectedFile.name}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
                                     {(selectedFile.size / 1024).toFixed(2)} KB
                                 </p>
@@ -210,8 +259,13 @@ export function DocumentUploadModal({
                         <div className="border border-green-500 bg-green-50 rounded-lg p-4 flex items-center gap-3">
                             <CheckCircle2 className="w-6 h-6 text-green-600" />
                             <div>
-                                <p className="font-medium text-green-900">Upload successful!</p>
-                                <p className="text-sm text-green-700">Document has been uploaded to patient record.</p>
+                                <p className="font-medium text-green-900">
+                                    Upload successful!
+                                </p>
+                                <p className="text-sm text-green-700">
+                                    Document has been uploaded to patient
+                                    record.
+                                </p>
                             </div>
                         </div>
                     )}
@@ -220,7 +274,9 @@ export function DocumentUploadModal({
                     {uploadError && (
                         <div className="border border-red-500 bg-red-50 rounded-lg p-4 flex items-center gap-3">
                             <AlertCircle className="w-6 h-6 text-red-600" />
-                            <p className="text-sm text-red-900">{uploadError}</p>
+                            <p className="text-sm text-red-900">
+                                {uploadError}
+                            </p>
                         </div>
                     )}
 
@@ -228,14 +284,26 @@ export function DocumentUploadModal({
                     {selectedFile && !uploadSuccess && (
                         <>
                             <div className="space-y-2">
-                                <Label htmlFor="document-type">Document Type</Label>
-                                <Select value={documentType} onValueChange={(value) => setDocumentType(value as ClinicalDocumentType)}>
+                                <Label htmlFor="document-type">
+                                    Document Type
+                                </Label>
+                                <Select
+                                    value={documentType}
+                                    onValueChange={(value) =>
+                                        setDocumentType(
+                                            value as ClinicalDocumentType
+                                        )
+                                    }
+                                >
                                     <SelectTrigger id="document-type">
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {DOCUMENT_TYPES.map((type) => (
-                                            <SelectItem key={type.value} value={type.value}>
+                                            <SelectItem
+                                                key={type.value}
+                                                value={type.value}
+                                            >
                                                 {type.label}
                                             </SelectItem>
                                         ))}
@@ -257,7 +325,9 @@ export function DocumentUploadModal({
 
                             {/* Summary (Optional) */}
                             <div className="space-y-2">
-                                <Label htmlFor="summary">Summary (Optional)</Label>
+                                <Label htmlFor="summary">
+                                    Summary (Optional)
+                                </Label>
                                 <Textarea
                                     id="summary"
                                     value={summary}
@@ -284,11 +354,18 @@ export function DocumentUploadModal({
 
                 {/* Footer Actions */}
                 <div className="flex justify-end gap-2 mt-4">
-                    <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+                    <Button
+                        variant="outline"
+                        onClick={handleClose}
+                        disabled={isUploading}
+                    >
                         {uploadSuccess ? "Close" : "Cancel"}
                     </Button>
                     {selectedFile && !uploadSuccess && (
-                        <Button onClick={handleUpload} disabled={!title || isUploading}>
+                        <Button
+                            onClick={handleUpload}
+                            disabled={!title || isUploading}
+                        >
                             {isUploading ? "Uploading..." : "Upload Document"}
                         </Button>
                     )}

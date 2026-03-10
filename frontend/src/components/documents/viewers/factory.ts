@@ -1,17 +1,23 @@
 import dynamic from "next/dynamic";
 
-import { ImageViewer, ImageViewerMetadata } from "./ImageViewer";
-import { TextViewer, TextViewerMetadata } from "./TextViewer";
-import { UnsupportedViewer, UnsupportedViewerMetadata } from "./UnsupportedViewer";
-
 // Types
 import { ClinicalDocument } from "@/types/clinicalDocument";
+
+import { ImageViewer, ImageViewerMetadata } from "./ImageViewer";
+import { TextViewer, TextViewerMetadata } from "./TextViewer";
+import {
+    UnsupportedViewer,
+    UnsupportedViewerMetadata,
+} from "./UnsupportedViewer";
 import { DocumentViewerProps, ViewerMetadata } from "./types";
 
 // Dynamic import for PDFViewer to avoid SSR issues
-const PDFViewer = dynamic(() => import("./PDFViewer").then((mod) => mod.PDFViewer), {
-    ssr: false,
-});
+const PDFViewer = dynamic(
+    () => import("./PDFViewer").then((mod) => mod.PDFViewer),
+    {
+        ssr: false,
+    }
+);
 
 const PDFViewerMetadata = {
     supportsZoom: true,
@@ -36,7 +42,14 @@ class DocumentViewerFactory {
             component: ImageViewer,
             metadata: ImageViewerMetadata,
             canHandle: (mimeType: string) => {
-                const imageTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp", "image/svg+xml"];
+                const imageTypes = [
+                    "image/jpeg",
+                    "image/jpg",
+                    "image/png",
+                    "image/gif",
+                    "image/webp",
+                    "image/svg+xml",
+                ];
                 return imageTypes.includes(mimeType);
             },
         },

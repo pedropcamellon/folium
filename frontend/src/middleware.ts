@@ -7,27 +7,27 @@ import type { NextRequest } from "next/server";
  */
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+    const { pathname } = request.nextUrl;
 
-  // Public routes accessible without auth
-  const publicRoutes = ["/", "/login", "/register", "/health"];
-  const isPublicRoute = publicRoutes.includes(pathname);
+    // Public routes accessible without auth
+    const publicRoutes = ["/", "/login", "/register", "/health"];
+    const isPublicRoute = publicRoutes.includes(pathname);
 
-  // Allow all requests through - ProtectedRoute handles auth client-side
-  return NextResponse.next();
+    // Allow all requests through - ProtectedRoute handles auth client-side
+    return NextResponse.next();
 }
 
 // Configure which routes use this middleware
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets
-     */
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)",
-  ],
+    matcher: [
+        /*
+         * Match all request paths except:
+         * - api (API routes)
+         * - _next/static (static files)
+         * - _next/image (image optimization files)
+         * - favicon.ico (favicon file)
+         * - public assets
+         */
+        "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*|_next).*)",
+    ],
 };

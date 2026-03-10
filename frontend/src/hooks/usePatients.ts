@@ -1,6 +1,9 @@
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
+
 import useSWR from "swr";
+
 import { API_ENDPOINTS, fetcher } from "@/lib/api";
+
 import type { Patient } from "@/types";
 
 export enum DataStatus {
@@ -26,11 +29,11 @@ export function usePatients() {
         { refreshInterval: 10000 }
     );
 
-    console.log('usePatients:', {
+    console.log("usePatients:", {
         endpoint: API_ENDPOINTS.patients,
         data,
         error,
-        isLoading
+        isLoading,
     });
 
     const [submitting, setSubmitting] = useState(false);
@@ -44,7 +47,9 @@ export function usePatients() {
         return DataStatus.IDLE;
     }, [data, error, isLoading]);
 
-    const createPatient = async (formData: PatientFormData): Promise<boolean> => {
+    const createPatient = async (
+        formData: PatientFormData
+    ): Promise<boolean> => {
         setSubmitting(true);
         setErrorMsg(null);
         try {

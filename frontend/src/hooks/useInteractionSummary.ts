@@ -1,12 +1,17 @@
-import { useState, useCallback } from "react";
-import { generateSummary, formatSoapSummary } from "@/services/summarizationService";
+import { useCallback, useState } from "react";
+
+import {
+    formatSoapSummary,
+    generateSummary,
+} from "@/services/summarizationService";
+
 import { StructuredSummary } from "@/types";
 
 export enum SummaryState {
-    IDLE = 'idle',
-    GENERATING = 'generating',
-    SUCCESS = 'success',
-    ERROR = 'error',
+    IDLE = "idle",
+    GENERATING = "generating",
+    SUCCESS = "success",
+    ERROR = "error",
 }
 
 interface UseInteractionSummaryResult {
@@ -28,14 +33,18 @@ export function useInteractionSummary(
     ) => void
 ): UseInteractionSummaryResult {
     const [summary, setSummary] = useState<string>("");
-    const [summaryState, setSummaryState] = useState<SummaryState>(SummaryState.IDLE);
+    const [summaryState, setSummaryState] = useState<SummaryState>(
+        SummaryState.IDLE
+    );
     const [summaryError, setSummaryError] = useState<string | null>(null);
 
     const generateSummaryFromTranscript = useCallback(
         async (transcript: string, interactionType?: string) => {
             if (!transcript || transcript.trim().length === 0) {
                 setSummaryState(SummaryState.ERROR);
-                setSummaryError("No transcript available. Please add a note or record audio first.");
+                setSummaryError(
+                    "No transcript available. Please add a note or record audio first."
+                );
                 return;
             }
 
@@ -49,12 +58,17 @@ export function useInteractionSummary(
                     interaction_type: interactionType,
                 });
 
-                const formattedSummary = formatSoapSummary(response.structured_data);
+                const formattedSummary = formatSoapSummary(
+                    response.structured_data
+                );
                 setSummary(formattedSummary);
                 setSummaryState(SummaryState.SUCCESS);
 
                 // Notify parent component of successful generation
-                onSummaryGenerated?.(formattedSummary, response.structured_data);
+                onSummaryGenerated?.(
+                    formattedSummary,
+                    response.structured_data
+                );
             } catch (e: any) {
                 setSummaryState(SummaryState.ERROR);
                 setSummaryError(e?.message || "Failed to generate summary");
