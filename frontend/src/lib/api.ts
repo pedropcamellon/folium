@@ -20,30 +20,30 @@ export const API_ENDPOINTS = {
     usersMe: `${FASTAPI_BASE_URL}/users/me`,
 
     // Patients
-    patients: `${FASTAPI_BASE_URL}/api/v1/patients`,
-    patient: (id: string) => `${FASTAPI_BASE_URL}/api/v1/patients/${id}`,
+    patients: `${FASTAPI_BASE_URL}/api/v1/patients/`,
+    patient: (id: string) => `${FASTAPI_BASE_URL}/api/v1/patients/${id}/`,
 
     // Interactions
-    interactions: `${FASTAPI_BASE_URL}/api/v1/interactions`,
+    interactions: `${FASTAPI_BASE_URL}/api/v1/interactions/`,
     interaction: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/interactions/${id}`,
     interactionsByPatient: (patientId: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/interactions?patientId=${patientId}`,
+        `${FASTAPI_BASE_URL}/api/v1/interactions/?patientId=${patientId}`,
     interactionNote: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/note`,
     interactionSummary: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/summary`,
 
     // Clinical Documents
-    documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents`,
+    documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents/`,
     document: (id: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}`,
+        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/`,
     documentsByPatient: (patientId: string, types?: string[]) => {
         const typeParam = types ? `&types=${types.join(",")}` : "";
-        return `${FASTAPI_BASE_URL}/api/v1/clinical-documents?patientId=${patientId}${typeParam}`;
+        return `${FASTAPI_BASE_URL}/api/v1/clinical-documents/?patientId=${patientId}${typeParam}`;
     },
     documentsByInteraction: (interactionId: string) =>
-        `${FASTAPI_BASE_URL}/api/v1/clinical-documents?interactionId=${interactionId}`,
+        `${FASTAPI_BASE_URL}/api/v1/clinical-documents/?interactionId=${interactionId}/`,
     documentUpload: `${FASTAPI_BASE_URL}/api/v1/clinical-documents/upload`,
     documentDownload: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/clinical-documents/${id}/download`,
@@ -52,7 +52,7 @@ export const API_ENDPOINTS = {
 
     // Summarization
     summarize: `${FASTAPI_BASE_URL}/api/v1/summarization/test`,
-    summarizationHealth: `${FASTAPI_BASE_URL}/api/v1/summarization/health`,
+    summarizationHealth: `${FASTAPI_BASE_URL}/api/v1/summarization/health/`,
 } as const;
 
 /**
