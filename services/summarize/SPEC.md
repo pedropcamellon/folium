@@ -320,7 +320,7 @@ docker compose build summarize  # After pyproject.toml updates
 
 | Feature | Local LLM (MediPhi) | OpenAI GPT-4 | AWS Bedrock (Claude 3) | Azure OpenAI |
 |---------|---------------------|--------------|------------------------|--------------|
-| **Status** | ✅ Implemented | Planned | Planned | Planned |
+| **Status** | Implemented | Planned | Planned | Planned |
 | **HIPAA Compliance** | Built-in (no BAA) | Requires BAA | Requires BAA | Requires BAA |
 | **Setup Cost** | $0 | $0 | $0 | $0 |
 | **ICD-10 Coding** | 68.7% (beats GPT-4) | 54.7% | Unknown | 54.7% |

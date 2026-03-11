@@ -223,14 +223,14 @@ terraform destroy -target=aws_iam_role.summarization_service
 
 ## Next Steps
 
-1. ✅ Request Bedrock model access
-2. ✅ Apply Terraform configuration
-3. ✅ Export AWS credentials
-4. ✅ Update docker-compose.yml
-5. ✅ Rebuild with PROVIDER=bedrock
-6. ⏭️ Sign AWS BAA for HIPAA compliance
-7. ⏭️ Configure CloudWatch dashboards
-8. ⏭️ Set up SNS email subscriptions
+1. Request Bedrock model access
+2. Apply Terraform configuration
+3. Export AWS credentials
+4. Update docker-compose.yml
+5. Rebuild with PROVIDER=bedrock
+6. Sign AWS BAA for HIPAA compliance
+7. Configure CloudWatch dashboards
+8. Set up SNS email subscriptions
 
 ---
 **Status**: AWS Bedrock infrastructure ready for production

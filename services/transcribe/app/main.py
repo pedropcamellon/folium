@@ -34,7 +34,7 @@ async def lifespan(app: FastAPI):
         provider = await get_transcription_provider()
         logger.info(f"[OK] Provider initialized: {provider.get_provider_name()}")
     except Exception as e:
-        logger.error(f"❌ Failed to initialize provider: {e}")
+        logger.error(f"Failed to initialize provider: {e}")
         raise
 
     yield
@@ -89,7 +89,7 @@ async def transcribe_audio(request: TranscriptionRequest):
         return TranscriptionResponse(**result)
 
     except Exception as e:
-        logger.error(f"❌ Transcription failed: {e}", exc_info=True)
+        logger.error(f"Transcription failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse(error="Transcription failed", detail=str(e)).dict(),
