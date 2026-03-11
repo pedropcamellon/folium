@@ -1,6 +1,5 @@
 """Patient service - Business logic layer"""
 
-from typing import List, Optional
 from app.models.patient import PatientCreate, PatientUpdate, PatientResponse
 from app.repositories.patient_repository import PatientRepository
 from app.core.exceptions import PatientNotFoundError
@@ -12,17 +11,17 @@ class PatientService:
     def __init__(self, repository: PatientRepository):
         self.repository = repository
 
-    async def get_all(self) -> List[PatientResponse]:
+    async def get_all(self) -> list[PatientResponse]:
         """Get all patients"""
         patients = await self.repository.get_all()
-        return [PatientResponse(**p) for p in patients]
+        return [PatientResponse.model_validate(p) for p in patients]
 
     async def get_by_id(self, patient_id: str) -> PatientResponse:
         """Get patient by ID"""
         patient = await self.repository.get_by_id(patient_id)
         if not patient:
             raise PatientNotFoundError(patient_id)
-        return PatientResponse(**patient)
+        return PatientResponse.model_validate(patient)
 
     async def create(self, patient_data: PatientCreate) -> PatientResponse:
         """Create new patient"""
@@ -32,7 +31,7 @@ class PatientService:
         patient = await self.repository.create(patient_dict)
         await self.repository.session.commit()
 
-        return PatientResponse(**patient)
+        return PatientResponse.model_validate(patient)
 
     async def update(self, patient_id: str, patient_data: PatientUpdate) -> PatientResponse:
         """Update patient"""
@@ -46,7 +45,7 @@ class PatientService:
 
         updated = await self.repository.update(patient_id, update_dict)
         await self.repository.session.commit()
-        return PatientResponse(**updated)
+        return PatientResponse.model_validate(updated)
 
     async def delete(self, patient_id: str) -> bool:
         """Delete patient"""
