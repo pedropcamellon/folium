@@ -26,6 +26,7 @@
 - Use async SQLAlchemy sessions injected via FastAPI dependencies for all database operations in repositories.
 - Use logger from logging instead of print
 - Be explicit about required vs optional fields in both backend and frontend
+- Hooks safety: In Next.js App Router, files are Server Components by default. Any file using React hooks (`useState`, `useEffect`, `useMemo`, etc.) or hook-based UI primitives must include `"use client"` at the top.
 - Code examples in docs: Only short snippets (5-10 lines) to illustrate patterns
 - No PII: Never include personal names, company names, or identifiable information in public repo files
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
