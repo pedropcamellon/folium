@@ -82,7 +82,7 @@ jobs:
             --cluster ${{ inputs.ecs_cluster }} \
             --service-name ${{ inputs.ecs_service }} \
             --query 'taskArns[0]' --output text)
-          
+
           if [ "$TASK_ARN" != "None" ] && [ -n "$TASK_ARN" ]; then
             ENI_ID=$(aws ecs describe-tasks \
               --cluster ${{ inputs.ecs_cluster }} \
@@ -98,7 +98,7 @@ jobs:
 
       - name: Summary
         run: |
-          echo "### ✅ Deployed to AWS" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed to AWS" >> $GITHUB_STEP_SUMMARY
           echo "- **Cluster:** ${{ inputs.ecs_cluster }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Service:** ${{ inputs.ecs_service }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image:** ${{ inputs.ecr_repository }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

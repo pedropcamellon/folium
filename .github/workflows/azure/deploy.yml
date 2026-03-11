@@ -79,6 +79,6 @@ jobs:
             --name ${{ inputs.container_app_name }} \
             --resource-group ${{ inputs.resource_group }} \
             --query properties.configuration.ingress.fqdn -o tsv)
-          echo "### ✅ Deployed to Azure" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed to Azure" >> $GITHUB_STEP_SUMMARY
           echo "- **URL:** https://$APP_URL" >> $GITHUB_STEP_SUMMARY
           echo "- **Image:** ${{ inputs.acr_name }}.azurecr.io/${{ inputs.image_name }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
