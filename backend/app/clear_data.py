@@ -15,7 +15,7 @@ async def main():
         # Then delete interactions
         await session.execute(delete(Interaction))
         await session.commit()
-        print("✅ Cleared all interactions and documents")
+        print("Cleared all interactions and documents")
 
 
 if __name__ == "__main__":

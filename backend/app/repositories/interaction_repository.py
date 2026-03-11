@@ -32,7 +32,7 @@ class InteractionRepository:
         try:
             interaction_uuid = UUID(interaction_id)
         except (ValueError, AttributeError):
-            return None
+            return
 
         result = await self.session.execute(
             select(Interaction)
@@ -79,7 +79,7 @@ class InteractionRepository:
         try:
             interaction_uuid = UUID(interaction_id)
         except (ValueError, AttributeError):
-            return None
+            return
 
         result = await self.session.execute(
             select(Interaction)
@@ -89,7 +89,7 @@ class InteractionRepository:
         interaction = result.scalar_one_or_none()
 
         if not interaction:
-            return None
+            return
 
         db_data = self._to_db_fields(interaction_data)
         for key, value in db_data.items():

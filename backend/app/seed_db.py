@@ -36,7 +36,7 @@ async def main():
         else:
             print("[DEBUG seed_db] No patients found, skipping interactions and documents")
 
-    print("\n✅ Database seeding complete!")
+    print("\nDatabase seeding complete!")
 
 
 if __name__ == "__main__":

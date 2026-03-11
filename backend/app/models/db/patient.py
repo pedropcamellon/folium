@@ -23,7 +23,9 @@ class Patient(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
 
     # Required fields
-    medical_record_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
+    medical_record_number: Mapped[str] = mapped_column(
+        String(50), unique=True, index=True, nullable=False
+    )
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     date_of_birth: Mapped[datetime] = mapped_column(Date, nullable=False)

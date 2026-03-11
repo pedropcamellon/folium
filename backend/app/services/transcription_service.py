@@ -40,9 +40,14 @@ class TranscriptionService:
                 "processing_time": float
             }
         """
-        logger.info(f"📝 Requesting transcription from {self.base_url}")
-        logger.info(f"🔗 Audio URL: {audio_url[:80]}...")
-        logger.info(f"🌐 Language: {language_code}, Speaker labels: {speaker_labels}")
+
+        logger.info(f"Requesting transcription from {self.base_url}")
+        logger.info(f"Audio URL: {audio_url[:80]}...")
+        logger.info(f"Language: {language_code}, Speaker labels: {speaker_labels}")
+
+        if language_code is None:
+            logger.warning("Language was provided as None. Using auto instead...")
+            language_code = "auto"
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
@@ -52,36 +57,34 @@ class TranscriptionService:
                     "speaker_labels": speaker_labels,
                     "vocabulary_name": vocabulary_name,
                 }
-                logger.info(f"📤 Sending POST to {self.base_url}/transcribe")
+                logger.info(f"Sending POST to {self.base_url}/transcribe")
 
                 response = await client.post(
                     f"{self.base_url}/transcribe",
                     json=payload,
                 )
 
-                logger.info(f"📥 Response status: {response.status_code}")
+                logger.info(f"Response status: {response.status_code}")
                 response.raise_for_status()
 
                 result = response.json()
-                logger.info(
-                    f"✅ Transcription completed in {result.get('processing_time', 0):.2f}s"
-                )
-                logger.info(f"📝 Transcript preview: {result.get('transcript', '')[:100]}...")
-                logger.info(f"🔢 Full result keys: {result.keys()}")
+                logger.info(f"Transcription completed in {result.get('processing_time', 0):.2f}s")
+                logger.info(f"Transcript preview: {result.get('transcript', '')[:100]}...")
+                logger.info(f"Full result keys: {result.keys()}")
 
                 return result
 
             except httpx.HTTPStatusError as e:
-                logger.error(f"❌ Transcription HTTP error: {e.response.status_code}")
-                logger.error(f"❌ Response body: {e.response.text}")
+                logger.error(f"Transcription HTTP error: {e.response.status_code}")
+                logger.error(f"Response body: {e.response.text}")
                 raise RuntimeError(f"Transcription service error: {e.response.status_code}")
 
             except httpx.TimeoutException:
-                logger.error(f"❌ Transcription timeout after {self.timeout}s")
+                logger.error(f"Transcription timeout after {self.timeout}s")
                 raise RuntimeError("Transcription service timeout")
 
             except Exception as e:
-                logger.error(f"❌ Transcription error: {type(e).__name__}: {e}", exc_info=True)
+                logger.error(f"Transcription error: {type(e).__name__}: {e}", exc_info=True)
                 raise
 
     async def health_check(self) -> dict:
