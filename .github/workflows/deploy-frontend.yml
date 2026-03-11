@@ -1,15 +1,16 @@
 name: Deploy Frontend to Vercel
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "frontend/**"
-      - ".github/workflows/deploy-frontend.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "frontend/**"
+  workflow_dispatch: # TODO Manual trigger only until secrets are configured
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - "frontend/**"
+  #     - ".github/workflows/deploy-frontend.yml"
+  # pull_request:
+  #   branches: [main]
+  #   paths:
+  #     - "frontend/**"
 
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -20,33 +21,54 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Validate Secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::error::VERCEL_TOKEN secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_ORG_ID }}" ]; then
+            echo "::error::VERCEL_ORG_ID secret is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "::error::VERCEL_PROJECT_ID secret is not set"
+            exit 1
+          fi
+          echo "[OK] All required secrets are configured"
+
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
-          cache: "npm"
-          cache-dependency-path: "package-lock.json"
+          node-version: "22"
+          cache: "pnpm"
+          cache-dependency-path: "frontend/pnpm-lock.yaml"
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
         working-directory: ./frontend
 
       - name: Run linting
-        run: npm run lint
+        run: pnpm run lint
         working-directory: ./frontend
 
       - name: Build application
-        run: npm run build
+        run: pnpm run build
         working-directory: ./frontend
         env:
           # Set your backend API URL here
           NEXT_PUBLIC_API_URL: ${{ github.ref == 'refs/heads/main' && 'https://app-south-drift-backend-dev.azurewebsites.net' || 'http://localhost:5000' }}
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: pnpm add --global vercel@latest
 
       - name: Pull Vercel Environment Information
         run: vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=${{ secrets.VERCEL_TOKEN }}
