@@ -13,7 +13,7 @@ FastAPI microservice for audio transcription with **Abstract Provider Pattern**.
 - **Fast**: 0.5-0.6s processing for short voice notes
 - **Provider Pattern**: Extensible design for AWS Transcribe/Azure Speech (planned)
 
-**Current Status**: ✅ Production-ready with Whisper base model
+**Current Status**: Production-ready with Whisper base model
 
 ---
 
@@ -124,7 +124,7 @@ curl http://localhost:8001/health
 Switch providers via environment variable (currently only Whisper implemented):
 
 ```bash
-# Self-hosted (HIPAA compliant) ✅ CURRENT
+# Self-hosted (HIPAA compliant) CURRENT
 TRANSCRIPTION_PROVIDER=whisper
 
 # AWS Transcribe (planned - requires BAA)
@@ -199,7 +199,7 @@ Logs include:
 - 🎤 Audio download and file size
 - 📊 Segment count and detected language
 - 📝 Transcript preview (first 100 chars)
-- ✅ Processing time
+- Processing time
 
 ### Testing
 

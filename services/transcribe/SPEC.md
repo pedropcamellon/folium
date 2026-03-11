@@ -44,9 +44,9 @@ services/transcribe/
 │   └── providers/
 │       ├── __init__.py     # Public API (get_transcription_provider)
 │       ├── base.py         # TranscriptionProvider ABC
-│       ├── whisper.py      # faster-whisper implementation ✅ IMPLEMENTED
-│       ├── aws.py          # AWS Transcribe (planned)
-│       ├── azure.py        # Azure Speech (planned)
+│       ├── whisper.py      # faster-whisper implementation (IMPLEMENTED)
+│       ├── aws.py          # AWS Transcribe (Planned)
+│       ├── azure.py        # Azure Speech (Planned)
 │       └── factory.py      # Singleton provider factory
 └── tests/
     └── test_providers.py
@@ -255,7 +255,7 @@ For long audio files (>5 minutes) or high-volume workloads, consider message que
 
 ## Provider Comparison
 
-| Feature | Self-Hosted Whisper ✅ | AWS Transcribe | Azure Speech |
+| Feature | Self-Hosted Whisper | AWS Transcribe | Azure Speech |
 |---------|------------------------|----------------|--------------|
 | **Status** | Production Ready | Planned | Planned |
 | **HIPAA Compliance** | Built-in (no BAA) | Requires BAA | Requires BAA |
