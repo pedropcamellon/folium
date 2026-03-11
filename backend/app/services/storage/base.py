@@ -94,13 +94,16 @@ class ObjectStorageProvider(ABC):
         pass
 
     @abstractmethod
-    async def get_presigned_url(self, key: str, expiration: int = 3600) -> str:
+    async def get_presigned_url(
+        self, key: str, expiration: int = 3600, internal: bool = False
+    ) -> str:
         """
         Generate temporary signed URL
 
         Args:
             key: Storage path
-            expiration: URL validity in seconds
+            expiration: URL expiration in seconds (default 1 hour)
+            internal: If True, use internal endpoint for Docker service-to-service communication
 
         Returns:
             Presigned URL

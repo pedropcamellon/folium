@@ -79,15 +79,32 @@ class MinIOStorage(ObjectStorageProvider):
         except ClientError:
             return False
 
-    async def get_presigned_url(self, key: str, expiration: int = 3600) -> str:
-        """Generate presigned URL with public endpoint for browser access"""
-        logger.info(f"MinIO: Generating presigned URL for key={key}")
+    async def get_presigned_url(
+        self, key: str, expiration: int = 3600, internal: bool = False
+    ) -> str:
+        """Generate presigned URL for object access
+
+        Args:
+            key: Object key
+            expiration: URL expiration in seconds
+            internal: If True, use internal endpoint for Docker service-to-service communication.
+                     If False, use public endpoint for browser access.
+        """
+        logger.info(f"MinIO: Generating presigned URL for key={key}, internal={internal}")
         logger.info(f"MinIO: Config - endpoint_url={self.config.endpoint_url}")
         logger.info(f"MinIO: Config - public_endpoint_url={self.config.public_endpoint_url}")
 
+        # Use internal endpoint for service-to-service communication
+        if internal:
+            logger.info("MinIO: Using internal endpoint for presigned URL generation")
+            url = self._client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.config.bucket, "Key": key},
+                ExpiresIn=expiration,
+            )
         # If we have a public endpoint, create a temporary client with that endpoint
-        # to generate the signature correctly
-        if self.config.public_endpoint_url:
+        # to generate the signature correctly for browser access
+        elif self.config.public_endpoint_url:
             logger.info("MinIO: Using public endpoint for presigned URL generation")
             public_client = boto3.client(
                 "s3",
