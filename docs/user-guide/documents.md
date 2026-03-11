@@ -115,10 +115,10 @@ You can select multiple document types simultaneously. For example:
 
 ### Tips
 
-✅ Use filters to focus on specific document categories during patient visits  
-✅ Combine filters to create custom views (e.g., all test results)  
-✅ Sort by "Last Modified" to see recently updated documents  
-✅ Badge indicator shows when filters or non-default sort are active  
+Use filters to focus on specific document categories during patient visits  
+Combine filters to create custom views (e.g., all test results)  
+Sort by "Last Modified" to see recently updated documents  
+Badge indicator shows when filters or non-default sort are active  
 
 ## Searching Documents
 
@@ -148,11 +148,11 @@ Search and filters work together:
 
 ### Search Tips
 
-✅ Use partial words (e.g., "pres" finds "Prescription")  
-✅ Search by patient symptoms in summaries  
-✅ Search by file name if you remember the upload name  
-✅ Combine with filters to narrow results (e.g., filter "Imaging" + search "chest")  
-✅ Search updates in real-time (300ms delay to prevent lag)  
+Use partial words (e.g., "pres" finds "Prescription")  
+Search by patient symptoms in summaries  
+Search by file name if you remember the upload name  
+Combine with filters to narrow results (e.g., filter "Imaging" + search "chest")  
+Search updates in real-time (300ms delay to prevent lag)  
 
 ## Downloading Documents
 
@@ -239,14 +239,14 @@ Search and filters work together:
 
 ## Tips & Best Practices
 
-✅ **Use descriptive titles** - "CBC Panel 2026-01-04" instead of "lab.pdf"  
-✅ **Add summaries** - Brief note helps others understand document purpose  
-✅ **Choose correct type** - Proper categorization improves organization and filtering  
-✅ **Delete obsolete documents** - Keep records clean and relevant  
-✅ **Use zoom for details** - Especially helpful for imaging and lab results  
-✅ **Use filters during visits** - Quickly focus on relevant document types  
-✅ **Use search for quick lookup** - Faster than scrolling through long lists  
-✅ **Combine search + filters** - Narrow results to exactly what you need  
+**Use descriptive titles** - "CBC Panel 2026-01-04" instead of "lab.pdf"  
+**Add summaries** - Brief note helps others understand document purpose  
+**Choose correct type** - Proper categorization improves organization and filtering  
+**Delete obsolete documents** - Keep records clean and relevant  
+**Use zoom for details** - Especially helpful for imaging and lab results  
+**Use filters during visits** - Quickly focus on relevant document types  
+**Use search for quick lookup** - Faster than scrolling through long lists  
+**Combine search + filters** - Narrow results to exactly what you need  
 
 ## Troubleshooting
 

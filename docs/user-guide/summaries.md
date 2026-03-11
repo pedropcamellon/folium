@@ -59,11 +59,11 @@ The AI-powered summarization feature transforms clinical transcripts and notes i
 
 ### Tips for Editing
 
-✅ Add patient-specific details AI might miss  
-✅ Correct any medication names or dosages  
-✅ Refine diagnosis codes for billing accuracy  
-✅ Add follow-up instructions specific to patient  
-✅ Remove any hallucinated or incorrect information  
+Add patient-specific details AI might miss  
+Correct any medication names or dosages  
+Refine diagnosis codes for billing accuracy  
+Add follow-up instructions specific to patient  
+Remove any hallucinated or incorrect information  
 
 ## Summary Quality
 
@@ -169,12 +169,12 @@ The AI-powered summarization feature transforms clinical transcripts and notes i
 
 ## Best Practices
 
-✅ **Generate summaries promptly** - Right after visit while details are fresh  
-✅ **Always review before finalizing** - AI is a tool, not a replacement for clinical judgment  
-✅ **Edit for specificity** - Add patient-specific context AI might miss  
-✅ **Use consistent formatting** - Helps with billing and record keeping  
-✅ **Include action items** - Labs to order, follow-ups, referrals  
-✅ **Check medication accuracy** - Verify drug names, dosages, frequencies  
+**Generate summaries promptly** - Right after visit while details are fresh  
+**Always review before finalizing** - AI is a tool, not a replacement for clinical judgment  
+**Edit for specificity** - Add patient-specific context AI might miss  
+**Use consistent formatting** - Helps with billing and record keeping  
+**Include action items** - Labs to order, follow-ups, referrals  
+**Check medication accuracy** - Verify drug names, dosages, frequencies  
 
 ## Troubleshooting
 

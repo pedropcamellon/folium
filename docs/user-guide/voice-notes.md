@@ -24,11 +24,11 @@ The voice notes feature allows you to quickly record audio during patient intera
 
 ### Audio Tips
 
-✅ **Use a quality microphone** - Built-in laptop mics work, but external mics are better  
-✅ **Minimize background noise** - Close doors, turn off fans  
-✅ **Speak clearly** - Normal conversational pace works best  
-✅ **Stay close to mic** - Within 1-2 feet for best results  
-✅ **Use short recordings** - 1-3 minutes per note recommended  
+**Use a quality microphone** - Built-in laptop mics work, but external mics are better  
+**Minimize background noise** - Close doors, turn off fans  
+**Speak clearly** - Normal conversational pace works best  
+**Stay close to mic** - Within 1-2 feet for best results  
+**Use short recordings** - 1-3 minutes per note recommended  
 
 ## Transcription
 
