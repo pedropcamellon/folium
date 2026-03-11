@@ -17,8 +17,6 @@ services:
       - south-drift-network
 
   frontend:
-    depends_on:
-      - backend
     networks:
       - south-drift-network
 
