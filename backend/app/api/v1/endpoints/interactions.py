@@ -102,17 +102,24 @@ async def upload_audio(
     from uuid import uuid4
     import asyncio
 
+    logger.info(f"🎙️ [UPLOAD] POST /audio called for {interaction_id}")
+
     # Validate interaction exists
     interaction = await service.get_by_id(interaction_id)
     if not interaction:
+        logger.info(f"❌ [UPLOAD] Interaction {interaction_id} not found")
         raise HTTPException(status_code=404, detail="Interaction not found")
+
+    logger.info(f"✅ [UPLOAD] Interaction found: {interaction.id}")
 
     # Read audio file
     audio_content = await audio.read()
+    logger.info(f"📁 [UPLOAD] Read {len(audio_content)} bytes from {audio.filename}")
 
     # Upload to object storage
     storage = await get_storage()
     storage_key = f"audio/{interaction_id}/{uuid4()}_{audio.filename}"
+    logger.info(f"🔑 [UPLOAD] Generated storage key: {storage_key}")
 
     try:
         storage_url = await storage.upload(
@@ -120,28 +127,40 @@ async def upload_audio(
             data=audio_content,
             content_type=audio.content_type or "audio/webm",
         )
+        logger.info(f"☁️ [UPLOAD] Uploaded to storage: {storage_url}")
     except Exception as e:
+        logger.info(f"❌ [UPLOAD] Storage upload failed: {e}")
         raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
 
     # Store audio reference in interaction metadata
     existing_metadata = interaction.metadata or {}
+    audio_metadata = {
+        "filename": audio.filename,
+        "storageKey": storage_key,
+        "storageUrl": storage_url,
+        "size": len(audio_content),
+        "contentType": audio.content_type,
+    }
+    logger.info(f"📦 [UPLOAD] Audio metadata to save: {audio_metadata}")
+
     updated = await service.update(
         interaction_id,
         InteractionUpdate(
             metadata={
                 **existing_metadata,
-                "audio": {
-                    "filename": audio.filename,
-                    "storageKey": storage_key,
-                    "storageUrl": storage_url,
-                    "size": len(audio_content),
-                    "contentType": audio.content_type,
-                },
+                "audio": audio_metadata,
             }
         ),
     )
 
-    # Run in background (fire and forget)
+    logger.info(f"💾 [UPLOAD] Database updated. Result metadata: {updated.metadata}")
+
+    # Verify the save worked by re-fetching
+    verify = await service.get_by_id(interaction_id)
+    logger.info(f"🔍 [UPLOAD] Verification fetch: {verify.metadata}")
+
+    # Start transcription in background (fire and forget)
+    logger.info("🚀 [UPLOAD] Triggering background transcription task")
     asyncio.create_task(
         transcribe_audio(
             interaction_id=interaction_id,
@@ -160,7 +179,7 @@ async def upload_audio(
         "storageUrl": storage_url,
         "size": len(audio_content),
         "status": "stored",
-        "message": "Audio uploaded to storage. Transcription in progress via microservice.",
+        "message": "Audio uploaded to storage. Transcription in progress.",
     }
 
 
