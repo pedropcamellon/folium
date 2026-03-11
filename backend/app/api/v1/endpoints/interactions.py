@@ -11,7 +11,8 @@ from app.models.interaction import (
     SummaryUpdateRequest,
 )
 from app.services.interaction_service import InteractionService
-from app.dependencies import get_interaction_service
+from app.services.patient_service import PatientService
+from app.dependencies import get_interaction_service, get_patient_service
 
 import logging
 
@@ -95,6 +96,7 @@ async def upload_audio(
     interaction_id: str,
     audio: UploadFile = File(...),
     service: InteractionService = Depends(get_interaction_service),
+    patient_service: "PatientService" = Depends(get_patient_service),
 ):
     """Upload audio file to object storage and trigger transcription"""
     from fastapi import HTTPException
@@ -102,7 +104,7 @@ async def upload_audio(
     from uuid import uuid4
     import asyncio
 
-    logger.info(f"🎙️ [UPLOAD] POST /audio called for {interaction_id}")
+    logger.info(f"[UPLOAD] POST /audio called for {interaction_id}")
 
     # Validate interaction exists
     interaction = await service.get_by_id(interaction_id)
@@ -114,12 +116,12 @@ async def upload_audio(
 
     # Read audio file
     audio_content = await audio.read()
-    logger.info(f"📁 [UPLOAD] Read {len(audio_content)} bytes from {audio.filename}")
+    logger.info(f"[UPLOAD] Read {len(audio_content)} bytes from {audio.filename}")
 
     # Upload to object storage
     storage = await get_storage()
     storage_key = f"audio/{interaction_id}/{uuid4()}_{audio.filename}"
-    logger.info(f"🔑 [UPLOAD] Generated storage key: {storage_key}")
+    logger.info(f"[UPLOAD] Generated storage key: {storage_key}")
 
     try:
         storage_url = await storage.upload(
@@ -242,7 +244,7 @@ async def trigger_transcription(
     from app.services.storage import get_storage
     import asyncio
 
-    logger.info(f"📝 [TRANSCRIBE] POST /transcribe called for {interaction_id}")
+    logger.info(f"[TRANSCRIBE] POST /transcribe called for {interaction_id}")
 
     interaction = await service.get_by_id(interaction_id)
     if not interaction:
@@ -304,9 +306,7 @@ async def transcribe_audio(
 
         logger.info("[BG] Calling transcription service...")
 
-        result = await transcription_svc.transcribe(
-            audio_url=presigned_url, language_code="en-US", speaker_labels=False
-        )
+        result = await transcription_svc.transcribe(audio_url=presigned_url, speaker_labels=False)
 
         logger.info(f"[BG] Transcription service returned result: {result.keys()}")
 
