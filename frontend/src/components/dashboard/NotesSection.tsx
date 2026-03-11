@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { API_ENDPOINTS } from "@/lib/api";
 
 import { AudioState, useInteractionAudio } from "@/hooks/useInteractionAudio";
+import { TranscriptionState } from "@/hooks/useTranscription";
 
 import { PatientInteraction } from "@/types";
 
@@ -19,13 +20,15 @@ enum NoteEditState {
 interface NotesSectionProps {
     interaction: PatientInteraction;
     onInteractionUpdate: (interaction: PatientInteraction) => void;
-    onLoadSample: () => void;
+    onAudioSubmitted?: () => void;
+    transcriptionState?: TranscriptionState;
 }
 
 export function NotesSection({
     interaction,
     onInteractionUpdate,
-    onLoadSample,
+    onAudioSubmitted,
+    transcriptionState = TranscriptionState.IDLE,
 }: NotesSectionProps) {
     const [note, setNote] = useState(interaction.note || "");
     const [editState, setEditState] = useState<NoteEditState>(
@@ -45,17 +48,43 @@ export function NotesSection({
         stopRecording,
         submitAudio,
         loadExistingAudio,
-    } = useInteractionAudio(interaction.id, (transcriptNote) => {
-        setNote(transcriptNote);
-        setLastSavedNote(transcriptNote);
-        onInteractionUpdate({ ...interaction, note: transcriptNote });
-    });
+    } = useInteractionAudio(interaction.id);
 
+    // Call parent's polling when audio is submitted successfully
+    useEffect(() => {
+        if (audioState === "submitted" && onAudioSubmitted) {
+            onAudioSubmitted();
+        }
+    }, [audioState, onAudioSubmitted]);
+
+    // Sync note state when interaction changes
     useEffect(() => {
         setNote(interaction.note || "");
         setLastSavedNote(interaction.note || "");
+    }, [interaction.note]);
+
+    // Handle transcription state changes
+    useEffect(() => {
+        // Don't overwrite if user is actively editing
+        if (editState === NoteEditState.EDITING) {
+            return;
+        }
+
+        if (transcriptionState === TranscriptionState.COMPLETE) {
+            // When transcription completes, show the new note in viewing mode
+            setEditState(NoteEditState.VIEWING);
+            setNote(interaction.note || "");
+            setLastSavedNote(interaction.note || "");
+        } else if (transcriptionState === TranscriptionState.ERROR) {
+            // When transcription fails, ensure we're in viewing mode to show the error
+            setEditState(NoteEditState.VIEWING);
+        }
+    }, [transcriptionState, interaction.note, editState]);
+
+    // Load audio only when interaction ID changes (not when note changes)
+    useEffect(() => {
         loadExistingAudio();
-    }, [interaction.id, interaction.note, loadExistingAudio]);
+    }, [interaction.id, loadExistingAudio]);
 
     useEffect(() => {
         if (editState === NoteEditState.EDITING) {
@@ -118,21 +147,13 @@ export function NotesSection({
                 <span className="text-xs text-slate-500">
                     {audioState === AudioState.RECORDING
                         ? "Recording..."
-                        : audioState === AudioState.POLLING
+                        : transcriptionState === TranscriptionState.PENDING
                           ? "Processing transcript..."
                           : "Voice Recording"}
                 </span>
                 {audioUrl && (
                     <audio controls src={audioUrl} className="ml-2 h-10" />
                 )}
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={onLoadSample}
-                    className="ml-auto"
-                >
-                    Load Test Sample
-                </Button>
             </div>
             {audioState === AudioState.RECORDED && (
                 <div className="flex items-center gap-2 mb-3">
@@ -168,6 +189,42 @@ export function NotesSection({
                     Audio submitted successfully!
                 </div>
             )}
+            {transcriptionState === TranscriptionState.PENDING && (
+                <div className="flex items-center gap-2 mb-3">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                        <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                            fill="none"
+                        />
+                        <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                    </svg>
+                    <span className="text-xs text-slate-600">
+                        Waiting for transcription...
+                    </span>
+                </div>
+            )}
+
+            {transcriptionState === TranscriptionState.COMPLETE && (
+                <div className="text-xs text-green-600 mb-3">
+                    Transcription complete!
+                </div>
+            )}
+
+            {transcriptionState === TranscriptionState.ERROR && (
+                <div className="text-xs text-red-600 mb-3">
+                    Transcription failed. Please try again.
+                </div>
+            )}
+
             {audioState === AudioState.ERROR && submitError && (
                 <div className="text-xs text-red-500 mb-3">{submitError}</div>
             )}

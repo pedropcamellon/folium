@@ -21,14 +21,12 @@ interface SummarySectionProps {
     interaction: PatientInteraction;
     note: string;
     onInteractionUpdate: (interaction: PatientInteraction) => void;
-    onLoadSample: () => void;
 }
 
 export function SummarySection({
     interaction,
     note,
     onInteractionUpdate,
-    onLoadSample,
 }: SummarySectionProps) {
     const [editState, setEditState] = useState<SummaryEditState>(
         SummaryEditState.VIEWING

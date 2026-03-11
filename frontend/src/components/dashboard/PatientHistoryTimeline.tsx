@@ -1,6 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { API_ENDPOINTS } from "@/lib/api";
+import { useTranscription } from "@/hooks/useTranscription";
 
 import { InteractionType, PatientInteraction } from "@/types";
 
@@ -29,6 +32,42 @@ export default function PatientHistoryTimeline({
     interactions,
 }: PatientHistoryTimelineProps) {
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [selectedInteraction, setSelectedInteraction] =
+        useState<PatientInteraction | null>(null);
+    
+    const { transcriptionState, startPolling } = useTranscription();
+
+    // Fetch interaction when selected
+    useEffect(() => {
+        if (!selectedId) {
+            setSelectedInteraction(null);
+            return;
+        }
+
+        const fetchInteraction = async () => {
+            try {
+                const res = await fetch(API_ENDPOINTS.interaction(selectedId));
+                if (res.ok) {
+                    const data = await res.json();
+                    setSelectedInteraction(data);
+                }
+            } catch (e) {
+                console.error("Failed to fetch interaction:", e);
+            }
+        };
+
+        fetchInteraction();
+    }, [selectedId]);
+
+    // Memoize callback to prevent recreating on every render
+    const handleAudioSubmitted = useCallback(() => {
+        if (selectedId) {
+            startPolling(selectedId, (updatedInteraction) => {
+                setSelectedInteraction(updatedInteraction);
+            });
+        }
+    }, [selectedId, startPolling]);
+
     if (!Array.isArray(interactions) || interactions.length === 0) {
         return <div className="text-slate-400">No history found.</div>;
     }
@@ -91,11 +130,13 @@ export default function PatientHistoryTimeline({
                     </div>
                 ))}
             </div>
-            {selectedId && (
+            {selectedId && selectedInteraction && (
                 <PatientInteractionDetailsModal
-                    interactionId={selectedId}
+                    interaction={selectedInteraction}
                     open={!!selectedId}
                     onClose={() => setSelectedId(null)}
+                    onAudioSubmitted={handleAudioSubmitted}
+                    transcriptionState={transcriptionState}
                 />
             )}
         </div>
