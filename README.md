@@ -151,31 +151,31 @@ For more installation options and troubleshooting, see the [official pnpm docume
 
 ### Backend (FastAPI)
 
-- ✅ RESTful API with automatic OpenAPI docs
-- ✅ Async Python for high performance
-- ✅ Patient management and clinical records
-- ✅ Interaction tracking (visits, calls, appointments)
-- ✅ Clinical document management (notes, labs, imaging, uploads)
-- ✅ AI service orchestration
-- ✅ CORS configuration for frontend
-- ✅ Docker containerization
+- RESTful API with automatic OpenAPI docs
+- Async Python for high performance
+- Patient management and clinical records
+- Interaction tracking (visits, calls, appointments)
+- Clinical document management (notes, labs, imaging, uploads)
+- AI service orchestration
+- CORS configuration for frontend
+- Docker containerization
 
 ### Frontend (Next.js 15)
 
-- ✅ Modern React with TypeScript
-- ✅ Tailwind CSS + shadcn/ui components
-- ✅ Patient dashboard with timeline
-- ✅ Clinical document viewer
-- ✅ Voice note upload and processing
-- ✅ Responsive design
-- ✅ BFF API routes for data aggregation
+- Modern React with TypeScript
+- Tailwind CSS + shadcn/ui components
+- Patient dashboard with timeline
+- Clinical document viewer
+- Voice note upload and processing
+- Responsive design
+- BFF API routes for data aggregation
 
 ### AI Services
 
-- ✅ Voice transcription via AWS Lambda + Bedrock
-- ✅ Medical imaging analysis via Azure Functions
-- ✅ Asynchronous processing with status tracking
-- ✅ Multi-cloud orchestration
+- Voice transcription via AWS Lambda + Bedrock
+- Medical imaging analysis via Azure Functions
+- Asynchronous processing with status tracking
+- Multi-cloud orchestration
 
 ### Docker
 
