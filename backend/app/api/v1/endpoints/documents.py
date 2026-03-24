@@ -4,9 +4,11 @@ from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, H
 from fastapi.responses import RedirectResponse
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
+from app.core.permissions import Permission
+from app.core.rbac import require_permission
 from app.models.document import (
     DocumentCreate,
     DocumentUpdate,
@@ -26,6 +28,7 @@ async def list_documents(
     patientId: str | None = Query(None, description="Filter by patient ID"),
     types: str | None = Query(None, description="Comma-separated document types to filter"),
     interactionId: str | None = Query(None, description="Filter by interaction ID"),
+    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Get all documents with optional filters"""
@@ -40,14 +43,20 @@ async def list_documents(
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
-async def get_document(document_id: str, service: DocumentService = Depends(get_document_service)):
+async def get_document(
+    document_id: str,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
+    service: DocumentService = Depends(get_document_service),
+):
     """Get document by ID"""
     return await service.get_by_id(document_id)
 
 
 @router.post("/", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(
-    document: DocumentCreate, service: DocumentService = Depends(get_document_service)
+    document: DocumentCreate,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_CREATE)),
+    service: DocumentService = Depends(get_document_service),
 ):
     """Create new document"""
     return await service.create(document)
@@ -57,6 +66,7 @@ async def create_document(
 async def update_document(
     document_id: str,
     document: DocumentUpdate,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_UPDATE)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Update existing document"""
@@ -65,7 +75,9 @@ async def update_document(
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
-    document_id: str, service: DocumentService = Depends(get_document_service)
+    document_id: str,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_DELETE)),
+    service: DocumentService = Depends(get_document_service),
 ):
     """Delete document"""
     await service.delete(document_id)
@@ -119,8 +131,9 @@ async def upload_document(
     patientId: str = Form(...),
     type: ClinicalDocumentType = Form(...),
     title: str = Form(...),
-    summary: Optional[str] = Form(None),
-    interactionId: Optional[str] = Form(None),
+    summary: str | None = Form(None),
+    interactionId: str | None = Form(None),
+    _: object = Depends(require_permission(Permission.DOCUMENTS_CREATE)),
     storage: ObjectStorageProvider = Depends(get_storage_provider),
     service: DocumentService = Depends(get_document_service),
 ):
@@ -141,7 +154,7 @@ async def upload_document(
         )
 
     # Generate storage key
-    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     unique_id = str(uuid.uuid4())[:8]
     sanitized_name = sanitize_filename(file.filename or "document")
     storage_key = f"documents/{patientId}/{timestamp}_{unique_id}_{sanitized_name}"
@@ -181,6 +194,7 @@ async def upload_document(
 @router.get("/{document_id}/download")
 async def download_document(
     document_id: str,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
     storage: ObjectStorageProvider = Depends(get_storage_provider),
     service: DocumentService = Depends(get_document_service),
 ):
@@ -210,6 +224,7 @@ async def download_document(
 @router.get("/{document_id}/view")
 async def view_document(
     document_id: str,
+    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
     storage: ObjectStorageProvider = Depends(get_storage_provider),
     service: DocumentService = Depends(get_document_service),
 ):
