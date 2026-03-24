@@ -101,15 +101,15 @@ export function SummarySection({
                 <div className="flex gap-2">
                     <Button
                         size="sm"
-                        variant="outline"
+                        variant="tertiary"
                         onClick={handleGenerate}
                         disabled={
                             summaryState === SummaryState.GENERATING || !note
                         }
+                        isLoading={summaryState === SummaryState.GENERATING}
+                        loadingText="Generating..."
                     >
-                        {summaryState === SummaryState.GENERATING
-                            ? "Generating..."
-                            : "Generate Summary"}
+                        Generate Summary
                     </Button>
                 </div>
             </div>
@@ -127,7 +127,7 @@ export function SummarySection({
                     {summary && (
                         <Button
                             size="sm"
-                            variant="outline"
+                            variant="tertiary"
                             onClick={() =>
                                 setEditState(SummaryEditState.EDITING)
                             }
@@ -150,10 +150,10 @@ export function SummarySection({
                             size="sm"
                             onClick={handleSave}
                             disabled={editState === SummaryEditState.SAVING}
+                            isLoading={editState === SummaryEditState.SAVING}
+                            loadingText="Saving..."
                         >
-                            {editState === SummaryEditState.SAVING
-                                ? "Saving..."
-                                : "Save"}
+                            Save
                         </Button>
                         <Button
                             size="sm"

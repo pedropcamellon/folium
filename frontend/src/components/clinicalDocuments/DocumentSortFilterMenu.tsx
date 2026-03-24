@@ -59,7 +59,7 @@ export function DocumentSortFilterMenu({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="tertiary" size="sm">
                     <ArrowUpDown className="w-4 h-4 mr-2" />
                     Sort & Filter
                     {hasActiveFilters && (

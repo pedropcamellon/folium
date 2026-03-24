@@ -1,6 +1,7 @@
 "use client";
 
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import { permissions } from "@/lib/permissions";
@@ -72,12 +73,12 @@ export default function PortalPage() {
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">
-                        <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+                        <Button size="lg" variant="primary">
                             Start Check-In
-                        </button>
-                        <button className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                        </Button>
+                        <Button size="lg" variant="tertiary">
                             View Visit Details
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </Card>

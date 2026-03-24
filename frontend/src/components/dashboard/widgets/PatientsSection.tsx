@@ -105,7 +105,7 @@ export default function PatientsSection({
                         )}
                     </div>
                     {canCreate && (
-                        <Button variant="default" onClick={handleAddNew}>
+                        <Button variant="primary" onClick={handleAddNew}>
                             Add Patient
                         </Button>
                     )}

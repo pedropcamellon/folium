@@ -84,7 +84,7 @@ export function PatientTable({
                                     {canEdit && (
                                         <Button
                                             size="sm"
-                                            variant="outline"
+                                            variant="tertiary"
                                             onClick={() => onEdit(patient)}
                                         >
                                             Edit
@@ -93,7 +93,7 @@ export function PatientTable({
                                     {canDelete && (
                                         <Button
                                             size="sm"
-                                            variant="destructive"
+                                            variant="danger-ghost"
                                             className="ml-2"
                                             onClick={() => onDelete(patient)}
                                         >
@@ -103,7 +103,7 @@ export function PatientTable({
                                     <a href={`/patients/${patient.id}`}>
                                         <Button
                                             size="sm"
-                                            variant="secondary"
+                                            variant="ghost"
                                             className={
                                                 canEdit || canDelete
                                                     ? "ml-2"
