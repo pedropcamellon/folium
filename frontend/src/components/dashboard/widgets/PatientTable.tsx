@@ -16,6 +16,8 @@ import type { Patient } from "@/types";
 interface PatientTableProps {
     patients: Patient[] | undefined;
     status: DataStatus;
+    canEdit: boolean;
+    canDelete: boolean;
     onEdit: (patient: Patient) => void;
     onDelete: (patient: Patient) => void;
 }
@@ -23,6 +25,8 @@ interface PatientTableProps {
 export function PatientTable({
     patients,
     status,
+    canEdit,
+    canDelete,
     onEdit,
     onDelete,
 }: PatientTableProps) {
@@ -77,26 +81,34 @@ export function PatientTable({
                                 <TableCell>{patient.gender}</TableCell>
                                 <TableCell>{patient.contactInfo}</TableCell>
                                 <TableCell>
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => onEdit(patient)}
-                                    >
-                                        Edit
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        variant="destructive"
-                                        className="ml-2"
-                                        onClick={() => onDelete(patient)}
-                                    >
-                                        Delete
-                                    </Button>
+                                    {canEdit && (
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => onEdit(patient)}
+                                        >
+                                            Edit
+                                        </Button>
+                                    )}
+                                    {canDelete && (
+                                        <Button
+                                            size="sm"
+                                            variant="destructive"
+                                            className="ml-2"
+                                            onClick={() => onDelete(patient)}
+                                        >
+                                            Delete
+                                        </Button>
+                                    )}
                                     <a href={`/patients/${patient.id}`}>
                                         <Button
                                             size="sm"
                                             variant="secondary"
-                                            className="ml-2"
+                                            className={
+                                                canEdit || canDelete
+                                                    ? "ml-2"
+                                                    : ""
+                                            }
                                         >
                                             View History
                                         </Button>

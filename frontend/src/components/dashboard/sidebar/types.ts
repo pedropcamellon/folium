@@ -1,5 +1,7 @@
 import { IconType } from "react-icons";
 
+import { Permission } from "@/lib/permissions";
+
 export interface NavItem {
     id: string;
     label: string;
@@ -7,6 +9,7 @@ export interface NavItem {
     icon: IconType;
     badge?: number;
     comingSoon?: boolean;
+    requiredPermissions?: Permission[];
 }
 
 export interface UserProfile {
