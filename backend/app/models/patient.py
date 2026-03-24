@@ -1,8 +1,9 @@
 """Patient data models (Pydantic)"""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
-from datetime import datetime, date
+from datetime import date, datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PatientBase(BaseModel):
@@ -52,9 +53,8 @@ class PatientUpdate(BaseModel):
 class PatientResponse(PatientBase):
     """Model for patient response with metadata"""
 
-    id: str
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    class Config:
-        from_attributes = True  # Enable ORM mode for future DB models
+    id: UUID
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime | None = Field(None, alias="updatedAt")
