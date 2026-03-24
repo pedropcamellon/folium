@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
 from fastapi.responses import RedirectResponse
-from typing import List, Optional
 import uuid
 import logging
 from datetime import datetime
@@ -22,11 +21,11 @@ router = APIRouter(prefix="/clinical-documents")
 logger = logging.getLogger(__name__)
 
 
-@router.get("/", response_model=List[DocumentResponse])
+@router.get("/", response_model=list[DocumentResponse])
 async def list_documents(
-    patientId: Optional[str] = Query(None, description="Filter by patient ID"),
-    types: Optional[str] = Query(None, description="Comma-separated document types to filter"),
-    interactionId: Optional[str] = Query(None, description="Filter by interaction ID"),
+    patientId: str | None = Query(None, description="Filter by patient ID"),
+    types: str | None = Query(None, description="Comma-separated document types to filter"),
+    interactionId: str | None = Query(None, description="Filter by interaction ID"),
     service: DocumentService = Depends(get_document_service),
 ):
     """Get all documents with optional filters"""
