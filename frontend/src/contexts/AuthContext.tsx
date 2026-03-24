@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { LoginCredentials, RegisterData, User, UserRole } from "@/types/user";
 
 import * as authApi from "@/lib/auth-api";
+import { getDefaultRouteForRole } from "@/lib/role-routing";
 
 interface AuthContextType {
     user: User | null;
@@ -20,7 +21,7 @@ interface AuthContextType {
     login: (credentials: LoginCredentials) => Promise<void>;
     register: (data: RegisterData) => Promise<void>;
     logout: () => Promise<void>;
-    refreshUser: () => Promise<void>;
+    refreshUser: () => Promise<User | null>;
     hasRole: (roles: UserRole[]) => boolean;
 }
 
@@ -45,11 +46,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setError(null);
             const currentUser = await authApi.getCurrentUser();
             setUser(currentUser);
+            return currentUser;
         } catch (err) {
             setUser(null);
             setError(
                 err instanceof Error ? err.message : "Failed to fetch user"
             );
+            return null;
         } finally {
             setLoading(false);
         }
@@ -75,7 +78,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 setLoading(true);
                 setError(null);
                 await authApi.login(credentials);
-                await refreshUser();
+                const currentUser = await refreshUser();
+                if (currentUser) {
+                    router.push(getDefaultRouteForRole(currentUser.role));
+                    return;
+                }
                 router.push("/");
             } catch (err) {
                 setError(err instanceof Error ? err.message : "Login failed");
