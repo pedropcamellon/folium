@@ -4,17 +4,12 @@ import {
     ClinicalDocument,
     ClinicalDocumentType,
 } from "@/types/clinicalDocument";
+import { CommonListSortOption } from "@/types/sort";
 
 import {
     deleteClinicalDocument,
     listClinicalDocuments,
 } from "@/services/clinicalDocumentService";
-
-type SortOption =
-    | "createdAt-desc"
-    | "createdAt-asc"
-    | "updatedAt-desc"
-    | "title-asc";
 
 export function usePatientDocuments(patientId: string) {
     const [documents, setDocuments] = useState<ClinicalDocument[]>([]);
@@ -23,12 +18,13 @@ export function usePatientDocuments(patientId: string) {
     const [selectedTypes, setSelectedTypes] = useState<ClinicalDocumentType[]>(
         []
     );
-    const [sortBy, setSortBy] = useState<SortOption>("createdAt-desc");
+    const [sortBy, setSortBy] =
+        useState<CommonListSortOption>("createdAt-desc");
     const [searchQuery, setSearchQuery] = useState("");
 
     const sortDocuments = (
         docs: ClinicalDocument[],
-        sortOption: SortOption
+        sortOption: CommonListSortOption
     ): ClinicalDocument[] => {
         return [...docs].sort((a, b) => {
             if (sortOption === "createdAt-desc") {
