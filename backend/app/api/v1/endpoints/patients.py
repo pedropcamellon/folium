@@ -9,7 +9,7 @@ from app.dependencies import get_patient_service
 router = APIRouter(prefix="/patients")
 
 
-@router.get("/", response_model=List[PatientResponse])
+@router.get("/", response_model=list[PatientResponse])
 async def list_patients(
     service: PatientService = Depends(get_patient_service)
 ):

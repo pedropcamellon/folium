@@ -1,7 +1,6 @@
 """Patient interaction endpoints - API route handlers"""
 
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File
-from typing import Optional
 
 from app.models.interaction import (
     InteractionCreate,
@@ -23,7 +22,7 @@ router = APIRouter(prefix="/interactions")
 
 @router.get("/", response_model=list[InteractionResponse])
 async def list_interactions(
-    patientId: Optional[str] = Query(None, description="Filter by patient ID"),
+    patientId: str | None = Query(None, description="Filter by patient ID"),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Get all interactions, optionally filtered by patient ID"""

@@ -18,7 +18,7 @@ class SummarizeRequest(BaseModel):
 
     transcript: str
     format: str = "soap"
-    interaction_type: Optional[str] = None
+    interaction_type: str | None = None
     language: str = "en"
 
 
