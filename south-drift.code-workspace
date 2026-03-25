@@ -1,20 +1,8 @@
 {
   "folders": [
     {
-      "name": "🏠 Root",
+      "name": "South Drift",
       "path": "."
-    },
-    {
-      "name": "🔙 Backend (FastAPI)",
-      "path": "backend"
-    },
-    {
-      "name": "Frontend (Next.js)",
-      "path": "frontend"
-    },
-    {
-      "name": "🎤 Transcribe Service",
-      "path": "services/transcribe"
     }
   ],
   "settings": {
