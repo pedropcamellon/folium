@@ -76,16 +76,18 @@ export function NewInteractionDialog({
                     <DialogFooter className="mt-6">
                         <Button
                             type="button"
-                            variant="outline"
+                            variant="secondary"
                             onClick={() => setOpen(false)}
                             disabled={form.loading}
                         >
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={form.loading}>
-                            {form.loading
-                                ? "Creating..."
-                                : "Create Interaction"}
+                        <Button
+                            type="submit"
+                            isLoading={form.loading}
+                            loadingText="Creating..."
+                        >
+                            Create Interaction
                         </Button>
                     </DialogFooter>
                 </form>

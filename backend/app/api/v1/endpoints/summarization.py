@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from typing import Optional
 import logging
 
+from app.core.permissions import Permission
+from app.core.rbac import require_permission
 from app.services.summarization_service import SummarizationService
 from app.dependencies import get_summarization_service
 
@@ -18,13 +19,14 @@ class SummarizeRequest(BaseModel):
 
     transcript: str
     format: str = "soap"
-    interaction_type: Optional[str] = None
+    interaction_type: str | None = None
     language: str = "en"
 
 
 @router.post("/test")
 async def test_summarization(
     request: SummarizeRequest,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_SUMMARIZE)),
     service: SummarizationService = Depends(get_summarization_service),
 ):
     """
@@ -49,6 +51,7 @@ async def test_summarization(
 
 @router.get("/health")
 async def check_summarization_health(
+    _: object = Depends(require_permission(Permission.ADMIN_HEALTH_READ)),
     service: SummarizationService = Depends(get_summarization_service),
 ):
     """Check if summarization service is reachable"""

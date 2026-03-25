@@ -98,7 +98,7 @@ export function DocumentViewerModal({
                     {supportsZoom && (
                         <>
                             <Button
-                                variant="outline"
+                                variant="tertiary"
                                 size="sm"
                                 onClick={handleZoomOut}
                                 disabled={scale <= 0.5}
@@ -106,7 +106,7 @@ export function DocumentViewerModal({
                                 <ZoomOut className="w-4 h-4" />
                             </Button>
                             <Button
-                                variant="outline"
+                                variant="tertiary"
                                 size="sm"
                                 onClick={handleResetZoom}
                                 disabled={scale === 1.0}
@@ -115,7 +115,7 @@ export function DocumentViewerModal({
                                 {Math.round(scale * 100)}%
                             </Button>
                             <Button
-                                variant="outline"
+                                variant="tertiary"
                                 size="sm"
                                 onClick={handleZoomIn}
                                 disabled={scale >= 3.0}
@@ -136,7 +136,7 @@ export function DocumentViewerModal({
 
                     <div className="ml-auto">
                         <Button
-                            variant="outline"
+                            variant="tertiary"
                             size="sm"
                             onClick={handleDownload}
                         >

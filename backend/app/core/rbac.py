@@ -1,15 +1,16 @@
 """Role-based access control decorators and utilities."""
 
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable, List
 
 from fastapi import Depends, HTTPException, status
 
 from app.core.auth import current_active_user
+from app.core.permissions import role_has_permission
 from app.models.user import User, UserRole
 
 
-def require_role(allowed_roles: List[UserRole]) -> Callable:
+def require_role(allowed_roles: list[UserRole]) -> Callable:
     """
     Decorator to require specific roles for endpoint access.
 
@@ -34,6 +35,21 @@ def require_role(allowed_roles: List[UserRole]) -> Callable:
         return wrapper
 
     return decorator
+
+
+def require_permission(permission: str) -> Callable:
+    """Dependency factory that enforces a named permission."""
+
+    async def dependency(user: User = Depends(current_active_user)) -> User:
+        user_role = UserRole(user.role)
+        if not role_has_permission(user_role, permission):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Missing permission: {permission}",
+            )
+        return user
+
+    return dependency
 
 
 async def get_current_provider(user: User = Depends(current_active_user)) -> User:

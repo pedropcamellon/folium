@@ -12,10 +12,11 @@ import { Button } from "@/components/ui/button";
 
 import { API_ENDPOINTS } from "@/lib/api";
 
+import { usePatientDocuments } from "@/hooks/usePatientDocuments";
+
 import { DocumentList } from "./DocumentList";
 import { DocumentSearchInput } from "./DocumentSearchInput";
 import { DocumentSortFilterMenu } from "./DocumentSortFilterMenu";
-import { usePatientDocuments } from "./hooks/usePatientDocuments";
 
 interface PatientClinicalDocumentsPanelProps {
     patientId: string;

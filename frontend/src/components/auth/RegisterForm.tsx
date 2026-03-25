@@ -146,12 +146,11 @@ export function RegisterForm() {
 
                 <Button
                     type="submit"
-                    className="w-full"
-                    disabled={form.formState.isSubmitting}
+                    fullWidth
+                    isLoading={form.formState.isSubmitting}
+                    loadingText="Creating account..."
                 >
-                    {form.formState.isSubmitting
-                        ? "Creating account..."
-                        : "Register"}
+                    Register
                 </Button>
             </form>
         </Form>

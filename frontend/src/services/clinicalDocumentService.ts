@@ -4,41 +4,38 @@ import {
     ClinicalNoteDocument,
 } from "@/types/clinicalDocument";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
+import { getAuthToken } from "@/lib/auth-api";
 
 export async function listClinicalDocuments(
     patientId: string,
     types?: string[]
 ): Promise<ClinicalDocument[]> {
     const url = API_ENDPOINTS.documentsByPatient(patientId, types);
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Failed to fetch documents");
-    return res.json();
+    return apiJson<ClinicalDocument[]>(url);
 }
 
 export async function getClinicalDocument(
     id: string
 ): Promise<ClinicalDocument> {
-    const res = await fetch(API_ENDPOINTS.document(id));
-    if (!res.ok) throw new Error("Failed to fetch document");
-    return res.json();
+    return apiJson<ClinicalDocument>(API_ENDPOINTS.document(id));
 }
 
 export async function updateClinicalNote(
     id: string,
     doc: Partial<ClinicalNoteDocument>
 ): Promise<ClinicalNoteDocument> {
-    const res = await fetch(API_ENDPOINTS.document(id), {
+    return apiJson<ClinicalNoteDocument>(API_ENDPOINTS.document(id), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(doc),
     });
-    if (!res.ok) throw new Error("Failed to update document");
-    return res.json();
 }
 
 export async function deleteClinicalDocument(id: string): Promise<void> {
-    const res = await fetch(API_ENDPOINTS.document(id), { method: "DELETE" });
+    const res = await apiRequest(API_ENDPOINTS.document(id), {
+        method: "DELETE",
+    });
     if (!res.ok) throw new Error("Failed to delete document");
 }
 
@@ -54,13 +51,11 @@ export async function createClinicalNote(
         | "typeLabel"
     >
 ): Promise<ClinicalNoteDocument> {
-    const res = await fetch(API_ENDPOINTS.documents, {
+    return apiJson<ClinicalNoteDocument>(API_ENDPOINTS.documents, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...doc, patientId }),
     });
-    if (!res.ok) throw new Error("Failed to create document");
-    return res.json();
 }
 
 export interface UploadDocumentParams {
@@ -89,6 +84,7 @@ export async function uploadDocument(
 
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
+        const token = getAuthToken();
 
         // Track upload progress
         xhr.upload.onprogress = (e) => {
@@ -118,6 +114,9 @@ export async function uploadDocument(
 
         // Send request
         xhr.open("POST", API_ENDPOINTS.documentUpload);
+        if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        }
         xhr.send(formData);
     });
 }

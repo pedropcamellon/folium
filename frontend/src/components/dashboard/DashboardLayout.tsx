@@ -1,6 +1,8 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+
+import { usePathname, useRouter } from "next/navigation";
 
 import { UserRole } from "@/types/user";
 
@@ -13,12 +15,58 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+import { Permission, getRoleLabel, hasAnyPermission } from "@/lib/permissions";
+import { getDefaultRouteForRole } from "@/lib/role-routing";
+
 import { useAuth } from "@/hooks/useAuth";
 
 import Sidebar from "./Sidebar";
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
-    const { user, logout } = useAuth();
+interface DashboardLayoutProps {
+    children: ReactNode;
+    requiredPermissions?: Permission[];
+}
+
+export default function DashboardLayout({
+    children,
+    requiredPermissions = [],
+}: DashboardLayoutProps) {
+    const { user, logout, loading } = useAuth();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    useEffect(() => {
+        if (loading) {
+            return;
+        }
+
+        if (!user) {
+            router.replace("/login");
+            return;
+        }
+
+        if (
+            requiredPermissions.length > 0 &&
+            !hasAnyPermission(user, requiredPermissions)
+        ) {
+            router.replace(getDefaultRouteForRole(user.role));
+        }
+    }, [loading, requiredPermissions, router, user]);
+
+    if (loading || !user) {
+        return (
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
+                Loading workspace...
+            </div>
+        );
+    }
+
+    if (
+        requiredPermissions.length > 0 &&
+        !hasAnyPermission(user, requiredPermissions)
+    ) {
+        return null;
+    }
 
     const getRoleBadgeColor = (role: UserRole) => {
         switch (role) {
@@ -45,7 +93,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <div className="flex items-center space-x-4">
                         <input
                             className="border rounded px-3 py-1 w-64"
-                            placeholder="Search patients, appointments..."
+                            placeholder={
+                                pathname === "/portal"
+                                    ? "Search your documents and timeline..."
+                                    : "Search patients, notes, and documents..."
+                            }
                         />
                         <button className="relative p-2 rounded hover:bg-slate-100">
                             <span className="sr-only">Notifications</span>
@@ -83,14 +135,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                                 user.role
                                             )}`}
                                         >
-                                            {user.role}
+                                            {getRoleLabel(user.role)}
                                         </span>
                                     )}
                                 </div>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
                                 <DropdownMenuLabel>
-                                    My Account
+                                    Logged in as {getRoleLabel(user.role)}
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem disabled>

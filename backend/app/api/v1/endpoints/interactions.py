@@ -1,8 +1,9 @@
 """Patient interaction endpoints - API route handlers"""
 
 from fastapi import APIRouter, Depends, Query, status, UploadFile, File
-from typing import Optional
 
+from app.core.permissions import Permission
+from app.core.rbac import require_permission
 from app.models.interaction import (
     InteractionCreate,
     InteractionUpdate,
@@ -23,7 +24,8 @@ router = APIRouter(prefix="/interactions")
 
 @router.get("/", response_model=list[InteractionResponse])
 async def list_interactions(
-    patientId: Optional[str] = Query(None, description="Filter by patient ID"),
+    patientId: str | None = Query(None, description="Filter by patient ID"),
+    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Get all interactions, optionally filtered by patient ID"""
@@ -39,7 +41,9 @@ async def list_interactions(
 
 @router.get("/{interaction_id}", response_model=InteractionResponse)
 async def get_interaction(
-    interaction_id: str, service: InteractionService = Depends(get_interaction_service)
+    interaction_id: str,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
+    service: InteractionService = Depends(get_interaction_service)
 ):
     """Get interaction by ID"""
     return await service.get_by_id(interaction_id)
@@ -47,7 +51,9 @@ async def get_interaction(
 
 @router.post("/", response_model=InteractionResponse, status_code=status.HTTP_201_CREATED)
 async def create_interaction(
-    interaction: InteractionCreate, service: InteractionService = Depends(get_interaction_service)
+    interaction: InteractionCreate,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_CREATE)),
+    service: InteractionService = Depends(get_interaction_service)
 ):
     """Create new interaction"""
     return await service.create(interaction)
@@ -57,6 +63,7 @@ async def create_interaction(
 async def update_interaction(
     interaction_id: str,
     interaction: InteractionUpdate,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_UPDATE)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Update existing interaction"""
@@ -67,6 +74,7 @@ async def update_interaction(
 async def update_interaction_note(
     interaction_id: str,
     note_data: NoteUpdateRequest,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_UPDATE)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Update just the note field of an interaction"""
@@ -77,6 +85,7 @@ async def update_interaction_note(
 async def update_interaction_summary(
     interaction_id: str,
     summary_data: SummaryUpdateRequest,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_SUMMARIZE)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Update just the summary field of an interaction"""
@@ -85,7 +94,9 @@ async def update_interaction_summary(
 
 @router.delete("/{interaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_interaction(
-    interaction_id: str, service: InteractionService = Depends(get_interaction_service)
+    interaction_id: str,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_DELETE)),
+    service: InteractionService = Depends(get_interaction_service)
 ):
     """Delete interaction"""
     await service.delete(interaction_id)
@@ -95,6 +106,7 @@ async def delete_interaction(
 async def upload_audio(
     interaction_id: str,
     audio: UploadFile = File(...),
+    _: object = Depends(require_permission(Permission.VOICE_RECORD)),
     service: InteractionService = Depends(get_interaction_service),
     patient_service: "PatientService" = Depends(get_patient_service),
 ):
@@ -188,6 +200,7 @@ async def upload_audio(
 @router.get("/{interaction_id}/audio")
 async def get_audio(
     interaction_id: str,
+    _: object = Depends(require_permission(Permission.VOICE_REVIEW)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Download audio file from object storage"""
@@ -237,6 +250,7 @@ async def get_audio(
 @router.post("/{interaction_id}/transcribe", response_model=dict)
 async def trigger_transcription(
     interaction_id: str,
+    _: object = Depends(require_permission(Permission.VOICE_REVIEW)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Trigger transcription for existing audio (separate from upload)"""
