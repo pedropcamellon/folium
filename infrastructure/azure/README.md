@@ -34,15 +34,16 @@ Azure resources for the SouthDrift main application backend.
 
    ```powershell
    # Create resource group
-   az group create --name terraform-state-rg-dev --location "East US"
-   
+
+   az group create --name rg-terraform-state --location "East US"
+
    # Create storage account
    az storage account create `
      --name southdrifttfstate `
-     --resource-group terraform-state-rg-dev `
+     --resource-group rg-terraform-state `
      --location "East US" `
      --sku Standard_LRS
-   
+
    # Create container
    az storage container create `
      --name tfstate `
