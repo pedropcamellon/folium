@@ -107,10 +107,11 @@ export function LoginForm() {
 
                 <Button
                     type="submit"
-                    className="w-full"
-                    disabled={form.formState.isSubmitting}
+                    fullWidth
+                    isLoading={form.formState.isSubmitting}
+                    loadingText="Logging in..."
                 >
-                    {form.formState.isSubmitting ? "Logging in..." : "Login"}
+                    Login
                 </Button>
             </form>
         </Form>

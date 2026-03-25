@@ -355,7 +355,7 @@ export function DocumentUploadModal({
                 {/* Footer Actions */}
                 <div className="flex justify-end gap-2 mt-4">
                     <Button
-                        variant="outline"
+                        variant="secondary"
                         onClick={handleClose}
                         disabled={isUploading}
                     >
@@ -365,8 +365,10 @@ export function DocumentUploadModal({
                         <Button
                             onClick={handleUpload}
                             disabled={!title || isUploading}
+                            isLoading={isUploading}
+                            loadingText="Uploading..."
                         >
-                            {isUploading ? "Uploading..." : "Upload Document"}
+                            Upload Document
                         </Button>
                     )}
                 </div>

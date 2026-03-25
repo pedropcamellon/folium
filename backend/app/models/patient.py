@@ -1,8 +1,9 @@
 """Patient data models (Pydantic)"""
 
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
-from datetime import datetime, date
+from datetime import date, datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PatientBase(BaseModel):
@@ -16,10 +17,10 @@ class PatientBase(BaseModel):
     date_of_birth: date = Field(..., alias="dateOfBirth")
     gender: str = Field(..., min_length=1, max_length=20)
     contact_info: str = Field(..., min_length=1, max_length=200, alias="contactInfo")
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-    emergency_contact: Optional[str] = Field(None, alias="emergencyContact")
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    emergency_contact: str | None = Field(None, alias="emergencyContact")
 
     model_config = ConfigDict(populate_by_name=True)
 
@@ -35,26 +36,25 @@ class PatientUpdate(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    medical_record_number: Optional[str] = Field(
+    medical_record_number: str | None = Field(
         None, min_length=1, max_length=50, alias="medicalRecordNumber"
     )
-    first_name: Optional[str] = Field(None, min_length=1, max_length=100, alias="firstName")
-    last_name: Optional[str] = Field(None, min_length=1, max_length=100, alias="lastName")
-    date_of_birth: Optional[date] = Field(None, alias="dateOfBirth")
-    gender: Optional[str] = Field(None, min_length=1, max_length=20)
-    contact_info: Optional[str] = Field(None, min_length=1, max_length=200, alias="contactInfo")
-    email: Optional[str] = None
-    phone: Optional[str] = None
-    address: Optional[str] = None
-    emergency_contact: Optional[str] = Field(None, alias="emergencyContact")
+    first_name: str | None = Field(None, min_length=1, max_length=100, alias="firstName")
+    last_name: str | None = Field(None, min_length=1, max_length=100, alias="lastName")
+    date_of_birth: date | None = Field(None, alias="dateOfBirth")
+    gender: str | None = Field(None, min_length=1, max_length=20)
+    contact_info: str | None = Field(None, min_length=1, max_length=200, alias="contactInfo")
+    email: str | None = None
+    phone: str | None = None
+    address: str | None = None
+    emergency_contact: str | None = Field(None, alias="emergencyContact")
 
 
 class PatientResponse(PatientBase):
     """Model for patient response with metadata"""
 
-    id: str
-    created_at: datetime = Field(..., alias="createdAt")
-    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
-    class Config:
-        from_attributes = True  # Enable ORM mode for future DB models
+    id: UUID
+    created_at: datetime = Field(..., alias="createdAt")
+    updated_at: datetime | None = Field(None, alias="updatedAt")

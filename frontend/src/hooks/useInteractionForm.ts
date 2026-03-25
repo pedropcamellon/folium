@@ -6,8 +6,7 @@ import { useState } from "react";
 
 import { mutate } from "swr";
 
-import { API_ENDPOINTS } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth-api";
+import { API_ENDPOINTS, apiRequest } from "@/lib/api";
 
 export interface InteractionFormData {
     type: string;
@@ -81,7 +80,6 @@ export function useInteractionForm({
         setLoading(true);
 
         try {
-            const token = getAuthToken();
             const payload = {
                 patientId,
                 type: formData.type,
@@ -96,11 +94,10 @@ export function useInteractionForm({
                 isCompliant: true,
             };
 
-            const response = await fetch(API_ENDPOINTS.interactions, {
+            const response = await apiRequest(API_ENDPOINTS.interactions, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    ...(token && { Authorization: `Bearer ${token}` }),
                 },
                 body: JSON.stringify(payload),
             });

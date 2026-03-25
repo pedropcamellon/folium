@@ -8,12 +8,14 @@ import {
     FaXRay,
 } from "react-icons/fa";
 
+import { permissions } from "@/lib/permissions";
+
 import { NavItem } from "./types";
 
 export const navItems: NavItem[] = [
     {
         id: "home",
-        label: "Home",
+        label: "Dashboard",
         href: "/",
         icon: FaTachometerAlt,
     },
@@ -22,6 +24,7 @@ export const navItems: NavItem[] = [
         label: "Patients",
         href: "/patients",
         icon: FaUserInjured,
+        requiredPermissions: [permissions.patientsRead],
     },
     {
         id: "appointments",
@@ -29,6 +32,7 @@ export const navItems: NavItem[] = [
         href: "#",
         icon: FaCalendarAlt,
         comingSoon: true,
+        requiredPermissions: [permissions.patientsRead],
     },
     {
         id: "medical-calls",
@@ -36,6 +40,7 @@ export const navItems: NavItem[] = [
         href: "#",
         icon: FaPhoneAlt,
         comingSoon: true,
+        requiredPermissions: [permissions.voiceRecord],
     },
     {
         id: "imaging-ai",
@@ -43,6 +48,7 @@ export const navItems: NavItem[] = [
         href: "#",
         icon: FaXRay,
         comingSoon: true,
+        requiredPermissions: [permissions.documentsRead],
     },
     {
         id: "reports",
@@ -50,6 +56,7 @@ export const navItems: NavItem[] = [
         href: "#",
         icon: FaFileAlt,
         comingSoon: true,
+        requiredPermissions: [permissions.adminHealthRead],
     },
     {
         id: "settings",

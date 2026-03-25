@@ -127,8 +127,8 @@ export function NotesSection({
                 <div className="font-semibold">Notes</div>
                 {audioState !== AudioState.RECORDING ? (
                     <Button
-                        size="icon"
-                        variant="outline"
+                        size="icon-sm"
+                        variant="tertiary"
                         onClick={startRecording}
                         aria-label="Record"
                     >
@@ -136,8 +136,8 @@ export function NotesSection({
                     </Button>
                 ) : (
                     <Button
-                        size="icon"
-                        variant="destructive"
+                        size="icon-sm"
+                        variant="danger-primary"
                         onClick={stopRecording}
                         aria-label="Stop Recording"
                     >
@@ -158,7 +158,7 @@ export function NotesSection({
             {audioState === AudioState.RECORDED && (
                 <div className="flex items-center gap-2 mb-3">
                     <span className="text-xs text-slate-600">Looks good?</span>
-                    <Button size="sm" variant="default" onClick={submitAudio}>
+                    <Button size="sm" variant="primary" onClick={submitAudio}>
                         Submit Audio
                     </Button>
                 </div>
@@ -241,7 +241,7 @@ export function NotesSection({
                     </div>
                     <Button
                         size="sm"
-                        variant="outline"
+                        variant="tertiary"
                         onClick={() => setEditState(NoteEditState.EDITING)}
                     >
                         Edit Note
@@ -261,10 +261,10 @@ export function NotesSection({
                             size="sm"
                             onClick={handleSave}
                             disabled={editState === NoteEditState.SAVING}
+                            isLoading={editState === NoteEditState.SAVING}
+                            loadingText="Saving..."
                         >
-                            {editState === NoteEditState.SAVING
-                                ? "Saving..."
-                                : "Save"}
+                            Save
                         </Button>
                         <Button
                             size="sm"

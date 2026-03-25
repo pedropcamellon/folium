@@ -53,8 +53,7 @@ export default function MetricsCards() {
                             <DialogTrigger asChild>
                                 <Button
                                     variant="ghost"
-                                    size="icon"
-                                    className="text-slate-400 hover:text-blue-700"
+                                    size="icon-md"
                                     aria-label="Show patient history chart"
                                 >
                                     <Info className="w-5 h-5" />

@@ -1,4 +1,5 @@
 import { ClinicalDocumentType } from "@/types/clinicalDocument";
+import { CommonListSortOption } from "@/types/sort";
 import { ArrowUpDown, ChevronDown } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -37,16 +38,10 @@ const TYPE_LABELS: Record<ClinicalDocumentType, string> = {
     CommunicationMessage: "Communication",
 };
 
-type SortOption =
-    | "createdAt-desc"
-    | "createdAt-asc"
-    | "updatedAt-desc"
-    | "title-asc";
-
 interface DocumentSortFilterMenuProps {
-    sortBy: SortOption;
+    sortBy: CommonListSortOption;
     selectedTypes: ClinicalDocumentType[];
-    onSortChange: (sort: SortOption) => void;
+    onSortChange: (sort: CommonListSortOption) => void;
     onTypeToggle: (type: ClinicalDocumentType) => void;
     onClearFilters: () => void;
 }
@@ -64,7 +59,7 @@ export function DocumentSortFilterMenu({
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="tertiary" size="sm">
                     <ArrowUpDown className="w-4 h-4 mr-2" />
                     Sort & Filter
                     {hasActiveFilters && (
@@ -79,7 +74,9 @@ export function DocumentSortFilterMenu({
                 <DropdownMenuLabel>Sort By</DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                     value={sortBy}
-                    onValueChange={(value) => onSortChange(value as SortOption)}
+                    onValueChange={(value) =>
+                        onSortChange(value as CommonListSortOption)
+                    }
                 >
                     <DropdownMenuRadioItem value="createdAt-desc">
                         Date Created (Newest)

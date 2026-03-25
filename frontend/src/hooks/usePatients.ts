@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 
 import useSWR from "swr";
 
-import { API_ENDPOINTS, fetcher } from "@/lib/api";
+import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
 
 import type { Patient } from "@/types";
 
@@ -25,7 +25,7 @@ interface PatientFormData {
 export function usePatients() {
     const { data, error, isLoading, mutate } = useSWR<Patient[]>(
         API_ENDPOINTS.patients,
-        fetcher,
+        (url: string) => apiJson<Patient[]>(url),
         { refreshInterval: 10000 }
     );
 
@@ -53,7 +53,7 @@ export function usePatients() {
         setSubmitting(true);
         setErrorMsg(null);
         try {
-            const res = await fetch(API_ENDPOINTS.patients, {
+            const res = await apiRequest(API_ENDPOINTS.patients, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
@@ -80,7 +80,7 @@ export function usePatients() {
         setSubmitting(true);
         setErrorMsg(null);
         try {
-            const res = await fetch(API_ENDPOINTS.patient(patientId), {
+            const res = await apiRequest(API_ENDPOINTS.patient(patientId), {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(formData),
@@ -103,7 +103,7 @@ export function usePatients() {
     const deletePatient = async (patientId: string): Promise<boolean> => {
         setErrorMsg(null);
         try {
-            const res = await fetch(API_ENDPOINTS.patient(patientId), {
+            const res = await apiRequest(API_ENDPOINTS.patient(patientId), {
                 method: "DELETE",
             });
             if (!res.ok) {

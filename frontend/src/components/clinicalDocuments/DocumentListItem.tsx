@@ -59,11 +59,10 @@ export function DocumentListItem({
                     </>
                 )}
                 <Button
-                    variant="ghost"
+                    variant="danger-ghost"
                     size="sm"
                     onClick={() => onDelete(document)}
                     title="Delete document"
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
                 >
                     <Trash2 className="w-4 h-4" />
                 </Button>
