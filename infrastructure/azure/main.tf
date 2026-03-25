@@ -268,30 +268,12 @@ module "backend_container_app" {
   tags = local.config.tags
 }
 
-resource "azurerm_role_assignment" "backend_acr_pull" {
-  count                            = local.config.features.backend_container_app && local.config.features.acr ? 1 : 0
-  scope                            = module.acr[0].id
-  role_definition_name             = "AcrPull"
-  principal_id                     = module.backend_container_app[0].principal_id
-  skip_service_principal_aad_check = true
-}
-
-resource "azurerm_role_assignment" "backend_key_vault_secrets_user" {
-  count                            = local.config.features.backend_container_app && local.config.features.key_vault ? 1 : 0
-  scope                            = module.key_vault[0].id
-  role_definition_name             = "Key Vault Secrets User"
-  principal_id                     = module.backend_container_app[0].principal_id
-  skip_service_principal_aad_check = true
-}
-
-resource "azurerm_key_vault_access_policy" "backend_container_app" {
-  count        = local.config.features.backend_container_app && local.config.features.key_vault ? 1 : 0
-  key_vault_id = module.key_vault[0].id
-  tenant_id    = data.azurerm_client_config.current.tenant_id
-  object_id    = module.backend_container_app[0].principal_id
-
-  secret_permissions = [
-    "Get",
-    "List",
-  ]
+module "backend_runtime_access" {
+  count                = local.config.features.backend_container_app ? 1 : 0
+  source               = "./modules/backend_runtime_access"
+  backend_principal_id = module.backend_container_app[0].principal_id
+  acr_id               = local.config.features.acr ? module.acr[0].id : null
+  key_vault_id         = local.config.features.key_vault ? module.key_vault[0].id : null
+  enable_acr           = local.config.features.acr
+  enable_key_vault     = local.config.features.key_vault
 }
