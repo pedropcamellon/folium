@@ -54,7 +54,7 @@ locals {
       memory       = "0.5Gi"
       # Bootstrap image so Terraform can create the Container App before CI/CD
       # publishes the real backend image to ACR.
-      image        = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
+      image = "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest"
     }
     static_web_app = {
       sku_tier = "Free"
@@ -174,7 +174,7 @@ module "postgres" {
   location                      = module.resource_group.location
   resource_group_name           = module.resource_group.name
   postgres_version              = local.config.postgres.version
-  administrator_login           = local.config.postgres.administrator_login
+  administrator_login           = coalesce(local.config.postgres.administrator_login, local.default_config.postgres.administrator_login)
   sku_name                      = local.config.postgres.sku_name
   storage_mb                    = local.config.postgres.storage_mb
   backup_retention_days         = local.config.postgres.backup_retention_days
@@ -223,13 +223,17 @@ resource "azurerm_key_vault_secret" "postgres_admin_password" {
   name         = "postgres-admin-password"
   value        = module.postgres[0].administrator_password
   key_vault_id = module.key_vault[0].id
+
+  depends_on = [module.key_vault]
 }
 
 resource "azurerm_key_vault_secret" "database_url" {
   count        = local.config.features.key_vault && local.config.features.postgres ? 1 : 0
   name         = "database-url"
-  value        = format("postgresql+asyncpg://%s:%s@%s/%s", local.config.postgres.administrator_login, module.postgres[0].administrator_password, module.postgres[0].fqdn, module.postgres[0].database_name)
+  value        = format("postgresql+asyncpg://%s:%s@%s/%s", coalesce(local.config.postgres.administrator_login, local.default_config.postgres.administrator_login), module.postgres[0].administrator_password, module.postgres[0].fqdn, module.postgres[0].database_name)
   key_vault_id = module.key_vault[0].id
+
+  depends_on = [module.key_vault]
 }
 
 resource "azurerm_key_vault_secret" "application_insights_connection_string" {
@@ -237,6 +241,8 @@ resource "azurerm_key_vault_secret" "application_insights_connection_string" {
   name         = "application-insights-connection-string"
   value        = module.monitoring[0].application_insights_connection_string
   key_vault_id = module.key_vault[0].id
+
+  depends_on = [module.key_vault]
 }
 
 module "backend_container_app" {
@@ -276,4 +282,16 @@ resource "azurerm_role_assignment" "backend_key_vault_secrets_user" {
   role_definition_name             = "Key Vault Secrets User"
   principal_id                     = module.backend_container_app[0].principal_id
   skip_service_principal_aad_check = true
+}
+
+resource "azurerm_key_vault_access_policy" "backend_container_app" {
+  count        = local.config.features.backend_container_app && local.config.features.key_vault ? 1 : 0
+  key_vault_id = module.key_vault[0].id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = module.backend_container_app[0].principal_id
+
+  secret_permissions = [
+    "Get",
+    "List",
+  ]
 }

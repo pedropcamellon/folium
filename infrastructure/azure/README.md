@@ -50,6 +50,18 @@ Azure resources for the SouthDrift main application backend.
      --account-name southdrifttfstate
    ```
 
+4. **Container Apps Provider Registration**: Register `Microsoft.App` once at the subscription level before creating Azure Container Apps resources.
+
+   ```powershell
+   # Check registration state
+   az provider show --namespace Microsoft.App --query registrationState -o tsv
+
+   # Register if needed
+   az provider register --namespace Microsoft.App
+   ```
+
+   If the command returns `Registered`, the subscription is ready. The temporary Terraform resource `azurerm_resource_provider_registration.microsoft_app` can then be removed to avoid the known azurerm provider inconsistency during apply.
+
 ### Deploy
 
 ```powershell
