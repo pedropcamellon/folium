@@ -4,7 +4,7 @@ import { FaMicrophone, FaPause } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { apiRequest, API_ENDPOINTS } from "@/lib/api";
 
 import { AudioState, useInteractionAudio } from "@/hooks/useInteractionAudio";
 import { TranscriptionState } from "@/hooks/useTranscription";
@@ -75,6 +75,10 @@ export function NotesSection({
             setEditState(NoteEditState.VIEWING);
             setNote(interaction.note || "");
             setLastSavedNote(interaction.note || "");
+        } else if (transcriptionState === TranscriptionState.PARTIAL) {
+            setEditState(NoteEditState.VIEWING);
+            setNote(interaction.note || "");
+            setLastSavedNote(interaction.note || "");
         } else if (transcriptionState === TranscriptionState.ERROR) {
             // When transcription fails, ensure we're in viewing mode to show the error
             setEditState(NoteEditState.VIEWING);
@@ -97,7 +101,7 @@ export function NotesSection({
         setEditState(NoteEditState.SAVING);
         setSaveError(null);
         try {
-            const res = await fetch(
+            const res = await apiRequest(
                 API_ENDPOINTS.interactionNote(interaction.id),
                 {
                     method: "PATCH",
@@ -216,6 +220,12 @@ export function NotesSection({
             {transcriptionState === TranscriptionState.COMPLETE && (
                 <div className="text-xs text-green-600 mb-3">
                     Transcription complete!
+                </div>
+            )}
+
+            {transcriptionState === TranscriptionState.PARTIAL && (
+                <div className="text-xs text-amber-600 mb-3">
+                    Transcript saved. Summary generation did not complete.
                 </div>
             )}
 

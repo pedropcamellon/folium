@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        PROVIDER: azure # local, openai, bedrock, azure
+        PROVIDER: local # local, openai, bedrock, azure
     container_name: south-drift-summarize
     env_file:
       - .env
@@ -17,7 +17,7 @@ services:
       - LOG_LEVEL=DEBUG
 
       # Provider Selection
-      - SUMMARIZATION_PROVIDER=azure
+      - SUMMARIZATION_PROVIDER=local
 
       # Local LLM Settings (if using local provider)
       - LOCAL_MODEL_PATH=/models/model.gguf

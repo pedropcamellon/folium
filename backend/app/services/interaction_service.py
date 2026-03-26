@@ -70,6 +70,16 @@ class InteractionService:
         await self.repository.session.commit()
         return InteractionResponse(**updated)
 
+    async def update_fields(self, interaction_id: str, update_data: dict) -> InteractionResponse:
+        """Update interaction with a raw field dictionary."""
+        existing = await self.repository.get_by_id(interaction_id)
+        if not existing:
+            raise InteractionNotFoundError(interaction_id)
+
+        updated = await self.repository.update(interaction_id, update_data)
+        await self.repository.session.commit()
+        return InteractionResponse(**updated)
+
     async def update_note(
         self, interaction_id: str, note_data: NoteUpdateRequest
     ) -> InteractionResponse:

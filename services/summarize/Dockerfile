@@ -30,11 +30,8 @@ COPY prompts ./prompts
 # ============================================================================
 FROM base AS provider-local
 
-# Install llama-cpp-python (CPU-only)
-RUN uv pip install --system llama-cpp-python
-
-# Install base dependencies
-RUN uv pip install --system .
+# Install dependencies with local extras
+RUN uv pip install --system --no-cache ".[local]"
 
 # Copy MediPhi-Clinical model (from local cache or download manually)
 # If models/model.gguf exists locally, it will be copied. Otherwise:

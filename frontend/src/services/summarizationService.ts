@@ -1,7 +1,7 @@
 /**
  * Summarization service for generating clinical summaries from transcripts
  */
-import { API_ENDPOINTS } from "@/lib/api";
+import { apiRequest, API_ENDPOINTS } from "@/lib/api";
 
 import {
     SummarizationHealthResponse,
@@ -15,7 +15,7 @@ import {
 export async function generateSummary(
     request: SummarizationRequest
 ): Promise<SummarizationResponse> {
-    const res = await fetch(API_ENDPOINTS.summarize, {
+    const res = await apiRequest(API_ENDPOINTS.summarize, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(request),
@@ -37,7 +37,7 @@ export async function generateSummary(
  * Check summarization service health
  */
 export async function checkSummarizationHealth(): Promise<SummarizationHealthResponse> {
-    const res = await fetch(API_ENDPOINTS.summarizationHealth);
+    const res = await apiRequest(API_ENDPOINTS.summarizationHealth);
 
     if (!res.ok) {
         throw new Error("Summarization service unavailable");
