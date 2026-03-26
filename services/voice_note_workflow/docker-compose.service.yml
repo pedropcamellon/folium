@@ -1,0 +1,27 @@
+services:
+  voice-note-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: southdrift-voice-note-worker
+    environment:
+      - PYTHONUNBUFFERED=1
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=default
+      - VOICE_NOTE_TASK_QUEUE=voice-notes-queue
+      - BACKEND_API_URL=http://backend:8000
+      - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
+      - SUMMARIZATION_SERVICE_URL=http://summarize:8002
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /app/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+        - action: rebuild
+          path: pyproject.toml
