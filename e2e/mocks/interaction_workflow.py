@@ -5,16 +5,16 @@ import json
 from playwright.sync_api import Page, Route
 
 
-RoutePatterns = tuple[str, str, str, str]
+RoutePatterns = tuple[str, ...]
 
 
 def install_interaction_mocks(
-    page: Page, interaction_id: str, transcript: str
+    page: Page, interaction_id: str, transcript: str, mock_summary: bool = True
 ) -> RoutePatterns:
     interaction_url = f"**/api/v1/interactions/{interaction_id}"
     audio_url = f"**/api/v1/interactions/{interaction_id}/audio"
     note_url = f"**/api/v1/interactions/{interaction_id}/note"
-    summarize_url = "**/api/v1/summarization/test"
+    route_patterns: list[str] = [interaction_url, audio_url, note_url]
     state = {
         "transcribed_note": "",
         "saved_note": "",
@@ -84,8 +84,13 @@ def install_interaction_mocks(
     page.route(interaction_url, handle_interaction)
     page.route(audio_url, handle_audio)
     page.route(note_url, handle_note)
-    page.route(summarize_url, handle_summary)
-    return interaction_url, audio_url, note_url, summarize_url
+
+    if mock_summary:
+        summarize_url = "**/api/v1/summarization/test"
+        page.route(summarize_url, handle_summary)
+        route_patterns.append(summarize_url)
+
+    return tuple(route_patterns)
 
 
 def remove_interaction_mocks(page: Page, routes: RoutePatterns) -> None:

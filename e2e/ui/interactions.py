@@ -23,9 +23,11 @@ def create_interaction(page: Page, flow: FlowCase, title: str) -> str:
     page.get_by_label("Provider Name").fill("Dr. SouthDrift")
 
     with page.expect_response(
-        lambda response: response.request.method == "POST"
-        and "/api/v1/interactions" in response.url
-        and response.status == 201,
+        lambda response: (
+            response.request.method == "POST"
+            and "/api/v1/interactions" in response.url
+            and response.status == 201
+        ),
         timeout=20000,
     ) as response_info:
         page.get_by_role("button", name="Create Interaction").click(timeout=15000)
@@ -73,14 +75,19 @@ def edit_and_save_note(page: Page, flow: FlowCase, note: str) -> None:
     page.get_by_text(note, exact=True).wait_for(state="visible", timeout=15000)
 
 
-def generate_and_assert_summary(page: Page, flow: FlowCase) -> None:
+def generate_and_assert_summary(
+    page: Page, flow: FlowCase, timeout_ms: int = 15000
+) -> None:
     log_step(flow.name, "Generating summary from saved note")
     page.get_by_role("button", name="Generate Summary").click(timeout=15000)
-    page.get_by_text("Chief Complaint: Improved sleep and residual cough").wait_for(
-        state="visible", timeout=15000
+    page.get_by_role("button", name="Edit Summary").wait_for(
+        state="visible", timeout=timeout_ms
     )
-    page.get_by_text("Plan:", exact=False).wait_for(state="visible", timeout=15000)
+    page.get_by_text(
+        "No summary available. Generate one from your notes.", exact=True
+    ).wait_for(state="hidden", timeout=timeout_ms)
 
 
 def close_interaction_details(page: Page) -> None:
-    page.get_by_role("button", name="Close").click(timeout=15000)
+    dialog = page.get_by_role("dialog")
+    dialog.get_by_role("button", name="Close").first.click(timeout=15000)
