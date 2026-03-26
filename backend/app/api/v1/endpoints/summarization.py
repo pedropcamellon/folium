@@ -23,17 +23,14 @@ class SummarizeRequest(BaseModel):
     language: str = "en"
 
 
-@router.post("/test")
-async def test_summarization(
+@router.post("")
+async def summarize_transcript(
     request: SummarizeRequest,
     _: object = Depends(require_permission(Permission.INTERACTIONS_SUMMARIZE)),
     service: SummarizationService = Depends(get_summarization_service),
 ):
     """
-    Test endpoint to call summarization service directly.
-
-    Use this to verify the integration is working before
-    wiring it into the full interaction workflow.
+    Generate a clinical summary from transcript text.
     """
     try:
         result = await service.summarize(
