@@ -9,6 +9,7 @@ from playwright.sync_api import Page
 from flow_cases import PATIENT_FLOW, PROVIDER_FLOW, FlowCase
 from flows.patient_portal import run_patient_portal_flow
 from flows.provider_patient_crud import run_provider_patient_crud
+from flows.provider_summary import run_provider_summary_flow
 from flows.provider_voice_note import run_provider_voice_note_flow
 from settings import FAKE_TRANSCRIPT, PROVIDER_WAIT_MS
 
@@ -45,6 +46,13 @@ SCENARIOS: tuple[Scenario, ...] = (
         name="provider-voice-note",
         flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
         runner=lambda page, base_url, flow: run_provider_voice_note_flow(
+            page, base_url, flow, FAKE_TRANSCRIPT
+        ),
+    ),
+    Scenario(
+        name="provider-summary",
+        flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
+        runner=lambda page, base_url, flow: run_provider_summary_flow(
             page, base_url, flow, FAKE_TRANSCRIPT
         ),
     ),
