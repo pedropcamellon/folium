@@ -7,3 +7,12 @@ BASE_URL = os.getenv("SOUTHDRIFT_BASE_URL", "http://localhost:3000")
 HEADLESS = os.getenv("PLAYWRIGHT_HEADLESS", "false").lower() == "true"
 SLOW_MO_MS = int(os.getenv("PLAYWRIGHT_SLOW_MO_MS", "250"))
 PROVIDER_WAIT_MS = int(os.getenv("SOUTHDRIFT_PROVIDER_WAIT_MS", "3000"))
+FAKE_TRANSCRIPT = os.getenv(
+	"SOUTHDRIFT_FAKE_TRANSCRIPT",
+	"Patient reports improved sleep, mild residual cough, and no fever for the last 48 hours.",
+)
+CHROMIUM_LAUNCH_ARGS = [
+	"--use-fake-ui-for-media-stream",
+	"--use-fake-device-for-media-stream",
+	"--mute-audio",
+]
