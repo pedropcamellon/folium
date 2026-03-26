@@ -1,6 +1,7 @@
 """Patient interaction endpoints - API route handlers"""
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File
+from fastapi import APIRouter, Depends, Query, status, UploadFile, File, HTTPException
+from fastapi.responses import Response
 
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
@@ -12,8 +13,8 @@ from app.models.interaction import (
     SummaryUpdateRequest,
 )
 from app.services.interaction_service import InteractionService
-from app.services.patient_service import PatientService
-from app.dependencies import get_interaction_service, get_patient_service
+from app.services.voice_note_service import VoiceNoteService
+from app.dependencies import get_interaction_service, get_voice_note_service
 
 import logging
 
@@ -107,142 +108,48 @@ async def upload_audio(
     interaction_id: str,
     audio: UploadFile = File(...),
     _: object = Depends(require_permission(Permission.VOICE_RECORD)),
-    service: InteractionService = Depends(get_interaction_service),
-    patient_service: "PatientService" = Depends(get_patient_service),
+    voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
 ):
-    """Upload audio file to object storage and trigger transcription"""
-    from fastapi import HTTPException
-    from app.services.storage import get_storage
-    from uuid import uuid4
-    import asyncio
-
+    """Upload audio file to object storage and start the voice note workflow."""
     logger.info(f"[UPLOAD] POST /audio called for {interaction_id}")
 
-    # Validate interaction exists
-    interaction = await service.get_by_id(interaction_id)
-    if not interaction:
-        logger.info(f"[UPLOAD] Interaction {interaction_id} not found")
-        raise HTTPException(status_code=404, detail="Interaction not found")
-
-    logger.info(f"[UPLOAD] Interaction found: {interaction.id}")
-
-    # Read audio file
     audio_content = await audio.read()
     logger.info(f"[UPLOAD] Read {len(audio_content)} bytes from {audio.filename}")
-
-    # Upload to object storage
-    storage = await get_storage()
-    storage_key = f"audio/{interaction_id}/{uuid4()}_{audio.filename}"
-    logger.info(f"[UPLOAD] Generated storage key: {storage_key}")
-
     try:
-        storage_url = await storage.upload(
-            key=storage_key,
-            data=audio_content,
-            content_type=audio.content_type or "audio/webm",
-        )
-        logger.info(f"☁️ [UPLOAD] Uploaded to storage: {storage_url}")
-    except Exception as e:
-        logger.error(f"[UPLOAD] Storage upload failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Storage upload failed: {str(e)}")
-
-    # Store audio reference in interaction metadata
-    existing_metadata = interaction.metadata or {}
-    audio_metadata = {
-        "filename": audio.filename,
-        "storageKey": storage_key,
-        "storageUrl": storage_url,
-        "size": len(audio_content),
-        "contentType": audio.content_type,
-    }
-    logger.info(f"📦 [UPLOAD] Audio metadata to save: {audio_metadata}")
-
-    updated = await service.update(
-        interaction_id,
-        InteractionUpdate(
-            metadata={
-                **existing_metadata,
-                "audio": audio_metadata,
-            }
-        ),
-    )
-
-    logger.info(f"💾 [UPLOAD] Database updated. Result metadata: {updated.metadata}")
-
-    # Verify the save worked by re-fetching
-    verify = await service.get_by_id(interaction_id)
-    logger.info(f"🔍 [UPLOAD] Verification fetch: {verify.metadata}")
-
-    # Start transcription in background (fire and forget)
-    logger.info("🚀 [UPLOAD] Triggering background transcription task")
-    asyncio.create_task(
-        transcribe_audio(
+        return await voice_note_service.upload_audio(
             interaction_id=interaction_id,
-            storage=storage,
-            storage_key=storage_key,
-            service=service,
-            interaction=interaction,
-            existing_metadata=existing_metadata,
+            filename=audio.filename,
+            content_type=audio.content_type,
+            audio_content=audio_content,
         )
-    )
-
-    return {
-        "interactionId": interaction_id,
-        "filename": audio.filename,
-        "storageKey": storage_key,
-        "storageUrl": storage_url,
-        "size": len(audio_content),
-        "status": "stored",
-        "message": "Audio uploaded to storage. Transcription in progress.",
-    }
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error(f"[UPLOAD] Voice note upload failed: {exc}")
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 @router.get("/{interaction_id}/audio")
 async def get_audio(
     interaction_id: str,
     _: object = Depends(require_permission(Permission.VOICE_REVIEW)),
-    service: InteractionService = Depends(get_interaction_service),
+    voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
 ):
     """Download audio file from object storage"""
-    from fastapi import HTTPException
-    from fastapi.responses import Response
-    from app.services.storage import get_storage
-
     logger.info(f"[GET] GET /audio called for {interaction_id}")
-
-    interaction = await service.get_by_id(interaction_id)
-    if not interaction:
-        logger.error(f"[GET] Interaction {interaction_id} not found")
-        raise HTTPException(status_code=404, detail="Interaction not found")
-
-    logger.info(f"[GET] Interaction found. Raw metadata: {interaction.metadata}")
-
-    metadata = interaction.metadata or {}
-    audio_data = metadata.get("audio")
-    logger.info(f"🎤 [GET] Audio data extracted: {audio_data}")
-
-    if not audio_data or not audio_data.get("storageKey"):
-        logger.error(f"[GET] No audio found for {interaction_id}")
-        raise HTTPException(status_code=404, detail="No audio found for this interaction")
-
-    # Download from object storage
-    storage = await get_storage()
-    storage_key = audio_data["storageKey"]
-
-    logger.info(f"[GET] Downloading from storage key: {storage_key}")
-
     try:
-        audio_bytes = await storage.download(storage_key)
-        logger.info(f"[GET] Downloaded {len(audio_bytes)} bytes")
-    except Exception as e:
-        logger.error(f"[GET] Download failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Storage download failed: {str(e)}")
+        audio_download = await voice_note_service.get_audio_download(interaction_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.error(f"[GET] Download failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"Storage download failed: {str(exc)}") from exc
 
     return Response(
-        content=audio_bytes,
-        media_type=audio_data.get("contentType", "audio/webm"),
+        content=audio_download["content"],
+        media_type=audio_download["mediaType"],
         headers={
-            "Content-Disposition": f'inline; filename="{audio_data.get("filename", "audio.webm")}"'
+            "Content-Disposition": f'inline; filename="{audio_download["filename"]}"'
         },
     )
 
@@ -251,117 +158,32 @@ async def get_audio(
 async def trigger_transcription(
     interaction_id: str,
     _: object = Depends(require_permission(Permission.VOICE_REVIEW)),
-    service: InteractionService = Depends(get_interaction_service),
+    voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
 ):
-    """Trigger transcription for existing audio (separate from upload)"""
-    from fastapi import HTTPException
-    from app.services.storage import get_storage
-    import asyncio
-
+    """Start the voice note workflow for existing audio."""
     logger.info(f"[TRANSCRIBE] POST /transcribe called for {interaction_id}")
 
-    interaction = await service.get_by_id(interaction_id)
-    if not interaction:
-        raise HTTPException(status_code=404, detail="Interaction not found")
-
-    metadata = interaction.metadata or {}
-    audio_data = metadata.get("audio")
-
-    if not audio_data or not audio_data.get("storageKey"):
-        raise HTTPException(status_code=400, detail="No audio uploaded for this interaction")
-
-    storage = await get_storage()
-    storage_key = audio_data["storageKey"]
-
-    logger.info(f"🚀 [TRANSCRIBE] Starting background task for {storage_key}")
-
-    # Run transcription in background
-    asyncio.create_task(
-        transcribe_audio(
-            interaction_id=interaction_id,
-            storage=storage,
-            storage_key=storage_key,
-            service=service,
-            interaction=interaction,
-            existing_metadata=metadata,
-        )
-    )
+    try:
+        workflow_execution = await voice_note_service.start_workflow(interaction_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     return {
         "interactionId": interaction_id,
-        "status": "transcribing",
-        "message": "Transcription started in background",
+        "status": "processing",
+        "workflowId": workflow_execution["workflowId"],
+        "runId": workflow_execution["runId"],
+        "message": "Voice note workflow started.",
     }
 
 
-# Trigger transcription with microservice
-async def transcribe_audio(
+@router.get("/{interaction_id}/voice-note-status", response_model=dict)
+async def get_voice_note_status(
     interaction_id: str,
-    storage,
-    storage_key: str,
-    service: InteractionService,
-    interaction,
-    existing_metadata: dict,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
+    voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
 ):
-    """Background task to transcribe audio"""
-    from app.services.transcription_service import get_transcription_service
-
-    logger.info(f"[BG] BACKGROUND TASK STARTED for {interaction_id}")
-    logger.info(f"[BG] Storage key: {storage_key}")
-
-    try:
-        # Generate presigned URL for transcription service to access audio
-        # Use internal=True for Docker service-to-service communication
-        presigned_url = await storage.get_presigned_url(storage_key, expiration=3600, internal=True)
-        logger.info(f"[BG] Generated presigned URL: {presigned_url[:80]}...")
-
-        # Call transcription microservice
-        transcription_svc = get_transcription_service()
-
-        logger.info("[BG] Calling transcription service...")
-
-        result = await transcription_svc.transcribe(audio_url=presigned_url, speaker_labels=False)
-
-        logger.info(f"[BG] Transcription service returned result: {result.keys()}")
-
-        # Update interaction note with transcript
-        transcript = result.get("transcript", "")
-        logger.info(f"[BG] Transcript received ({len(transcript)} chars): {transcript[:100]}...")
-
-        if transcript and transcript.strip():
-            from datetime import datetime
-
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-            # Overwrite note with new transcript
-            updated_note = f"{transcript}\n{timestamp}".strip()
-
-            logger.info(f"[BG] Updating interaction note (length: {len(updated_note)} chars)")
-            await service.update_note(interaction_id, NoteUpdateRequest(note=updated_note))
-        else:
-            logger.info("[BG] Transcript empty, skipping note update")
-
-        logger.info(f"[BG] Transcription completed for {interaction_id}")
-
-    except Exception as e:
-        logger.error(f"[BG] Transcription failed: {e}", exc_info=True)
-
-        # Fetch fresh metadata to avoid overwriting audio info
-        fresh_interaction = await service.get_by_id(interaction_id)
-        fresh_metadata = fresh_interaction.metadata or {} if fresh_interaction else {}
-        fresh_audio = fresh_metadata.get("audio", {})
-
-        # Update with error status while preserving existing audio metadata
-        await service.update(
-            interaction_id,
-            InteractionUpdate(
-                metadata={
-                    **fresh_metadata,
-                    "audio": {
-                        **fresh_audio,
-                        "transcriptionError": str(e),
-                        "transcriptionStatus": "failed",
-                    },
-                }
-            ),
-        )
+    """Get current voice note workflow status for an interaction."""
+    return await voice_note_service.get_workflow_status(interaction_id)

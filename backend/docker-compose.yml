@@ -26,6 +26,10 @@ services:
       # Microservices URLs
       - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
       - SUMMARIZATION_SERVICE_URL=http://summarize:8002
+
+      # Temporal
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_NAMESPACE=default
     volumes:
       - backend_cache:/root/.cache
     working_dir: /app
