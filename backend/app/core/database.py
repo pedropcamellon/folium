@@ -1,7 +1,6 @@
 """Database configuration for user management."""
 
 import logging
-import os
 import sys
 from typing import AsyncGenerator
 
@@ -9,6 +8,7 @@ from fastapi import Depends
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.config import settings
 from app.models.user import Base
 
 # Import all models to register them with Base.metadata
@@ -16,8 +16,8 @@ from app.models.db import Patient, Interaction, Document  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
-# Database URL from environment (required)
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Database URL from settings/.env (required)
+DATABASE_URL = settings.DATABASE_URL
 if not DATABASE_URL:
     raise ValueError(
         "DATABASE_URL environment variable is required. "
