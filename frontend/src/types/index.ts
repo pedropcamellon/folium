@@ -77,6 +77,16 @@ export interface PatientInteraction {
     updatedBy: string;
 }
 
+export interface VoiceNoteWorkflowStatusResponse {
+    interactionId: string;
+    workflowId?: string;
+    runId?: string;
+    status: "idle" | "processing" | "transcribed" | "completed" | "partial" | "failed";
+    failureStage?: string | null;
+    errorMessage?: string | null;
+    interaction?: PatientInteraction;
+}
+
 // ============== SUMMARIZATION TYPES ==============
 export interface StructuredSummary {
     chief_complaint: string;
