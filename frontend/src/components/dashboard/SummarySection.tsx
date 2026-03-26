@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { apiRequest, API_ENDPOINTS } from "@/lib/api";
 
 import {
     SummaryState,
@@ -71,7 +71,7 @@ export function SummarySection({
         setEditState(SummaryEditState.SAVING);
         setSaveError(null);
         try {
-            const res = await fetch(
+            const res = await apiRequest(
                 API_ENDPOINTS.interactionSummary(interaction.id),
                 {
                     method: "PATCH",
@@ -103,9 +103,7 @@ export function SummarySection({
                         size="sm"
                         variant="tertiary"
                         onClick={handleGenerate}
-                        disabled={
-                            summaryState === SummaryState.GENERATING || !note
-                        }
+                        disabled={summaryState === SummaryState.GENERATING || !note}
                         isLoading={summaryState === SummaryState.GENERATING}
                         loadingText="Generating..."
                     >

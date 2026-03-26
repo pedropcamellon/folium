@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
+
+const MIN_RECORDING_DURATION_MS = 1000;
 
 export enum AudioState {
     IDLE = "idle",
@@ -22,15 +24,20 @@ export function useInteractionAudio(interactionId: string) {
     );
 
     const audioChunks = useRef<Blob[]>([]);
+    const recordingStartedAt = useRef<number | null>(null);
+    const recordedDurationMs = useRef<number>(0);
 
     const startRecording = async () => {
         setRecordingError(null);
+        setSubmitError(null);
         try {
             const stream = await navigator.mediaDevices.getUserMedia({
                 audio: true,
             });
             const recorder = new window.MediaRecorder(stream);
             audioChunks.current = [];
+            recordingStartedAt.current = Date.now();
+            recordedDurationMs.current = 0;
 
             recorder.ondataavailable = (e) => {
                 if (e.data.size > 0) {
@@ -39,10 +46,26 @@ export function useInteractionAudio(interactionId: string) {
             };
 
             recorder.onstop = () => {
+                const startedAt = recordingStartedAt.current;
+                const durationMs = startedAt ? Date.now() - startedAt : 0;
+                recordedDurationMs.current = durationMs;
+                recorder.stream.getTracks().forEach((track) => track.stop());
+
+                if (durationMs <= MIN_RECORDING_DURATION_MS) {
+                    setAudioUrl(null);
+                    setRecordingError(
+                        "Recordings must be longer than 1 second."
+                    );
+                    setMediaRecorder(null);
+                    setAudioState(AudioState.IDLE);
+                    return;
+                }
+
                 const audioBlob = new Blob(audioChunks.current, {
                     type: "audio/webm",
                 });
                 setAudioUrl(URL.createObjectURL(audioBlob));
+                setMediaRecorder(null);
                 setAudioState(AudioState.RECORDED);
             };
 
@@ -69,6 +92,13 @@ export function useInteractionAudio(interactionId: string) {
             return;
         }
 
+        if (recordedDurationMs.current <= MIN_RECORDING_DURATION_MS) {
+            setAudioUrl(null);
+            setRecordingError("Recordings must be longer than 1 second.");
+            setAudioState(AudioState.IDLE);
+            return;
+        }
+
         let audioBlob: Blob;
         try {
             audioBlob = await fetch(audioUrl).then((r) => r.blob());
@@ -84,7 +114,7 @@ export function useInteractionAudio(interactionId: string) {
             const formData = new FormData();
             formData.append("audio", audioBlob, "audio.webm");
 
-            const res = await fetch(
+            const res = await apiRequest(
                 `${API_ENDPOINTS.interaction(interactionId)}/audio`,
                 {
                     method: "POST",
@@ -112,22 +142,25 @@ export function useInteractionAudio(interactionId: string) {
     const cleanup = () => {
         setAudioState(AudioState.IDLE);
         setAudioUrl(null);
+        setRecordingError(null);
+        setSubmitError(null);
+        recordedDurationMs.current = 0;
+        recordingStartedAt.current = null;
     };
 
     const loadExistingAudio = useCallback(async () => {
         try {
-            const res = await fetch(API_ENDPOINTS.interaction(interactionId));
-            if (res.ok) {
-                const data = await res.json();
-                if (data.metadata?.audio) {
-                    const audioRes = await fetch(
-                        `${API_ENDPOINTS.interaction(interactionId)}/audio`
-                    );
-                    if (audioRes.ok) {
-                        const audioBlob = await audioRes.blob();
-                        setAudioUrl(URL.createObjectURL(audioBlob));
-                        setAudioState(AudioState.LOADED);
-                    }
+            const data = await apiJson<{ metadata?: { audio?: unknown } }>(
+                API_ENDPOINTS.interaction(interactionId)
+            );
+            if (data.metadata?.audio) {
+                const audioRes = await apiRequest(
+                    `${API_ENDPOINTS.interaction(interactionId)}/audio`
+                );
+                if (audioRes.ok) {
+                    const audioBlob = await audioRes.blob();
+                    setAudioUrl(URL.createObjectURL(audioBlob));
+                    setAudioState(AudioState.LOADED);
                 }
             }
         } catch {
