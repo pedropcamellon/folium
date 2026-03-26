@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { ChevronRight } from "lucide-react";
+
+import { API_ENDPOINTS, apiJson } from "@/lib/api";
+
 import { useTranscription } from "@/hooks/useTranscription";
 
 import { InteractionType, PatientInteraction } from "@/types";
@@ -34,7 +37,7 @@ export default function PatientHistoryTimeline({
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [selectedInteraction, setSelectedInteraction] =
         useState<PatientInteraction | null>(null);
-    
+
     const { transcriptionState, startPolling } = useTranscription();
 
     // Fetch interaction when selected
@@ -46,18 +49,25 @@ export default function PatientHistoryTimeline({
 
         const fetchInteraction = async () => {
             try {
-                const res = await fetch(API_ENDPOINTS.interaction(selectedId));
-                if (res.ok) {
-                    const data = await res.json();
-                    setSelectedInteraction(data);
-                }
+                const data = await apiJson<PatientInteraction>(
+                    API_ENDPOINTS.interaction(selectedId)
+                );
+                setSelectedInteraction(data);
             } catch (e) {
                 console.error("Failed to fetch interaction:", e);
             }
         };
 
-        fetchInteraction();
+        void fetchInteraction();
     }, [selectedId]);
+
+    const handleSelectInteraction = useCallback(
+        (interaction: PatientInteraction) => {
+            setSelectedInteraction(interaction);
+            setSelectedId(interaction.id);
+        },
+        []
+    );
 
     // Memoize callback to prevent recreating on every render
     const handleAudioSubmitted = useCallback(() => {
@@ -88,14 +98,16 @@ export default function PatientHistoryTimeline({
             />
             <div className="flex flex-col gap-8">
                 {sorted.map((item, idx) => (
-                    <div
+                    <button
+                        type="button"
                         key={item.id}
-                        className="relative flex items-start gap-4 cursor-pointer group"
-                        onClick={() => setSelectedId(item.id)}
+                        className="relative flex w-full items-start justify-between gap-4 rounded-lg border border-transparent py-3 pl-10 pr-3 text-left cursor-pointer group transition-colors hover:border-slate-200 hover:bg-slate-50 focus-visible:border-slate-300 focus-visible:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+                        onClick={() => handleSelectInteraction(item)}
+                        aria-label={`View details for ${item.title}`}
                     >
                         {/* Dot */}
                         <div
-                            className="absolute left-0 top-2 w-4 flex flex-col items-center"
+                            className="absolute left-2 top-4 w-4 flex flex-col items-center"
                             style={{ zIndex: 1 }}
                         >
                             <div
@@ -110,7 +122,7 @@ export default function PatientHistoryTimeline({
                                 <div className="w-0.5 flex-1 bg-slate-200 mt-0.5" />
                             )}
                         </div>
-                        <div className="ml-8">
+                        <div className="flex-1">
                             <div className="font-semibold text-base">
                                 {item.title}{" "}
                                 <span className="text-xs font-normal text-slate-400">
@@ -127,14 +139,23 @@ export default function PatientHistoryTimeline({
                                 {item.description}
                             </div>
                         </div>
-                    </div>
+                        <div className="flex items-center gap-2 self-center pl-2 text-slate-400 transition-transform group-hover:translate-x-0.5 group-hover:text-slate-600 group-focus-visible:translate-x-0.5 group-focus-visible:text-slate-600">
+                            <span className="hidden text-xs font-medium text-slate-500 sm:inline">
+                                View details
+                            </span>
+                            <ChevronRight className="h-4 w-4" />
+                        </div>
+                    </button>
                 ))}
             </div>
-            {selectedId && selectedInteraction && (
+            {selectedInteraction && (
                 <PatientInteractionDetailsModal
                     interaction={selectedInteraction}
-                    open={!!selectedId}
-                    onClose={() => setSelectedId(null)}
+                    open={!!selectedInteraction}
+                    onClose={() => {
+                        setSelectedId(null);
+                        setSelectedInteraction(null);
+                    }}
                     onAudioSubmitted={handleAudioSubmitted}
                     transcriptionState={transcriptionState}
                 />

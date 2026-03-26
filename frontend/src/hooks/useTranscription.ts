@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { API_ENDPOINTS } from "@/lib/api";
+import { apiJson, API_ENDPOINTS } from "@/lib/api";
 
-import { PatientInteraction } from "@/types";
+import { PatientInteraction, VoiceNoteWorkflowStatusResponse } from "@/types";
 
 export enum TranscriptionState {
     IDLE = "idle",
     PENDING = "pending",
     COMPLETE = "complete",
+    PARTIAL = "partial",
     ERROR = "error",
 }
 
@@ -38,26 +39,36 @@ export function useTranscription() {
                 if (abortController.signal.aborted) return;
 
                 try {
-                    const res = await fetch(
-                        API_ENDPOINTS.interaction(interactionId)
+                    const data = await apiJson<VoiceNoteWorkflowStatusResponse>(
+                        API_ENDPOINTS.interactionVoiceNoteStatus(interactionId)
                     );
-                    if (res.ok) {
-                        const data = await res.json();
-                        onUpdate(data);
 
-                        // Check for transcription error
-                        if (data.metadata?.audio?.transcriptionError) {
-                            setTranscriptionState(TranscriptionState.ERROR);
-                            pollingAbortRef.current = null;
-                            return;
-                        }
+                    if (data.interaction) {
+                        onUpdate(data.interaction);
+                    }
 
-                        // Stop polling if note updated (transcription complete)
-                        if (data.note) {
-                            setTranscriptionState(TranscriptionState.COMPLETE);
-                            pollingAbortRef.current = null;
-                            return;
-                        }
+                    if (data.status === "failed") {
+                        setTranscriptionState(TranscriptionState.ERROR);
+                        pollingAbortRef.current = null;
+                        return;
+                    }
+
+                    if (data.status === "partial") {
+                        setTranscriptionState(TranscriptionState.PARTIAL);
+                        pollingAbortRef.current = null;
+                        return;
+                    }
+
+                    if (data.status === "transcribed") {
+                        setTranscriptionState(TranscriptionState.COMPLETE);
+                        pollingAbortRef.current = null;
+                        return;
+                    }
+
+                    if (data.status === "completed") {
+                        setTranscriptionState(TranscriptionState.COMPLETE);
+                        pollingAbortRef.current = null;
+                        return;
                     }
                 } catch (e) {
                     console.error("Polling error:", e);
@@ -68,14 +79,14 @@ export function useTranscription() {
 
                 // Continue polling
                 if (!abortController.signal.aborted) {
-                    pollingTimeoutRef.current = setTimeout(poll, 2000);
+                    pollingTimeoutRef.current = setTimeout(poll, 1000);
                 }
             };
 
             // Start polling
             poll();
 
-            // Stop after 10 seconds max
+            // Stop after 2 minutes max
             setTimeout(() => {
                 if (!abortController.signal.aborted) {
                     abortController.abort();
@@ -85,7 +96,7 @@ export function useTranscription() {
                         clearTimeout(pollingTimeoutRef.current);
                     }
                 }
-            }, 10000);
+            }, 120000);
         },
         []
     );

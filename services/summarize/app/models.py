@@ -1,21 +1,22 @@
 """Pydantic models for summarization service."""
 
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from typing import Any
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class SummarizeRequest(BaseModel):
     """Request schema for summarization endpoint."""
 
     transcript: str = Field(..., description="Clinical transcript text to summarize")
-    interaction_type: Optional[str] = Field(
+    interaction_type: str | None = Field(
         None,
         description="Type of clinical interaction (e.g., 'consultation', 'follow-up')",
     )
-    format: Optional[str] = Field(
+    format: str | None = Field(
         "soap", description="Output format: 'soap' (default), 'narrative', 'structured'"
     )
-    language: Optional[str] = Field("en", description="Language code (default: 'en')")
+    language: str | None = Field("en", description="Language code (default: 'en')")
 
     class Config:
         json_schema_extra = {
@@ -31,33 +32,71 @@ class SummarizeRequest(BaseModel):
 class StructuredSummary(BaseModel):
     """Structured clinical summary data (SOAP format)."""
 
-    chief_complaint: Optional[str] = Field(
+    chief_complaint: str | None = Field(
         None, description="Brief reason for visit/interaction"
     )
-    subjective: Optional[str] = Field(
+    subjective: str | None = Field(
         None, description="Patient's description of symptoms, history, concerns"
     )
-    objective: Optional[str] = Field(
+    objective: str | None = Field(
         None, description="Observable findings, vitals, exam results"
     )
-    assessment: Optional[str] = Field(
+    assessment: str | None = Field(
         None, description="Clinical impression, diagnosis, differential"
     )
-    plan: Optional[str | List[str]] = Field(
+    plan: str | None = Field(
         None,
-        description="Treatment plan, medications, follow-up, education (string or list)",
+        description="Treatment plan, medications, follow-up, education",
     )
-    clinical_tags: List[str] = Field(
+    clinical_tags: list[str] = Field(
         default_factory=list,
         description="Relevant medical tags (e.g., 'hypertension', 'diabetes')",
     )
-    icd_codes: List[str] = Field(
+    icd_codes: list[str] = Field(
         default_factory=list, description="Suggested ICD-10 codes"
     )
-    action_items: List[str] = Field(
+    action_items: list[str] = Field(
         default_factory=list,
         description="Follow-up actions (labs, referrals, prescriptions)",
     )
+
+    @field_validator(
+        "chief_complaint",
+        "subjective",
+        "objective",
+        "assessment",
+        "plan",
+        mode="before",
+    )
+    @classmethod
+    def normalize_text_fields(cls, value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        if isinstance(value, list):
+            normalized = [str(item).strip() for item in value if str(item).strip()]
+            return "\n".join(normalized)
+        if isinstance(value, dict):
+            normalized = [
+                f"{key}: {item}" if item not in (None, "", [], {}) else str(key)
+                for key, item in value.items()
+            ]
+            normalized = [item.strip() for item in normalized if item.strip()]
+            return "\n".join(normalized)
+        return str(value)
+
+    @field_validator("clinical_tags", "icd_codes", "action_items", mode="before")
+    @classmethod
+    def normalize_list_fields(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item) for item in value if str(item).strip()]
+        if isinstance(value, str):
+            stripped = value.strip()
+            return [stripped] if stripped else []
+        return [str(value)]
 
 
 class SummarizeResponse(BaseModel):
@@ -70,7 +109,7 @@ class SummarizeResponse(BaseModel):
     processing_time: float = Field(..., description="Processing time in seconds")
     model_used: str = Field(..., description="Name of the model used")
     provider: str = Field(..., description="Provider name (local, openai, etc.)")
-    usage: Optional[Dict[str, Any]] = Field(
+    usage: dict[str, Any] | None = Field(
         None, description="Token usage and cost information (if applicable)"
     )
 
@@ -112,4 +151,4 @@ class ErrorResponse(BaseModel):
 
     error: str = Field(..., description="Error type")
     detail: str = Field(..., description="Error details")
-    model_used: Optional[str] = Field(None, description="Model name if available")
+    model_used: str | None = Field(None, description="Model name if available")

@@ -1,44 +1,74 @@
 from __future__ import annotations
 
+import argparse
+
 from playwright.sync_api import sync_playwright
 
-from browser_session import new_page, run_flow
-from flow_cases import PATIENT_FLOW, PROVIDER_FLOW, FlowCase
-from settings import BASE_URL, HEADLESS, PROVIDER_WAIT_MS, SLOW_MO_MS
+from browser_session import run_flow
+from scenarios import SCENARIOS, resolve_scenarios
+from settings import (
+    BASE_URL,
+    CHROMIUM_LAUNCH_ARGS,
+    HEADLESS,
+    SLOW_MO_MS,
+)
+from ui import new_page
 
 
-def with_provider_pause(flow: FlowCase, wait_ms: int) -> FlowCase:
-    return FlowCase(
-        name=flow.name,
-        email=flow.email,
-        password=flow.password,
-        expected_path=flow.expected_path,
-        expected_heading=flow.expected_heading,
-        expected_identity_text=flow.expected_identity_text,
-        wait_after_login_ms=wait_ms,
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run SouthDrift Playwright e2e scenarios"
     )
+    parser.add_argument(
+        "--scenario",
+        action="append",
+        dest="scenario_names",
+        help="Run only the named scenario. Repeat the flag to run more than one.",
+    )
+    parser.add_argument(
+        "--list",
+        action="store_true",
+        help="List available scenarios and exit.",
+    )
+    return parser.parse_args()
 
 
 def main() -> None:
-    print(f"Running SouthDrift role-flow checks against {BASE_URL}")
+    args = parse_args()
+
+    if args.list:
+        print("Available scenarios:")
+        for scenario in SCENARIOS:
+            print(f"- {scenario.name}")
+        return
+
+    scenarios = resolve_scenarios(args.scenario_names)
+
+    print(f"Running SouthDrift e2e scenarios against {BASE_URL}")
+    print("Selected scenarios: " + ", ".join(scenario.name for scenario in scenarios))
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(
             headless=HEADLESS,
             slow_mo=SLOW_MO_MS,
+            args=CHROMIUM_LAUNCH_ARGS,
         )
-        page = new_page(browser)
         try:
-            run_flow(
-                page,
-                BASE_URL,
-                with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
-            )
-            run_flow(page, BASE_URL, PATIENT_FLOW)
+            for scenario in scenarios:
+                page = new_page(browser, BASE_URL)
+                try:
+                    run_flow(
+                        page,
+                        BASE_URL,
+                        scenario.flow,
+                        scenario.name,
+                        scenario.runner,
+                    )
+                finally:
+                    page.context.close()
         finally:
-            page.context.close()
             browser.close()
 
-    print("All requested user flows passed")
+    print("All requested scenarios passed")
 
 
 if __name__ == "__main__":
