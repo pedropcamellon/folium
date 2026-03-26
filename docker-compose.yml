@@ -3,8 +3,10 @@ include:
   - docker-compose.storage.yml
   - backend/docker-compose.yml
   - frontend/docker-compose.yml
+  - services/temporal/docker-compose.infra.yml
   - services/transcribe/docker-compose.yml
   - services/summarize/docker-compose.yml
+  - services/voice_note_workflow/docker-compose.service.yml
 
 services:
   backend:
@@ -13,29 +15,3 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    networks:
-      - south-drift-network
-
-  frontend:
-    networks:
-      - south-drift-network
-
-  postgres:
-    networks:
-      - south-drift-network
-
-  minio:
-    networks:
-      - south-drift-network
-
-  transcribe:
-    networks:
-      - south-drift-network
-
-  summarize:
-    networks:
-      - south-drift-network
-
-networks:
-  south-drift-network:
-    driver: bridge
