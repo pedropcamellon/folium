@@ -1,7 +1,9 @@
 """Application configuration using Pydantic settings"""
 
-from pydantic_settings import BaseSettings
 from typing import List
+
+from pydantic import model_validator
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -20,13 +22,11 @@ class Settings(BaseSettings):
         "http://127.0.0.1:3000",
     ]
 
-    # Database (future)
-    DATABASE_URL: str = "sqlite:///./southdrift.db"
+    # Database
+    DATABASE_URL: str = ""
 
     # JWT Authentication
-    JWT_SECRET: str = (
-        "CHANGE_THIS_SECRET_KEY_IN_PRODUCTION_USE_ENV_VAR"  # TODO Use env var in production
-    )
+    JWT_SECRET: str = ""
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 
@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     STORAGE_REGION: str = "us-east-2"
     STORAGE_ENDPOINT: str | None = None  # Required for MinIO/Azure (internal Docker)
     STORAGE_PUBLIC_ENDPOINT: str | None = None  # Public-facing endpoint for browser
-    STORAGE_ACCESS_KEY: str = "minioadmin"
-    STORAGE_SECRET_KEY: str = "minioadmin"
+    STORAGE_ACCESS_KEY: str = ""
+    STORAGE_SECRET_KEY: str = ""
     STORAGE_CDN_URL: str | None = None  # Optional CDN URL
 
     # Azure-specific storage settings
@@ -54,6 +54,13 @@ class Settings(BaseSettings):
         "http://localhost:8002"  # or "http://summarize:8002" in docker-compose
     )
 
+    # Temporal
+    TEMPORAL_ADDRESS: str = "localhost:7233"
+    TEMPORAL_NAMESPACE: str = "default"
+    VOICE_NOTE_TASK_QUEUE: str = "voice-notes-queue"
+    VOICE_NOTE_WORKFLOW_NAME: str = "voice-note-workflow"
+    VOICE_NOTE_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
+
     # Legacy settings (deprecated)
 
     # AWS
@@ -66,8 +73,36 @@ class Settings(BaseSettings):
     # Logging
     LOG_LEVEL: str = "INFO"
 
+    @model_validator(mode="after")
+    def validate_required_env_settings(self) -> "Settings":
+        missing_fields: list[str] = []
+
+        if not self.DATABASE_URL.strip():
+            missing_fields.append("DATABASE_URL")
+
+        if not self.JWT_SECRET.strip():
+            missing_fields.append("JWT_SECRET")
+
+        if self.STORAGE_PROVIDER in {"aws", "minio"}:
+            if not self.STORAGE_ACCESS_KEY.strip():
+                missing_fields.append("STORAGE_ACCESS_KEY")
+            if not self.STORAGE_SECRET_KEY.strip():
+                missing_fields.append("STORAGE_SECRET_KEY")
+
+        if self.STORAGE_PROVIDER == "azure" and not (
+            self.AZURE_STORAGE_CONNECTION_STRING.strip()
+        ):
+            missing_fields.append("AZURE_STORAGE_CONNECTION_STRING")
+
+        if missing_fields:
+            missing = ", ".join(missing_fields)
+            raise ValueError(f"Missing required environment settings: {missing}")
+
+        return self
+
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"  # Ignore extra environment variables (e.g., from .NET Core)
 
