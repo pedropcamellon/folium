@@ -4,6 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: southdrift-voice-note-worker
+    depends_on:
+      temporal:
+        condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
       - TEMPORAL_ADDRESS=temporal:7233
