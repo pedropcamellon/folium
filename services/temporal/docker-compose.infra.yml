@@ -1,16 +1,30 @@
 services:
+  southdrift-temporal-postgres:
+    image: postgres:15-alpine
+    container_name: southdrift-temporal-postgres
+    ports:
+      - "5433:5432" # Use 5433 externally to avoid conflict with app postgres
+    env_file:
+      - .env
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal -d temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   temporal:
     image: temporalio/auto-setup:latest
     container_name: southdrift-temporal-server
     ports:
       - "7233:7233"
+    env_file:
+      - .env
     environment:
-      - DB=postgres12
-      - DB_PORT=5432
-      - POSTGRES_USER=southdrift
-      - POSTGRES_SEEDS=postgres
+      - POSTGRES_SEEDS=southdrift-temporal-postgres
     depends_on:
-      postgres:
+      southdrift-temporal-postgres:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "tctl", "--address", "temporal:7233", "cluster", "health"]
@@ -24,8 +38,12 @@ services:
     container_name: southdrift-temporal-ui
     ports:
       - "8233:8080"
+    env_file:
+      - .env
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
-      - TEMPORAL_UI_PORT=8080
     depends_on:
       - temporal
+
+volumes:
+  temporal-postgres-data:
