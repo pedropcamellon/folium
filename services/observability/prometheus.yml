@@ -26,7 +26,7 @@ scrape_configs:
   # Temporal Server
   - job_name: "temporal"
     static_configs:
-      - targets: ["temporal:7233"]
+      - targets: ["temporal:9090"]
     metrics_path: "/metrics"
 
   # PostgreSQL Exporter (optional, if added later)
