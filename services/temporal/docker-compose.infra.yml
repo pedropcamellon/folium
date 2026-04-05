@@ -19,6 +19,7 @@ services:
     container_name: southdrift-temporal-server
     ports:
       - "7233:7233"
+      - "9091:9090" # Prometheus metrics (9091 external, 9090 internal)
     env_file:
       - .env
     environment:
