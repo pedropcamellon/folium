@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: "southdrift-monitor"
+
+scrape_configs:
+  # Backend API
+  - job_name: "backend"
+    static_configs:
+      - targets: ["backend:8000"]
+    metrics_path: "/metrics"
+
+  # Transcription Service
+  - job_name: "transcription"
+    static_configs:
+      - targets: ["transcribe:8001"]
+    metrics_path: "/metrics"
+
+  # Summarization Service
+  - job_name: "summarization"
+    static_configs:
+      - targets: ["summarize:8002"]
+    metrics_path: "/metrics"
+
+  # Temporal Server
+  - job_name: "temporal"
+    static_configs:
+      - targets: ["temporal:7233"]
+    metrics_path: "/metrics"
+
+  # PostgreSQL Exporter (optional, if added later)
+  # - job_name: 'postgres'
+  #   static_configs:
+  #     - targets: ['postgres-exporter:9187']
+
+  # MinIO Exporter (optional, if added later)
+  # - job_name: 'minio'
+  #   static_configs:
+  #     - targets: ['minio:9000']
+  #   metrics_path: '/minio/v2/metrics/cluster'
