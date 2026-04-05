@@ -1,5 +1,5 @@
 services:
-  prometheus:
+  southdrift-prometheus:
     image: prom/prometheus:latest
     container_name: southdrift-prometheus
     ports:
@@ -14,10 +14,8 @@ services:
       - "--web.console.templates=/usr/share/prometheus/consoles"
       - "--web.enable-lifecycle"
     restart: unless-stopped
-    networks:
-      - default
 
-  grafana:
+  southdrift-grafana:
     image: grafana/grafana:latest
     container_name: southdrift-grafana
     ports:
@@ -32,10 +30,8 @@ services:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
     depends_on:
-      - prometheus
+      - southdrift-prometheus
     restart: unless-stopped
-    networks:
-      - default
 
 volumes:
   prometheus-data:
