@@ -21,65 +21,66 @@ Start http://localhost:8233
 
 This folder contains the shared Temporal infrastructure used by all Temporal-based services:
 
+- **Temporal PostgreSQL**: Dedicated database for Temporal state (port 5433)
 - **Temporal Server**: Workflow orchestration engine (port 7233)
 - **Temporal UI**: Web interface for monitoring workflows (port 8233)
+- **Prometheus Metrics**: Temporal server metrics endpoint (port 9090)
 
-Temporal reuses the shared PostgreSQL container from `../../docker-compose.database.yml` instead of running its own database.
+Temporal uses a dedicated PostgreSQL database (`southdrift-temporal-postgres`) separate from the application database.
 
 ## Usage Patterns
 
-### 1. Standalone Infrastructure (this folder)
+### Starting Temporal Infrastructure
 
-Run Temporal infrastructure only, develop workers separately:
+```bash
+# From project root
+docker compose up temporal temporal-ui -d
 
-```powershell
-cd functions/temporal
-docker compose up
+# Or rebuild if config changed
+docker compose up temporal temporal-ui --build -d
 ```
 
-Use this when:
+### Checking Temporal Health
 
-- Running workers directly via `uv run worker.py` (not containerized)
-- Debugging individual workers in VS Code
-- Testing Temporal server configuration
+```bash
+# View temporal logs
+docker compose logs temporal --tail=50
 
-### 2. Full Stack Orchestration
+# Check cluster health
+docker compose exec temporal tctl cluster health
 
-Run Temporal + all workers together:
-
-```powershell
-cd functions
-docker compose up --watch
+# Access UI
+open http://localhost:8233
 ```
 
-Use this for:
+### Prometheus Metrics
 
-- End-to-end integration testing
-- Simulating production-like environment
-- Testing inter-service communication
+Temporal exposes metrics on port 9090:
 
-### 3. Service Isolation
+```bash
+# View raw metrics
+curl http://localhost:9090/metrics
 
-Run Temporal + specific worker:
-
-```powershell
-cd functions/extract-sq-ft
-docker compose up --watch
+# Metrics are automatically scraped by Prometheus
+# View in Prometheus UI: http://localhost:9090
+# View in Grafana: http://localhost:3001
 ```
 
-Use this for:
+Metrics include:
 
-- Focused service development
-- Quick iteration on single service
-- Service-specific testing
+- Workflow execution counts and durations
+- Task queue depths and processing rates
+- Service health and resource usage
+- Database connection pool stats
 
-## Accessing Services
+## Environment Configuration
 
-| Service | URL | Credentials |
-|---------|-----|-------------|
-| Temporal UI | <http://localhost:8233> | None |
-| Temporal gRPC | localhost:7233 | None |
-| PostgreSQL | localhost:5432 | `southdrift` / `dev_password_change_in_prod` |
+| Service             | URL                             | Credentials                                         |
+| ------------------- | ------------------------------- | --------------------------------------------------- |
+| Temporal UI         | <http://localhost:8233>         | None                                                |
+| Temporal gRPC       | localhost:7233                  | None                                                |
+| Temporal Metrics    | <http://localhost:9090/metrics> | None                                                |
+| Temporal PostgreSQL | localhost:5433                  | `temporal` / `temporal_dev_password_change_in_prod` |
 
 ## Configuration
 
@@ -102,8 +103,6 @@ Workers connect to Temporal server at `temporal:7233` (Docker network) or `local
 ```yaml
 environment:
   - TEMPORAL_ADDRESS=temporal:7233
-networks:
-  - temporal-network
 ```
 
 **Local Python Worker**:
