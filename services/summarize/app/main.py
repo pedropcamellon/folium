@@ -3,19 +3,20 @@
 import logging
 import traceback
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.models import (
+    ErrorResponse,
+    HealthResponse,
+    StructuredSummary,
     SummarizeRequest,
     SummarizeResponse,
-    HealthResponse,
-    ErrorResponse,
-    StructuredSummary,
 )
 from app.providers import get_summarization_provider
+from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
 # Configure logging
 logging.basicConfig(
@@ -208,6 +209,12 @@ async def root():
         "provider": settings.summarization_provider,
         "endpoints": {"summarize": "POST /summarize", "health": "GET /health"},
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 if __name__ == "__main__":
