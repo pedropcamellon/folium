@@ -7,6 +7,7 @@ include:
   - services/transcribe/docker-compose.yml
   - services/summarize/docker-compose.yml
   - services/voice_note_workflow/docker-compose.service.yml
+  - services/observability/docker-compose.observability.yml
 
 services:
   backend:
