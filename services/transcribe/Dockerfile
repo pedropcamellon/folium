@@ -4,7 +4,7 @@
 ARG PROVIDER=whisper
 
 # ============== Base Stage ==============
-FROM python:3.11-slim as base
+FROM python:3.11.15-slim as base
 
 WORKDIR /app
 
