@@ -5,7 +5,13 @@ services:
       dockerfile: Dockerfile
     container_name: southdrift-voice-note-worker
     depends_on:
+      backend:
+        condition: service_healthy
+      summarize:
+        condition: service_healthy
       temporal:
+        condition: service_healthy
+      transcribe:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
