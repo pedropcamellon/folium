@@ -4,10 +4,8 @@ services:
     container_name: southdrift-postgres
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_USER: southdrift
-      POSTGRES_PASSWORD: dev_password_change_in_prod
-      POSTGRES_DB: southdrift_db
+    env_file:
+      - .env.database
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
