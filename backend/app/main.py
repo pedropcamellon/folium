@@ -2,12 +2,14 @@
 
 import logging
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.endpoints.auth import auth_router, users_router
 from app.api.v1.router import api_router
 from app.config import settings
+from app.core.metrics import PrometheusMiddleware, metrics_endpoint
 
 logger = logging.getLogger(__name__)
 
@@ -20,13 +22,13 @@ async def lifespan(app: FastAPI):
     logger.info("API documentation available at: /docs")
 
     # Initialize database tables
-    from app.core.database import create_db_and_tables, async_session_maker
+    from app.core.database import async_session_maker, create_db_and_tables
 
     await create_db_and_tables()
 
     # Seed test data
     try:
-        from app.seed import seed_users, seed_patients, seed_interactions, seed_documents
+        from app.seed import seed_documents, seed_interactions, seed_patients, seed_users
 
         async with async_session_maker() as session:
             await seed_users(session)
@@ -88,6 +90,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Prometheus metrics middleware
+app.add_middleware(PrometheusMiddleware)
+
 # Include API router with v1 prefix
 app.include_router(api_router, prefix="/api/v1")
 
@@ -100,3 +105,9 @@ app.include_router(users_router, prefix="/users", tags=["users"])
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "version": settings.VERSION, "app": settings.APP_NAME}
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return metrics_endpoint()

@@ -1,19 +1,20 @@
 """FastAPI application for audio transcription microservice"""
 
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
 import logging
+from contextlib import asynccontextmanager
 
+from fastapi import FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+from app.config import settings
 from app.models import (
-    TranscriptionRequest,
-    TranscriptionResponse,
     ErrorResponse,
     HealthResponse,
+    TranscriptionRequest,
+    TranscriptionResponse,
 )
 from app.providers import get_transcription_provider
-from app.config import settings
-
 
 # Configure logging
 logging.basicConfig(
@@ -124,3 +125,9 @@ async def root():
         "version": "1.0.0",
         "docs": "/docs",
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus metrics endpoint"""
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
