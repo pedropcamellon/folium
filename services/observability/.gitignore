@@ -1,0 +1,6 @@
+# Ignore Prometheus and Grafana runtime data
+prometheus-data/
+grafana-data/
+
+# Ignore generated dashboard snapshots
+*.snapshot.json
