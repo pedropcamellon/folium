@@ -35,6 +35,7 @@
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
 - No emojis: Never use emojis in code generation (comments, strings, logs, or documentation). Use clear descriptive text instead.
 - Assistant Responses: Always include datetime footer in ISO 8601 format (YYYY-MM-DD HH:MM)
+- Prefer PS instead bash for CLI commands.
 
 ## Input Sanitization
 
@@ -50,4 +51,5 @@
 - Type Safety: Shared types in `frontend/types/`. Always align frontend models with backend API responses.
 
 ---
+
 For more, see `README.md` in the repo root and `frontend/README.md` for dev setup.
