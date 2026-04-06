@@ -20,6 +20,7 @@ dependencies = [
     "prometheus-client>=0.21.0",
     "python-dotenv>=1.0.1",
     "python-jose[cryptography]>=3.3.0",
+    "python-json-logger>=2.0.7",
     "python-multipart>=0.0.12",
     "sqlalchemy>=2.0.0",
     "temporalio>=1.8.0",

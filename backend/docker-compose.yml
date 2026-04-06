@@ -1,5 +1,6 @@
 services:
-  backend:
+  southdrift-backend:
+    container_name: southdrift-backend
     build:
       context: .
       dockerfile: Dockerfile
@@ -7,9 +8,9 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      postgres:
+      southdrift-postgres:
         condition: service_healthy
-      minio:
+      southdrift-minio:
         condition: service_healthy
     env_file:
       - .env
@@ -19,21 +20,21 @@ services:
       - RELOAD=true
 
       # Database configuration
-      - DATABASE_URL=postgresql+asyncpg://southdrift:dev_password_change_in_prod@postgres:5432/southdrift_db
+      - DATABASE_URL=postgresql+asyncpg://southdrift:dev_password_change_in_prod@southdrift-postgres:5432/southdrift_db
 
       # Storage configuration (MinIO)
-      - STORAGE_ENDPOINT=http://minio:9000
+      - STORAGE_ENDPOINT=http://southdrift-minio:9000
       - STORAGE_ACCESS_KEY=minioadmin
       - STORAGE_SECRET_KEY=minioadmin
       - STORAGE_BUCKET=southdrift-dev
       - STORAGE_REGION=us-east-1
 
       # Microservices URLs
-      - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
-      - SUMMARIZATION_SERVICE_URL=http://summarize:8002
+      - TRANSCRIPTION_SERVICE_URL=http://southdrift-transcribe:8001
+      - SUMMARIZATION_SERVICE_URL=http://southdrift-summarize:8002
 
       # Temporal
-      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_ADDRESS=southdrift-temporal:7233
       - TEMPORAL_NAMESPACE=default
     volumes:
       - backend_cache:/root/.cache
