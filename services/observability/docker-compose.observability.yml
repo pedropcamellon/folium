@@ -38,7 +38,7 @@ services:
     develop:
       watch:
         - action: restart
-          path: ./provisioning/dashboards/*.json
+          path: ./provisioning/dashboards
 
   southdrift-loki:
     image: grafana/loki:3.7.1
