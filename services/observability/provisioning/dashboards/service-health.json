@@ -68,7 +68,7 @@
         "x": 0,
         "y": 0
       },
-      "id": 4,
+      "id": 6,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -189,7 +189,7 @@
         ]
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 0,
         "y": 3
@@ -215,11 +215,18 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "editorMode": "builder",
-          "expr": "workflow_success{taskqueue=\"temporal_sys_history_scanner_taskqueue_0\"}",
-          "legendFormat": "{{__name__}}",
-          "range": true,
+          "expr": "rate(temporal_workflow_completed_total{job=\"temporal\"}[5m])",
+          "legendFormat": "Successful - {{workflow_type}}",
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "rate(temporal_workflow_failed_total{job=\"temporal\"}[5m])",
+          "legendFormat": "Failed - {{workflow_type}}",
+          "refId": "B"
         }
       ],
       "title": "Temporal Workflow Success Rate",
@@ -288,7 +295,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 7,
         "w": 12,
         "x": 12,
         "y": 3
@@ -384,7 +391,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 10
       },
       "id": 1,
       "options": {
@@ -477,7 +484,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 10
       },
       "id": 2,
       "options": {
@@ -523,7 +530,7 @@
   "timepicker": {},
   "timezone": "browser",
   "title": "SouthDrift Service Health",
-  "uid": "adhb5f7",
-  "version": 5,
+  "uid": "a2a7a749-1497-4f04-bb3c-fbdfceb4ee8a",
+  "version": 4,
   "weekStart": ""
 }
