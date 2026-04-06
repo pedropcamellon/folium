@@ -34,7 +34,7 @@ services:
       - SUMMARIZATION_SERVICE_URL=http://southdrift-summarize:8002
 
       # Temporal
-      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_ADDRESS=southdrift-temporal:7233
       - TEMPORAL_NAMESPACE=default
     volumes:
       - backend_cache:/root/.cache
