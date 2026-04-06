@@ -7,6 +7,8 @@ services:
       - "9001:9001" # Web Console
     env_file:
       - .env.storage
+    environment:
+      - MINIO_PROMETHEUS_AUTH_TYPE=public
     command: server /data --console-address ":9001"
     volumes:
       - minio_data:/data
