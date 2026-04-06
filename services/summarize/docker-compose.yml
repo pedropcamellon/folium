@@ -1,11 +1,11 @@
 services:
-  summarize:
+  southdrift-summarize:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         PROVIDER: local # local, openai, bedrock, azure
-    container_name: south-drift-summarize
+    container_name: southdrift-summarize
     env_file:
       - .env
     ports:

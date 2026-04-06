@@ -1,5 +1,5 @@
 services:
-  minio:
+  southdrift-minio:
     image: minio/minio:latest
     container_name: southdrift-minio
     ports:
