@@ -34,8 +34,8 @@ scrape_configs:
   #   static_configs:
   #     - targets: ['postgres-exporter:9187']
 
-  # MinIO Exporter (optional, if added later)
-  # - job_name: 'minio'
-  #   static_configs:
-  #     - targets: ['minio:9000']
-  #   metrics_path: '/minio/v2/metrics/cluster'
+  # MinIO Metrics
+  - job_name: "minio"
+    static_configs:
+      - targets: ["minio:9000"]
+    metrics_path: "/minio/v2/metrics/cluster"

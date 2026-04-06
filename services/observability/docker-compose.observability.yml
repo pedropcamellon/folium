@@ -30,7 +30,8 @@ services:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
     depends_on:
-      - southdrift-prometheus
+      southdrift-prometheus:
+        condition: service_started
     restart: unless-stopped
 
 volumes:
