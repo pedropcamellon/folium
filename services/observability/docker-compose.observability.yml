@@ -1,6 +1,6 @@
 services:
   southdrift-prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.10.0
     container_name: southdrift-prometheus
     ports:
       - "9090:9090"
@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
 
   southdrift-grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:12.4.2
     container_name: southdrift-grafana
     ports:
       - "3001:3000"
