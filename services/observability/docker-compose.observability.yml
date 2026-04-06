@@ -33,6 +33,10 @@ services:
       southdrift-prometheus:
         condition: service_started
     restart: unless-stopped
+    develop:
+      watch:
+        - action: restart
+          path: ./provisioning/dashboards/*.json
 
 volumes:
   prometheus-data:
