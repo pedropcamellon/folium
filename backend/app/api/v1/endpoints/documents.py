@@ -1,26 +1,28 @@
 """Clinical document endpoints - API route handlers"""
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File, Form, HTTPException
-from fastapi.responses import RedirectResponse
 import uuid
-import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import RedirectResponse
+
+from app.core.logging import setup_structured_logging
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
-from app.models.document import (
-    DocumentCreate,
-    DocumentUpdate,
-    DocumentResponse,
-    ClinicalDocumentType,
-)
-from app.services.document_service import DocumentService
 from app.dependencies import get_document_service, get_storage_provider
+from app.models.document import (
+    ClinicalDocumentType,
+    DocumentCreate,
+    DocumentResponse,
+    DocumentUpdate,
+)
+from app.models.user import User
+from app.services.document_service import DocumentService
 from app.services.storage.base import ObjectStorageProvider
 
 router = APIRouter(prefix="/clinical-documents")
-logger = logging.getLogger(__name__)
+logger = setup_structured_logging("backend")
 
 
 @router.get("/", response_model=list[DocumentResponse])
@@ -28,10 +30,19 @@ async def list_documents(
     patientId: str | None = Query(None, description="Filter by patient ID"),
     types: str | None = Query(None, description="Comma-separated document types to filter"),
     interactionId: str | None = Query(None, description="Filter by interaction ID"),
-    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
+    current_user: User = Depends(require_permission(Permission.DOCUMENTS_READ)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Get all documents with optional filters"""
+    logger.audit(
+        action="documents_list_accessed",
+        user_id=str(current_user.id),
+        patient_id=patientId if patientId else None,
+        interaction_id=interactionId if interactionId else None,
+        method="GET",
+        endpoint="/api/v1/clinical-documents",
+    )
+
     if interactionId:
         return await service.get_by_interaction_id(interactionId)
 
@@ -45,21 +56,41 @@ async def list_documents(
 @router.get("/{document_id}", response_model=DocumentResponse)
 async def get_document(
     document_id: str,
-    _: object = Depends(require_permission(Permission.DOCUMENTS_READ)),
+    current_user: User = Depends(require_permission(Permission.DOCUMENTS_READ)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Get document by ID"""
-    return await service.get_by_id(document_id)
+    document = await service.get_by_id(document_id)
+    logger.audit(
+        action="document_accessed",
+        user_id=str(current_user.id),
+        patient_id=str(document.patientId),
+        document_id=document_id,
+        document_type=document.type,
+        method="GET",
+        endpoint=f"/api/v1/clinical-documents/{document_id}",
+    )
+    return document
 
 
 @router.post("/", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
 async def create_document(
     document: DocumentCreate,
-    _: object = Depends(require_permission(Permission.DOCUMENTS_CREATE)),
+    current_user: User = Depends(require_permission(Permission.DOCUMENTS_CREATE)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Create new document"""
-    return await service.create(document)
+    result = await service.create(document)
+    logger.audit(
+        action="document_created",
+        user_id=str(current_user.id),
+        patient_id=str(result.patientId),
+        document_id=str(result.id),
+        document_type=result.type,
+        method="POST",
+        endpoint="/api/v1/clinical-documents",
+    )
+    return result
 
 
 @router.patch("/{document_id}", response_model=DocumentResponse)
@@ -76,10 +107,20 @@ async def update_document(
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_document(
     document_id: str,
-    _: object = Depends(require_permission(Permission.DOCUMENTS_DELETE)),
+    current_user: User = Depends(require_permission(Permission.DOCUMENTS_DELETE)),
     service: DocumentService = Depends(get_document_service),
 ):
     """Delete document"""
+    document = await service.get_by_id(document_id)
+    logger.audit(
+        action="document_deleted",
+        user_id=str(current_user.id),
+        patient_id=str(document.patientId),
+        document_id=document_id,
+        document_type=document.type,
+        method="DELETE",
+        endpoint=f"/api/v1/clinical-documents/{document_id}",
+    )
     await service.delete(document_id)
 
 
