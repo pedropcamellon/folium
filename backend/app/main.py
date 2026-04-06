@@ -1,6 +1,5 @@
 """FastAPI application entry point"""
 
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,9 +8,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.endpoints.auth import auth_router, users_router
 from app.api.v1.router import api_router
 from app.config import settings
+from app.core.logging import setup_structured_logging
 from app.core.metrics import PrometheusMiddleware, metrics_endpoint
+from app.core.middleware import CorrelationMiddleware
 
-logger = logging.getLogger(__name__)
+# Set up structured JSON logging with audit support
+logger = setup_structured_logging("backend")
 
 
 @asynccontextmanager
@@ -89,6 +91,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Correlation ID middleware for request tracing
+app.add_middleware(CorrelationMiddleware)
 
 # Prometheus metrics middleware
 app.add_middleware(PrometheusMiddleware)
