@@ -1,5 +1,5 @@
 services:
-  postgres:
+  southdrift-postgres:
     image: postgres:16-alpine
     container_name: southdrift-postgres
     ports:

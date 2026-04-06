@@ -1,15 +1,15 @@
 services:
   # Self-hosted Whisper (HIPAA compliant, default)
-  transcribe:
+  southdrift-transcribe:
     build:
       context: .
       args:
-        PROVIDER: whisper  # Change to: aws, azure
+        PROVIDER: whisper # Change to: aws, azure
     ports:
       - "8001:8001"
     environment:
       # Provider selection
-      - TRANSCRIPTION_PROVIDER=whisper  # Must match build arg
+      - TRANSCRIPTION_PROVIDER=whisper # Must match build arg
 
       # Whisper settings (if provider=whisper)
       - WHISPER_MODEL_SIZE=base
@@ -28,7 +28,7 @@ services:
       # Service settings
       - PORT=8001
       - LOG_LEVEL=info
-      - HF_HOME=/app/.cache/huggingface  # Use cached models from image
+      - HF_HOME=/app/.cache/huggingface # Use cached models from image
     volumes:
       # Optional: Persist models outside container (for model updates without rebuild)
       - whisper-models:/app/.cache/huggingface
@@ -52,9 +52,6 @@ services:
           "--tries=1",
           "--spider",
           "http://localhost:8001/health",
-          "||",
-          "exit",
-          "1",
         ]
       interval: 30s
       timeout: 10s

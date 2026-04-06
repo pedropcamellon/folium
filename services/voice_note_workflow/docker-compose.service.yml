@@ -1,26 +1,26 @@
 services:
-  voice-note-worker:
+  southdrift-voicenotes-worker:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: southdrift-voice-note-worker
+    container_name: southdrift-voicenotes-worker
     depends_on:
-      backend:
+      southdrift-backend:
         condition: service_healthy
-      summarize:
+      southdrift-summarize:
         condition: service_healthy
-      temporal:
+      southdrift-temporal:
         condition: service_healthy
-      transcribe:
+      southdrift-transcribe:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_ADDRESS=southdrift-temporal:7233
       - TEMPORAL_NAMESPACE=default
       - VOICE_NOTE_TASK_QUEUE=voice-notes-queue
-      - BACKEND_API_URL=http://backend:8000
-      - TRANSCRIPTION_SERVICE_URL=http://transcribe:8001
-      - SUMMARIZATION_SERVICE_URL=http://summarize:8002
+      - BACKEND_API_URL=http://southdrift-backend:8000
+      - TRANSCRIPTION_SERVICE_URL=http://southdrift-transcribe:8001
+      - SUMMARIZATION_SERVICE_URL=http://southdrift-summarize:8002
       - LOG_LEVEL=INFO
     restart: unless-stopped
     develop:

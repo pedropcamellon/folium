@@ -1,24 +1,24 @@
 """Patient interaction endpoints - API route handlers"""
 
-from fastapi import APIRouter, Depends, Query, status, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 
+from app.core.logging import setup_structured_logging
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
+from app.dependencies import get_interaction_service, get_voice_note_service
 from app.models.interaction import (
     InteractionCreate,
-    InteractionUpdate,
     InteractionResponse,
+    InteractionUpdate,
     NoteUpdateRequest,
     SummaryUpdateRequest,
 )
+from app.models.user import User
 from app.services.interaction_service import InteractionService
 from app.services.voice_note_service import VoiceNoteService
-from app.dependencies import get_interaction_service, get_voice_note_service
 
-import logging
-
-logger = logging.getLogger(__name__)
+logger = setup_structured_logging("backend")
 
 router = APIRouter(prefix="/interactions")
 
@@ -26,11 +26,18 @@ router = APIRouter(prefix="/interactions")
 @router.get("/", response_model=list[InteractionResponse])
 async def list_interactions(
     patientId: str | None = Query(None, description="Filter by patient ID"),
-    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_READ)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Get all interactions, optionally filtered by patient ID"""
     logger.info(f"[API] list_interactions called with patientId={patientId}")
+    logger.audit(
+        action="interactions_list_accessed",
+        user_id=str(current_user.id),
+        patient_id=patientId if patientId else None,
+        method="GET",
+        endpoint="/api/v1/interactions",
+    )
     if patientId:
         logger.info(f"[API] Calling service.get_by_patient_id({patientId})")
         result = await service.get_by_patient_id(patientId)
@@ -43,21 +50,39 @@ async def list_interactions(
 @router.get("/{interaction_id}", response_model=InteractionResponse)
 async def get_interaction(
     interaction_id: str,
-    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
-    service: InteractionService = Depends(get_interaction_service)
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_READ)),
+    service: InteractionService = Depends(get_interaction_service),
 ):
     """Get interaction by ID"""
-    return await service.get_by_id(interaction_id)
+    interaction = await service.get_by_id(interaction_id)
+    logger.audit(
+        action="interaction_accessed",
+        user_id=str(current_user.id),
+        patient_id=str(interaction.patientId),
+        interaction_id=interaction_id,
+        method="GET",
+        endpoint=f"/api/v1/interactions/{interaction_id}",
+    )
+    return interaction
 
 
 @router.post("/", response_model=InteractionResponse, status_code=status.HTTP_201_CREATED)
 async def create_interaction(
     interaction: InteractionCreate,
-    _: object = Depends(require_permission(Permission.INTERACTIONS_CREATE)),
-    service: InteractionService = Depends(get_interaction_service)
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_CREATE)),
+    service: InteractionService = Depends(get_interaction_service),
 ):
     """Create new interaction"""
-    return await service.create(interaction)
+    result = await service.create(interaction)
+    logger.audit(
+        action="interaction_created",
+        user_id=str(current_user.id),
+        patient_id=str(result.patientId),
+        interaction_id=str(result.id),
+        method="POST",
+        endpoint="/api/v1/interactions",
+    )
+    return result
 
 
 @router.put("/{interaction_id}", response_model=InteractionResponse)
@@ -75,11 +100,20 @@ async def update_interaction(
 async def update_interaction_note(
     interaction_id: str,
     note_data: NoteUpdateRequest,
-    _: object = Depends(require_permission(Permission.INTERACTIONS_UPDATE)),
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_UPDATE)),
     service: InteractionService = Depends(get_interaction_service),
 ):
     """Update just the note field of an interaction"""
-    return await service.update_note(interaction_id, note_data)
+    result = await service.update_note(interaction_id, note_data)
+    logger.audit(
+        action="interaction_note_updated",
+        user_id=str(current_user.id),
+        patient_id=str(result.patientId),
+        interaction_id=interaction_id,
+        method="PATCH",
+        endpoint=f"/api/v1/interactions/{interaction_id}/note",
+    )
+    return result
 
 
 @router.patch("/{interaction_id}/summary", response_model=InteractionResponse)
@@ -96,10 +130,19 @@ async def update_interaction_summary(
 @router.delete("/{interaction_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_interaction(
     interaction_id: str,
-    _: object = Depends(require_permission(Permission.INTERACTIONS_DELETE)),
-    service: InteractionService = Depends(get_interaction_service)
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_DELETE)),
+    service: InteractionService = Depends(get_interaction_service),
 ):
     """Delete interaction"""
+    interaction = await service.get_by_id(interaction_id)
+    logger.audit(
+        action="interaction_deleted",
+        user_id=str(current_user.id),
+        patient_id=str(interaction.patientId),
+        interaction_id=interaction_id,
+        method="DELETE",
+        endpoint=f"/api/v1/interactions/{interaction_id}",
+    )
     await service.delete(interaction_id)
 
 
@@ -107,14 +150,30 @@ async def delete_interaction(
 async def upload_audio(
     interaction_id: str,
     audio: UploadFile = File(...),
-    _: object = Depends(require_permission(Permission.VOICE_RECORD)),
+    current_user: User = Depends(require_permission(Permission.VOICE_RECORD)),
     voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
+    interaction_service: InteractionService = Depends(get_interaction_service),
 ):
     """Upload audio file to object storage and start the voice note workflow."""
     logger.info(f"[UPLOAD] POST /audio called for {interaction_id}")
 
+    # Get interaction to log patient_id
+    interaction = await interaction_service.get_by_id(interaction_id)
+
     audio_content = await audio.read()
     logger.info(f"[UPLOAD] Read {len(audio_content)} bytes from {audio.filename}")
+
+    logger.audit(
+        action="voice_note_uploaded",
+        user_id=str(current_user.id),
+        patient_id=str(interaction.patientId),
+        interaction_id=interaction_id,
+        audio_filename=audio.filename,
+        file_size=len(audio_content),
+        method="POST",
+        endpoint=f"/api/v1/interactions/{interaction_id}/audio",
+    )
+
     try:
         return await voice_note_service.upload_audio(
             interaction_id=interaction_id,
@@ -132,11 +191,25 @@ async def upload_audio(
 @router.get("/{interaction_id}/audio")
 async def get_audio(
     interaction_id: str,
-    _: object = Depends(require_permission(Permission.VOICE_REVIEW)),
+    current_user: User = Depends(require_permission(Permission.VOICE_REVIEW)),
     voice_note_service: VoiceNoteService = Depends(get_voice_note_service),
+    interaction_service: InteractionService = Depends(get_interaction_service),
 ):
     """Download audio file from object storage"""
     logger.info(f"[GET] GET /audio called for {interaction_id}")
+
+    # Get interaction to log patient_id
+    interaction = await interaction_service.get_by_id(interaction_id)
+
+    logger.audit(
+        action="voice_note_accessed",
+        user_id=str(current_user.id),
+        patient_id=str(interaction.patientId),
+        interaction_id=interaction_id,
+        method="GET",
+        endpoint=f"/api/v1/interactions/{interaction_id}/audio",
+    )
+
     try:
         audio_download = await voice_note_service.get_audio_download(interaction_id)
     except ValueError as exc:
@@ -148,9 +221,7 @@ async def get_audio(
     return Response(
         content=audio_download["content"],
         media_type=audio_download["mediaType"],
-        headers={
-            "Content-Disposition": f'inline; filename="{audio_download["filename"]}"'
-        },
+        headers={"Content-Disposition": f'inline; filename="{audio_download["filename"]}"'},
     )
 
 
