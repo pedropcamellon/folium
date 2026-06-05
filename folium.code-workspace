@@ -1,7 +1,7 @@
 {
   "folders": [
     {
-      "name": "South Drift",
+      "name": "Folium",
       "path": ".",
     },
   ],
@@ -26,13 +26,10 @@
     "recommendations": [
       // Python (for transcribe service)
       "ms-python.python",
-      "ms-python.vscode-pylance",
       "charliermarsh.ruff",
       // Python (for backend FastAPI)
       "ms-python.python",
       "ms-python.vscode-pylance",
-      "charliermarsh.ruff",
-      // JavaScript/TypeScript (for frontend)
       "dbaeumer.vscode-eslint",
       "esbenp.prettier-vscode",
       "bradlc.vscode-tailwindcss",
