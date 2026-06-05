@@ -1,20 +1,14 @@
-# Copilot Instructions for SouthDrift
+# Copilot Instructions — Folium
 
-## Documentation Standards
+Personal project. Use your personal GitHub account for all git/remote ops, never a work account.
 
-- SPEC.md files: Keep technical descriptions concise and high-level. Include short code examples (5-10 lines) only to illustrate patterns. Do NOT include full implementations, complete functions, or extensive code blocks in SPEC files.
-- README.md files: Focus on setup, architecture overview, and developer workflows.
-- Code should live in actual source files, not documentation.
+## Architecture
 
-## Project Architecture
-
-- API Pattern: Frontend calls FastAPI directly via service layer
-- Backend: FastAPI (Python 3.11+), async patterns, SQLAlchemy with async PostgreSQL, Alembic for migrations, repository pattern for data access
-- Data Flow: All dummy/mock data lives in the backend. The frontend fetches via service modules that call FastAPI endpoints.
-- Frontend: Next.js App Router, TypeScript, Tailwind, shadcn/ui, SWR for data fetching, Recharts for charts, Framer Motion for animation.
-- Monorepo: Contains `backend/` (FastAPI), `frontend/` (Next.js + shadcn/ui)
-- AI Services: Separate microservices for voice transcription and medical imaging analysis, orchestrated by the backend.
-- Deployment: Docker Compose for local dev, GitHub Actions for CI/CD, Terraform for IaC, multi-cloud support (Azure + AWS)
+- Monorepo: `backend/` (FastAPI, Python 3.11+), `frontend/` (Next.js App Router + shadcn/ui), AI microservices (voice transcription, medical imaging) orchestrated by backend.
+- Backend: async SQLAlchemy + async PostgreSQL, Alembic migrations, repository pattern, Pydantic validation.
+- Frontend: TypeScript, Tailwind, shadcn/ui, SWR, Recharts, Framer Motion. Calls FastAPI via service layer; never hardcode API URLs.
+- Mock data lives in backend; frontend fetches via service modules.
+- Deploy: Docker Compose (local), GitHub Actions (CI/CD), Terraform (IaC), multi-cloud (Azure + AWS).
 
 ## Rules
 
@@ -39,17 +33,18 @@
 
 ## Input Sanitization
 
-- **Repository layer**: Sanitize at repository as defense-in-depth. Strip whitespace, validate UUIDs (try/except), normalize "null" → None, isinstance() checks for datetime/UUID/JSON, log warnings when catching Pydantic misses
-- **Datetime handling**: SQLAlchemy expects datetime objects, not ISO strings. Pydantic handles conversion; service layer should NOT call .isoformat()
-- **Constraints**: Max lengths in Pydantic models (not repos). SQL injection prevented by ORM parameterized queries. Frontend handles XSS (backend stores raw)
+- Repo layer = defense-in-depth: strip whitespace, validate UUIDs, normalize "null"→None, isinstance checks, log Pydantic misses.
+- Datetime: pass datetime objects (Pydantic converts); service layer must not `.isoformat()`.
+- Max lengths in Pydantic, not repos. ORM params stop SQLi; frontend stops XSS (backend stores raw).
 
-## UI/UX Rules
+## UI/UX
 
-- Error Handling: UI components must gracefully handle backend/API downtime (show user-friendly errors, never crash on null/invalid data).
-- UI: Use shadcn/ui primitives for all new components. Place dashboard widgets in `frontend/src/components/dashboard/widgets/`.
-- Separate UI (presentational) from logic (hooks/services) with orchestrator components
-- Type Safety: Shared types in `frontend/types/`. Always align frontend models with backend API responses.
+- shadcn/ui primitives for new components; dashboard widgets in `frontend/src/components/dashboard/widgets/`.
+- Gracefully handle API downtime (no crash on null/invalid). Separate presentational UI from logic. Shared types in `frontend/types/`.
 
----
+## GitHub Workflow
 
-For more, see `README.md` in the repo root and `frontend/README.md` for dev setup.
+- Prefer `gh` CLI / REST; MCP server only as fallback. Command syntax in the `github-workflow` skill.
+- Branches: `feat/<slug>`, `chore/<slug>`, `fix/<slug>`. Rename = create new ref + delete old.
+- Issues: shipped work = closed issue (`-r completed`); in-flight = open issue referencing its `feat/*` branch. Mirror each to `tasks/<active|staging|completed>/<issue>-<slug>.md` (`tasks/_TEMPLATE.md`); move between folders as state changes.
+- Labels/milestones via `gh` (not MCP); seed set in `tasks/PROJECT-BOARD.md`.
