@@ -51,5 +51,15 @@ Thumbs.db
 
 .github/copilot-plan.md
 
+# Local working memory (task files); keep templates/docs + folder layout tracked
+tasks/**
+!tasks/README.md
+!tasks/_TEMPLATE.md
+!tasks/PROJECT-BOARD.md
+!tasks/active/
+!tasks/completed/
+!tasks/staging/
+!tasks/*/.gitkeep
+
 # Models
 *.gguf
