@@ -29,7 +29,6 @@
       "charliermarsh.ruff",
       // Python (for backend FastAPI)
       "ms-python.python",
-      "ms-python.vscode-pylance",
       "dbaeumer.vscode-eslint",
       "esbenp.prettier-vscode",
       "bradlc.vscode-tailwindcss",
