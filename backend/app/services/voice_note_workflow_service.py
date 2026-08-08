@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from dataclasses import asdict, is_dataclass
+import logging
+from dataclasses import asdict, dataclass, is_dataclass
 from datetime import timedelta
-
 from uuid import uuid4
 
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -88,6 +89,16 @@ class VoiceNoteWorkflowService:
             "runId": handle.result_run_id or handle.first_execution_run_id or handle.run_id or "",
         }
 
+    async def cancel_workflow(self, workflow_id: str) -> None:
+        """Cancel a running workflow. Logs and swallows errors if already finished."""
+        try:
+            client = await self._get_client()
+            handle = client.get_workflow_handle(workflow_id)
+            await handle.cancel()
+            logger.info("Cancelled workflow %s", workflow_id)
+        except Exception as exc:
+            logger.warning("Could not cancel workflow %s: %s", workflow_id, exc)
+
     async def get_voice_note_workflow_state(
         self,
         workflow_id: str,
@@ -107,7 +118,11 @@ class VoiceNoteWorkflowService:
                 if status_value is not None:
                     result["status"] = getattr(status_value, "value", status_value)
             else:
-                result = workflow_result if isinstance(workflow_result, dict) else {"value": workflow_result}
+                result = (
+                    workflow_result
+                    if isinstance(workflow_result, dict)
+                    else {"value": workflow_result}
+                )
         elif description.status in {
             WorkflowExecutionStatus.FAILED,
             WorkflowExecutionStatus.CANCELED,

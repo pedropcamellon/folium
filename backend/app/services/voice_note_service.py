@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from uuid import uuid4
+
+logger = logging.getLogger(__name__)
 
 from app.models.interaction import InteractionUpdate
 from app.services.interaction_service import InteractionService
@@ -32,6 +35,13 @@ class VoiceNoteService:
         audio_content: bytes,
     ) -> dict:
         interaction = await self.interaction_service.get_by_id(interaction_id)
+
+        # Delete the previous audio file from storage to avoid orphaned objects.
+        old_storage_key = ((interaction.metadata or {}).get("audio") or {}).get("storageKey")
+        if old_storage_key:
+            logger.info("Deleting previous audio object %s before re-upload", old_storage_key)
+            await self.storage_provider.delete(old_storage_key)
+
         storage_key = f"audio/{interaction_id}/{uuid4()}_{filename}"
         storage_url = await self.storage_provider.upload(
             key=storage_key,
@@ -100,6 +110,12 @@ class VoiceNoteService:
             internal=True,
         )
 
+        # Cancel any in-flight workflow so it cannot race and overwrite the new result.
+        old_workflow_id = (audio_data.get("voiceNoteWorkflow") or {}).get("workflowId")
+        if old_workflow_id:
+            logger.info("Cancelling previous workflow %s before starting new one", old_workflow_id)
+            await self.workflow_service.cancel_workflow(old_workflow_id)
+
         workflow_execution = await self.workflow_service.start_voice_note_workflow(
             interaction_id=interaction_id,
             patient_id=interaction.patientId,
@@ -142,7 +158,9 @@ class VoiceNoteService:
                 "interaction": interaction.model_dump(),
             }
 
-        workflow_state = await self.workflow_service.get_voice_note_workflow_state(workflow_id, run_id)
+        workflow_state = await self.workflow_service.get_voice_note_workflow_state(
+            workflow_id, run_id
+        )
         temporal_status = workflow_state["status"]
         status_value = "processing"
         error_message = workflow_state.get("errorMessage")
