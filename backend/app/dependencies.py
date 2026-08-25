@@ -15,7 +15,7 @@ from app.services.storage.factory import get_storage
 from app.services.summarization_service import SummarizationService
 from app.services.transcription_service import TranscriptionService
 from app.services.voice_note_service import VoiceNoteService
-from app.services.voicenotes_service import VoiceNotesService
+from app.services.voicenotes import VoiceNotesService
 
 # Singletons (for services without database dependencies)
 _transcription_service = None

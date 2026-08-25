@@ -8,7 +8,7 @@ from uuid import uuid4
 from app.models.interaction import InteractionUpdate
 from app.services.interaction_service import InteractionService
 from app.services.storage.base import ObjectStorageProvider
-from app.services.voicenotes_service import VoiceNotesService
+from app.services.voicenotes import VoiceNotesService
 
 
 class VoiceNoteService:
