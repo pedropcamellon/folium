@@ -1,8 +1,9 @@
 services:
   folium-summarize:
+    image: folium-summarize:dev
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: services/summarize/Dockerfile
       args:
         PROVIDER: local # local, openai, bedrock, azure
     container_name: folium-summarize
@@ -14,49 +15,24 @@ services:
     ports:
       - "8002:8002"
     environment:
-      # Service Configuration
-      - SERVICE_NAME=summarize
-      - SERVICE_PORT=8002
-      - LOG_LEVEL=DEBUG
-
-      # Provider Selection
-      - SUMMARIZATION_PROVIDER=local
-
-      # Local LLM Settings (if using local provider)
-      - LOCAL_MODEL_PATH=/models/model.gguf
-      - LOCAL_MODEL_NAME=mediphi-clinical
-      - LOCAL_N_CTX=8192
-      - LOCAL_N_THREADS=4
-      - LOCAL_TEMPERATURE=0.0
-      - LOCAL_MAX_TOKENS=800
-
-      # OpenAI Settings (if using openai provider)
-      # - OPENAI_API_KEY=${OPENAI_API_KEY}
-      # - OPENAI_MODEL=gpt-4-turbo
-      # - OPENAI_TEMPERATURE=0.3
-      # - OPENAI_MAX_TOKENS=500
-
-      # AWS Bedrock Settings (if using bedrock provider)
-      # Requires: AWS credentials and Bedrock model access
-      # To use: Set PROVIDER=bedrock in build args and uncomment below
-      # - AWS_REGION=us-east-1
-      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      # - AWS_BEDROCK_MODEL=anthropic.claude-3-sonnet-20240229-v1:0
-      # - AWS_BEDROCK_TEMPERATURE=0.3
-      # - AWS_BEDROCK_MAX_TOKENS=500
-
-      # Azure OpenAI Settings (loaded from .env file)
-
-      # CORS Settings
-      - CORS_ORIGINS=["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"]
+      SERVICE_NAME: summarize
+      SERVICE_PORT: "8002"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SUMMARIZATION_PROVIDER: ${SUMMARIZATION_PROVIDER:-local}
+      LOCAL_MODEL_PATH: ${LOCAL_MODEL_PATH:-/models/model.gguf}
+      LOCAL_MODEL_NAME: ${LOCAL_MODEL_NAME:-mediphi-clinical}
+      LOCAL_N_CTX: ${LOCAL_N_CTX:-8192}
+      LOCAL_N_THREADS: ${LOCAL_N_THREADS:-4}
+      LOCAL_TEMPERATURE: ${LOCAL_TEMPERATURE:-0.0}
+      LOCAL_MAX_TOKENS: ${LOCAL_MAX_TOKENS:-800}
+      CORS_ORIGINS: '["http://localhost:3000", "http://localhost:3001", "http://frontend:3000"]'
 
     volumes:
       # Mount local models directory (download GGUF model here)
       - ./models:/models
 
       # Development: Watch mode for hot reload
-      - ./app:/app/app
+      - ./app:/workspace/services/summarize/app
 
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8002/health"]

@@ -2,7 +2,7 @@
 name = "folium"
 version = "1.0.0"
 description = "Healthcare platform backend with AI capabilities"
-requires-python = ">=3.11"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "alembic>=1.18.4",
     "asyncpg>=0.29.0",
@@ -12,6 +12,7 @@ dependencies = [
     "boto3>=1.34.34",
     "fastapi-users[sqlalchemy]>=13.0.0",
     "fastapi>=0.115.0",
+    "folium-core>=0.1.0",
     "httpx>=0.28.1",
     "passlib[bcrypt]>=1.7.4",
     "psycopg2-binary>=2.9.9",
@@ -26,6 +27,9 @@ dependencies = [
     "temporalio[langgraph]>=1.27.0",
     "uvicorn[standard]>=0.32.0",
 ]
+
+[tool.uv.sources]
+folium-core = { workspace = true }
 
 [project.optional-dependencies]
 dev = [

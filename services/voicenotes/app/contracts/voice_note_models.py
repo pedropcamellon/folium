@@ -2,6 +2,18 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from folium.core.models.workflow import AudioReference, VoiceNotesInput
+
+__all__ = [
+    "AudioReference",
+    "SummaryResult",
+    "TranscriptionResult",
+    "VoiceNoteWorkflowInput",
+    "VoiceNoteWorkflowResult",
+    "VoiceNoteWorkflowStatus",
+    "workflow_result_to_payload",
+]
+
 
 class VoiceNoteWorkflowStatus(str, Enum):
     QUEUED = "queued"
@@ -12,20 +24,7 @@ class VoiceNoteWorkflowStatus(str, Enum):
     FAILED = "failed"
 
 
-@dataclass
-class AudioReference:
-    storage_key: str
-    audio_url: str | None = None
-    bucket: str | None = None
-    original_filename: str | None = None
-    content_type: str | None = None
-
-
-@dataclass
-class VoiceNoteWorkflowInput:
-    interaction_id: str
-    patient_id: str
-    audio: AudioReference
+VoiceNoteWorkflowInput = VoiceNotesInput
 
 
 @dataclass

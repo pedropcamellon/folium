@@ -1,16 +1,19 @@
 services:
-  southdrift-postgres:
-    image: postgres:16-alpine
-    container_name: southdrift-postgres
+  folium-postgres:
+    image: postgres:15-alpine
+    container_name: folium-postgres
     ports:
       - "5432:5432"
     env_file:
       - path: .env
         required: false
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-folium}
+      POSTGRES_DB: ${POSTGRES_DB:-folium_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U southdrift -d southdrift_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-folium} -d ${POSTGRES_DB:-folium_db}"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -5,6 +5,8 @@ node_modules
 .env.*
 !.env.example
 !.env.*.example
+!**/.env.example
+!**/.env.*.example
 .env.local
 .env.development.local
 .env.test.local
@@ -51,15 +53,6 @@ Thumbs.db
 .dockerignore
 
 .github/copilot-plan.md
-
-# Local working memory (task files); keep templates/docs + folder layout tracked
-tasks/**
-!tasks/README.md
-!tasks/_TEMPLATE.md
-!tasks/active/
-!tasks/completed/
-!tasks/staging/
-!tasks/*/.gitkeep
 
 # Models
 *.gguf

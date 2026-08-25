@@ -1,9 +1,9 @@
 [project]
 name = "e2e"
 version = "0.1.0"
-description = "Playwright end-to-end checks for SouthDrift role-aware flows"
+description = "Playwright end-to-end checks for Folium role-aware flows"
 readme = "README.md"
-requires-python = "==3.13.3"
+requires-python = ">=3.13,<3.14"
 dependencies = [
 	"playwright==1.53.0",
 ]

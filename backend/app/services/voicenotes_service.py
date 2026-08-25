@@ -3,28 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import asdict, dataclass, is_dataclass
+from dataclasses import asdict, is_dataclass
 from datetime import timedelta
 from uuid import uuid4
 
+from folium.core.models.workflow import AudioReference, VoiceNotesInput
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
 
 from app.config import settings
-
-
-@dataclass
-class AudioReference:
-    storage_key: str
-    audio_url: str
-    original_filename: str | None = None
-    content_type: str | None = None
-
-
-@dataclass
-class VoiceNotesInput:
-    interaction_id: str
-    patient_id: str
-    audio: AudioReference
 
 
 class VoiceNotesService:

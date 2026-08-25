@@ -1,16 +1,18 @@
 services:
-  southdrift-backend:
-    container_name: southdrift-backend
+  folium-backend:
+    image: folium-backend
+    pull_policy: build
+    container_name: folium-backend
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: backend/Dockerfile
       target: development
     ports:
       - "8000:8000"
     depends_on:
-      southdrift-postgres:
+      folium-postgres:
         condition: service_healthy
-      southdrift-minio:
+      folium-minio:
         condition: service_healthy
     env_file:
       - path: ../.env
@@ -18,31 +20,19 @@ services:
       - path: .env
         required: false
     environment:
-      # Development settings
-      - PYTHONUNBUFFERED=1
-      - RELOAD=true
-
-      # Database configuration
-      - DATABASE_URL=postgresql+asyncpg://southdrift:dev_password_change_in_prod@southdrift-postgres:5432/southdrift_db
-
-      # Storage configuration (MinIO)
-      - STORAGE_ENDPOINT=http://southdrift-minio:9000
-      - STORAGE_ACCESS_KEY=minioadmin
-      - STORAGE_SECRET_KEY=minioadmin
-      - STORAGE_BUCKET=southdrift-dev
-      - STORAGE_REGION=us-east-1
-
-      # Microservices URLs
-      - TRANSCRIPTION_SERVICE_URL=http://southdrift-transcribe:8001
-      - SUMMARIZATION_SERVICE_URL=http://southdrift-summarize:8002
-
-      # Temporal
-      - TEMPORAL_ADDRESS=southdrift-temporal:7233
-      - TEMPORAL_NAMESPACE=default
+      PYTHONUNBUFFERED: "1"
+      RELOAD: "true"
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-http://folium-minio:9000}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-folium-dev}
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://folium-transcribe:8001}
+      SUMMARIZATION_SERVICE_URL: ${SUMMARIZATION_SERVICE_URL:-http://folium-summarize:8002}
+      TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
     volumes:
       - backend_cache:/root/.cache
-    working_dir: /app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    working_dir: /workspace/backend
+    command: uv run --frozen --no-sync --package folium uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     healthcheck:
       test:
         [
@@ -59,13 +49,21 @@ services:
       watch:
         - action: sync
           path: ./app
-          target: /app/app
+          target: /workspace/backend/app
           ignore:
             - __pycache__/
             - "*.pyc"
             - .pytest_cache/
         - action: rebuild
-          path: pyproject.toml
+          path: ./pyproject.toml
+        - action: sync
+          path: ../packages/folium-core/src
+          target: /workspace/packages/folium-core/src
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ../packages/folium-core/pyproject.toml
 
 volumes:
   backend_cache:
