@@ -5,6 +5,11 @@ services:
       context: .
       args:
         PROVIDER: whisper # Change to: aws, azure
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     ports:
       - "8001:8001"
     environment:

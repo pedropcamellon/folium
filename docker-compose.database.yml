@@ -5,7 +5,8 @@ services:
     ports:
       - "5432:5432"
     env_file:
-      - .env.database
+      - path: .env
+        required: false
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:

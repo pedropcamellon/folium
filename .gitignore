@@ -3,6 +3,7 @@ node_modules
 # Environment files with secrets
 .env
 .env.*
+!.env.example
 !.env.*.example
 .env.local
 .env.development.local

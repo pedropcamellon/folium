@@ -5,7 +5,10 @@ services:
     ports:
       - "5433:5432" # Use 5433 externally to avoid conflict with app postgres
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     volumes:
       - temporal-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +24,10 @@ services:
       - "7233:7233"
       - "9091:9090" # Prometheus metrics (9091 external, 9090 internal)
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     environment:
       - POSTGRES_SEEDS=southdrift-temporal-postgres
     depends_on:
@@ -48,7 +54,10 @@ services:
     ports:
       - "8233:8080"
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     environment:
       - TEMPORAL_ADDRESS=southdrift-temporal:7233
     depends_on:

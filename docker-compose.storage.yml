@@ -6,7 +6,8 @@ services:
       - "9000:9000" # S3 API
       - "9001:9001" # Web Console
     env_file:
-      - .env.storage
+      - path: .env
+        required: false
     environment:
       - MINIO_PROMETHEUS_AUTH_TYPE=public
     command: server /data --console-address ":9001"

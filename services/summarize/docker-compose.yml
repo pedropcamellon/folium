@@ -7,7 +7,10 @@ services:
         PROVIDER: local # local, openai, bedrock, azure
     container_name: folium-summarize
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     ports:
       - "8002:8002"
     environment:
