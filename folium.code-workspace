@@ -4,6 +4,9 @@
       "name": "Folium",
       "path": ".",
     },
+    {
+      "path": "../pedropcamellon.github.io",
+    },
   ],
   "settings": {
     // Global workspace settings
