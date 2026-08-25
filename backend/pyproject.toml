@@ -1,5 +1,5 @@
 [project]
-name = "southdrift"
+name = "folium"
 version = "1.0.0"
 description = "Healthcare platform backend with AI capabilities"
 requires-python = ">=3.11"
@@ -23,7 +23,7 @@ dependencies = [
     "python-json-logger>=2.0.7",
     "python-multipart>=0.0.12",
     "sqlalchemy>=2.0.0",
-    "temporalio>=1.8.0",
+    "temporalio[langgraph]>=1.27.0",
     "uvicorn[standard]>=0.32.0",
 ]
 
@@ -35,6 +35,11 @@ dev = [
     "black>=24.0.0",
     "ruff>=0.6.0",
     "mypy>=1.8.0",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
 ]
 
 [build-system]
@@ -52,6 +57,9 @@ target-version = ['py311']
 line-length = 100
 target-version = "py311"
 
+[tool.ruff.lint]
+ignore = ["E402"]
+
 [tool.mypy]
 python_version = "3.11"
 warn_return_any = true
@@ -61,8 +69,3 @@ ignore_missing_imports = true  # SQLAlchemy stubs can be tricky
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-
-[dependency-groups]
-dev = [
-    "mypy>=1.19.1",
-]

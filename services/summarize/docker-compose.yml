@@ -1,11 +1,11 @@
 services:
-  southdrift-summarize:
+  folium-summarize:
     build:
       context: .
       dockerfile: Dockerfile
       args:
         PROVIDER: local # local, openai, bedrock, azure
-    container_name: southdrift-summarize
+    container_name: folium-summarize
     env_file:
       - .env
     ports:

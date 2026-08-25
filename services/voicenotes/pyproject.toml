@@ -1,5 +1,5 @@
 [project]
-name = "voice-note-workflow"
+name = "voicenotes"
 version = "0.1.0"
 description = "Temporal worker service for SouthDrift voice note processing"
 readme = "README.md"

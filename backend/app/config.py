@@ -1,7 +1,5 @@
 """Application configuration using Pydantic settings"""
 
-from typing import List
-
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
@@ -10,12 +8,12 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
 
     # App settings
-    APP_NAME: str = "SouthDrift"
+    APP_NAME: str = "Folium"
     DEBUG: bool = False
     VERSION: str = "1.0.0"
 
     # CORS
-    ALLOWED_ORIGINS: List[str] = [
+    ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",
         "https://localhost:3000",
         "http://frontend:3000",
@@ -32,7 +30,7 @@ class Settings(BaseSettings):
 
     # Multi-Cloud Storage Configuration
     STORAGE_PROVIDER: str = "minio"  # 'aws', 'azure', 'minio'
-    STORAGE_BUCKET: str = "southdrift-dev"
+    STORAGE_BUCKET: str = "folium-dev"
     STORAGE_REGION: str = "us-east-2"
     STORAGE_ENDPOINT: str | None = None  # Required for MinIO/Azure (internal Docker)
     STORAGE_PUBLIC_ENDPOINT: str | None = None  # Public-facing endpoint for browser
@@ -58,8 +56,8 @@ class Settings(BaseSettings):
     TEMPORAL_ADDRESS: str = "localhost:7233"
     TEMPORAL_NAMESPACE: str = "default"
     VOICE_NOTE_TASK_QUEUE: str = "voice-notes-queue"
-    VOICE_NOTE_WORKFLOW_NAME: str = "voice-note-workflow"
-    VOICE_NOTE_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
+    VOICENOTES_WORKFLOW_NAME: str = "voicenotes"
+    VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
 
     # Legacy settings (deprecated)
 
@@ -89,9 +87,7 @@ class Settings(BaseSettings):
             if not self.STORAGE_SECRET_KEY.strip():
                 missing_fields.append("STORAGE_SECRET_KEY")
 
-        if self.STORAGE_PROVIDER == "azure" and not (
-            self.AZURE_STORAGE_CONNECTION_STRING.strip()
-        ):
+        if self.STORAGE_PROVIDER == "azure" and not (self.AZURE_STORAGE_CONNECTION_STRING.strip()):
             missing_fields.append("AZURE_STORAGE_CONNECTION_STRING")
 
         if missing_fields:

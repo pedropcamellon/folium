@@ -1,0 +1,2 @@
+VOICENOTES_WORKFLOW_NAME = "voicenotes"
+TRANSCRIBE_ACTIVITY_NAME = "transcribe-audio"

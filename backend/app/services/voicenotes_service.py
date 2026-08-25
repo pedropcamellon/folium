@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass
-from dataclasses import asdict, is_dataclass
+from dataclasses import asdict, dataclass, is_dataclass
 from datetime import timedelta
-
 from uuid import uuid4
 
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
@@ -23,13 +21,13 @@ class AudioReference:
 
 
 @dataclass
-class VoiceNoteWorkflowInput:
+class VoiceNotesInput:
     interaction_id: str
     patient_id: str
     audio: AudioReference
 
 
-class VoiceNoteWorkflowService:
+class VoiceNotesService:
     """Starts and inspects Temporal workflows for voice notes."""
 
     def __init__(self) -> None:
@@ -52,7 +50,7 @@ class VoiceNoteWorkflowService:
     def build_workflow_id(self, interaction_id: str) -> str:
         return f"voice-note-{interaction_id}-{uuid4().hex[:8]}"
 
-    async def start_voice_note_workflow(
+    async def start_voicenotes(
         self,
         interaction_id: str,
         patient_id: str,
@@ -62,7 +60,7 @@ class VoiceNoteWorkflowService:
         content_type: str | None,
     ) -> dict[str, str]:
         client = await self._get_client()
-        workflow_input = VoiceNoteWorkflowInput(
+        workflow_input = VoiceNotesInput(
             interaction_id=interaction_id,
             patient_id=patient_id,
             audio=AudioReference(
@@ -74,12 +72,12 @@ class VoiceNoteWorkflowService:
         )
         workflow_id = self.build_workflow_id(interaction_id)
         handle = await client.start_workflow(
-            settings.VOICE_NOTE_WORKFLOW_NAME,
+            settings.VOICENOTES_WORKFLOW_NAME,
             workflow_input,
             id=workflow_id,
             task_queue=settings.VOICE_NOTE_TASK_QUEUE,
             execution_timeout=timedelta(
-                minutes=settings.VOICE_NOTE_WORKFLOW_EXECUTION_TIMEOUT_MINUTES
+                minutes=settings.VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES
             ),
         )
 
@@ -88,7 +86,7 @@ class VoiceNoteWorkflowService:
             "runId": handle.result_run_id or handle.first_execution_run_id or handle.run_id or "",
         }
 
-    async def get_voice_note_workflow_state(
+    async def get_voicenotes_state(
         self,
         workflow_id: str,
         run_id: str | None = None,
@@ -107,7 +105,11 @@ class VoiceNoteWorkflowService:
                 if status_value is not None:
                     result["status"] = getattr(status_value, "value", status_value)
             else:
-                result = workflow_result if isinstance(workflow_result, dict) else {"value": workflow_result}
+                result = (
+                    workflow_result
+                    if isinstance(workflow_result, dict)
+                    else {"value": workflow_result}
+                )
         elif description.status in {
             WorkflowExecutionStatus.FAILED,
             WorkflowExecutionStatus.CANCELED,

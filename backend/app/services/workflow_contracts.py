@@ -12,21 +12,21 @@ class AudioReference:
 
 
 @dataclass
-class VoiceNoteWorkflowInput:
+class VoiceNotesInput:
     interaction_id: str
     patient_id: str
     audio: AudioReference
 
 
-def build_voice_note_workflow_input(
+def build_voicenotes_input(
     interaction_id: str,
     patient_id: str,
     storage_key: str,
     audio_url: str,
     original_filename: str | None,
     content_type: str | None,
-) -> VoiceNoteWorkflowInput:
-    return VoiceNoteWorkflowInput(
+) -> VoiceNotesInput:
+    return VoiceNotesInput(
         interaction_id=interaction_id,
         patient_id=patient_id,
         audio=AudioReference(

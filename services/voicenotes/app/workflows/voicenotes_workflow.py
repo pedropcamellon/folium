@@ -12,11 +12,11 @@ from app.contracts.voice_note_models import (
 )
 from app.temporal_config import (
     TRANSCRIBE_ACTIVITY_NAME,
-    VOICE_NOTE_WORKFLOW_NAME,
+    VOICENOTES_WORKFLOW_NAME,
 )
 
 
-@workflow.defn(name=VOICE_NOTE_WORKFLOW_NAME)
+@workflow.defn(name=VOICENOTES_WORKFLOW_NAME)
 class VoiceNoteWorkflow:
     @workflow.run
     async def run(self, input_data: VoiceNoteWorkflowInput) -> VoiceNoteWorkflowResult:

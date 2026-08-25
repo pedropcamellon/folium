@@ -4,23 +4,23 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session
-from app.repositories.patient_repository import PatientRepository
-from app.repositories.interaction_repository import InteractionRepository
 from app.repositories.document_repository import DocumentRepository
-from app.services.patient_service import PatientService
-from app.services.interaction_service import InteractionService
+from app.repositories.interaction_repository import InteractionRepository
+from app.repositories.patient_repository import PatientRepository
 from app.services.document_service import DocumentService
-from app.services.transcription_service import TranscriptionService
-from app.services.summarization_service import SummarizationService
-from app.services.voice_note_service import VoiceNoteService
-from app.services.voice_note_workflow_service import VoiceNoteWorkflowService
-from app.services.storage.factory import get_storage
+from app.services.interaction_service import InteractionService
+from app.services.patient_service import PatientService
 from app.services.storage.base import ObjectStorageProvider
+from app.services.storage.factory import get_storage
+from app.services.summarization_service import SummarizationService
+from app.services.transcription_service import TranscriptionService
+from app.services.voice_note_service import VoiceNoteService
+from app.services.voicenotes_service import VoiceNotesService
 
 # Singletons (for services without database dependencies)
 _transcription_service = None
 _summarization_service = None
-_voice_note_workflow_service = None
+_voicenotes_service = None
 
 
 def get_patient_repository(session: AsyncSession = Depends(get_async_session)) -> PatientRepository:
@@ -79,12 +79,12 @@ def get_summarization_service() -> SummarizationService:
     return _summarization_service
 
 
-def get_voice_note_workflow_service() -> VoiceNoteWorkflowService:
-    """Get voice note workflow service instance (singleton)."""
-    global _voice_note_workflow_service
-    if _voice_note_workflow_service is None:
-        _voice_note_workflow_service = VoiceNoteWorkflowService()
-    return _voice_note_workflow_service
+def get_voicenotes_service() -> VoiceNotesService:
+    """Get voicenotes service instance (singleton)."""
+    global _voicenotes_service
+    if _voicenotes_service is None:
+        _voicenotes_service = VoiceNotesService()
+    return _voicenotes_service
 
 
 async def get_storage_provider() -> ObjectStorageProvider:
@@ -94,7 +94,7 @@ async def get_storage_provider() -> ObjectStorageProvider:
 
 async def get_voice_note_service(
     interaction_service: InteractionService = Depends(get_interaction_service),
-    workflow_service: VoiceNoteWorkflowService = Depends(get_voice_note_workflow_service),
+    workflow_service: VoiceNotesService = Depends(get_voicenotes_service),
     storage_provider: ObjectStorageProvider = Depends(get_storage_provider),
 ) -> VoiceNoteService:
     """Get voice note orchestration service with injected collaborators."""

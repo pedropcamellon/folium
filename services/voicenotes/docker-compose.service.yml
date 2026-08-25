@@ -1,26 +1,26 @@
 services:
-  southdrift-voicenotes-worker:
+  folium-voicenotes-worker:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: southdrift-voicenotes-worker
+    container_name: folium-voicenotes-worker
     depends_on:
-      southdrift-backend:
+      folium-backend:
         condition: service_healthy
-      southdrift-summarize:
+      folium-summarize:
         condition: service_healthy
-      southdrift-temporal:
+      folium-temporal:
         condition: service_healthy
-      southdrift-transcribe:
+      folium-transcribe:
         condition: service_healthy
     environment:
       - PYTHONUNBUFFERED=1
-      - TEMPORAL_ADDRESS=southdrift-temporal:7233
+      - TEMPORAL_ADDRESS=folium-temporal:7233
       - TEMPORAL_NAMESPACE=default
       - VOICE_NOTE_TASK_QUEUE=voice-notes-queue
-      - BACKEND_API_URL=http://southdrift-backend:8000
-      - TRANSCRIPTION_SERVICE_URL=http://southdrift-transcribe:8001
-      - SUMMARIZATION_SERVICE_URL=http://southdrift-summarize:8002
+      - BACKEND_API_URL=http://folium-backend:8000
+      - TRANSCRIPTION_SERVICE_URL=http://folium-transcribe:8001
+      - SUMMARIZATION_SERVICE_URL=http://folium-summarize:8002
       - LOG_LEVEL=INFO
     restart: unless-stopped
     develop:
