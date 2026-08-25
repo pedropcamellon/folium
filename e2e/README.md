@@ -1,6 +1,6 @@
-# SouthDrift E2E
+# Folium E2E
 
-SouthDrift E2E checks focus on one thing: proving role-aware UX with realistic user behavior.
+Folium E2E checks focus on one thing: proving role-aware UX with realistic user behavior.
 
 This suite validates two visible user journeys:
 
@@ -34,6 +34,6 @@ Run options:
 - Run one scenario: `uv run .\main.py --scenario provider-voice-note`
 - Run summary only: `uv run .\main.py --scenario provider-summary`
 - Run multiple scenarios: `uv run .\main.py --scenario provider-patient-crud --scenario patient-portal`
-- Use env selection instead of flags: set `SOUTHDRIFT_E2E_SCENARIOS=provider-voice-note`
+- Use env selection instead of flags: set `FOLIUM_E2E_SCENARIOS=provider-voice-note`
 
 Expected outcome: a quick pass/fail signal that role routing, session boundaries, and core provider CRUD interactions still work end to end.

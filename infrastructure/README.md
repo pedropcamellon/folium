@@ -1,6 +1,6 @@
-# SouthDrift Infrastructure
+# Folium Infrastructure
 
-Multi-cloud infrastructure for the SouthDrift healthcare EMR platform.
+Multi-cloud infrastructure for the Folium healthcare EMR platform.
 
 ## Architecture
 
@@ -54,11 +54,11 @@ See `azure/README.md` and `aws/README.md` for detailed setup instructions.
 
 ## Environments
 
-| Environment | Azure Region | AWS Region | Purpose |
-|-------------|--------------|------------|---------|
-| **dev** | East US | us-east-1 | Local development |
-| **staging** | East US | us-east-1 | Pre-production testing |
-| **prod** | East US | us-east-1 | Production |
+| Environment | Azure Region | AWS Region | Purpose                |
+| ----------- | ------------ | ---------- | ---------------------- |
+| **dev**     | East US      | us-east-1  | Local development      |
+| **staging** | East US      | us-east-1  | Pre-production testing |
+| **prod**    | East US      | us-east-1  | Production             |
 
 ## Configuration
 
@@ -66,7 +66,7 @@ Edit `terraform.tfvars.json` for environment settings. See cloud-specific README
 
 ## State Management
 
-**Azure**: Stored in Azure Storage Account `southdrifttfstate`  
+**Azure**: Stored in Azure Storage Account `foliumtfstate`
 **AWS**: Local state (dev) or S3 backend (production)
 
 See cloud-specific README files for backend configuration.
@@ -103,5 +103,6 @@ cd aws && terraform destroy
 ```
 
 ---
+
 **Last Updated**: 2026-01-02  
-**Maintained By**: SouthDrift Team
+**Maintained By**: Folium Team

@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "SouthDrift audit logs and correlation tracing",
+  "description": "Folium audit logs and correlation tracing",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -164,7 +164,7 @@
   ],
   "refresh": "10s",
   "schemaVersion": 42,
-  "tags": ["southdrift", "logs", "audit"],
+  "tags": ["folium", "logs", "audit"],
   "templating": {
     "list": [
       {
@@ -217,6 +217,6 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "SouthDrift Audit & Logs",
+  "title": "Folium Audit & Logs",
   "version": 1
 }

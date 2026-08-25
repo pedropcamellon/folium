@@ -1,6 +1,6 @@
 # Voice Note Workflow Service
 
-Dedicated Temporal worker service for SouthDrift voice note processing.
+Dedicated Temporal worker service for Folium voice note processing.
 
 This service owns workflow orchestration only. The backend API remains responsible for request validation, audio upload, initial interaction metadata persistence, and starting the workflow.
 

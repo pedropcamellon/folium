@@ -24,14 +24,14 @@ def install_summary_page_mocks(
         "lastName": "Summary",
         "dateOfBirth": "1992-04-15",
         "gender": "Female",
-        "contactInfo": "taylor.summary@southdrift.test",
+        "contactInfo": "taylor.summary@folium.test",
         "medicalImages": [],
         "clinicalSummaries": [],
     }
     interaction_payload = {
         "id": interaction_id,
         "createdAt": "2026-03-26T10:00:00Z",
-        "createdBy": "provider@southdrift.com",
+        "createdBy": "provider@folium.com",
         "description": "Mocked summary scenario interaction.",
         "interactionDate": "2026-03-26T10:00:00Z",
         "isCompliant": True,
@@ -41,11 +41,11 @@ def install_summary_page_mocks(
         "summary": "",
         "patientId": patient_id,
         "providerId": "provider-001",
-        "providerName": "Dr. SouthDrift",
+        "providerName": "Dr. Folium",
         "title": "Mock Summary Interaction",
         "type": "VoiceNote",
         "updatedAt": "2026-03-26T10:00:00Z",
-        "updatedBy": "provider@southdrift.com",
+        "updatedBy": "provider@folium.com",
     }
     route_patterns = (patient_url, interactions_url, interaction_url, documents_url)
 

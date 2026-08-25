@@ -19,7 +19,7 @@ def create_interaction(page: Page, flow: FlowCase, title: str) -> str:
     page.get_by_label("Description").fill(
         "Provider voice note workflow created by Playwright."
     )
-    page.get_by_label("Provider Name").fill("Dr. SouthDrift")
+    page.get_by_label("Provider Name").fill("Dr. Folium")
 
     with page.expect_response(
         lambda response: (

@@ -4,7 +4,7 @@ datasources:
   - name: Prometheus
     type: prometheus
     access: proxy
-    url: http://southdrift-prometheus:9090
+    url: http://folium-prometheus:9090
     uid: prometheus
     isDefault: true
     editable: true
@@ -12,7 +12,7 @@ datasources:
   - name: Loki
     type: loki
     access: proxy
-    url: http://southdrift-loki:3100
+    url: http://folium-loki:3100
     uid: loki
     isDefault: false
     editable: true

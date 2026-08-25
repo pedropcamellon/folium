@@ -32,7 +32,7 @@ async def seed_documents(
             file_size=245678,
             file_url="https://storage.example.com/docs/chest-xray-maria.pdf",
             type="ImagingReport",
-            created_by="provider@southdrift.com",
+            created_by="provider@folium.com",
         ),
         Document(
             patient_id=patients[0].id,
@@ -42,7 +42,7 @@ async def seed_documents(
             file_size=89234,
             file_url="https://storage.example.com/docs/intake-maria.pdf",
             type="AdministrativeForm",
-            created_by="staff@southdrift.com",
+            created_by="staff@folium.com",
         ),
         Document(
             patient_id=patients[1].id,
@@ -52,7 +52,7 @@ async def seed_documents(
             file_size=156432,
             file_url="https://storage.example.com/docs/lab-results-james.pdf",
             type="LabResult",
-            created_by="provider@southdrift.com",
+            created_by="provider@folium.com",
         ),
     ]
 

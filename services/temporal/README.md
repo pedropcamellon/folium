@@ -26,7 +26,7 @@ This folder contains the shared Temporal infrastructure used by all Temporal-bas
 - **Temporal UI**: Web interface for monitoring workflows (port 8233)
 - **Prometheus Metrics**: Temporal server metrics endpoint (port 9090)
 
-Temporal uses a dedicated PostgreSQL database (`southdrift-temporal-postgres`) separate from the application database.
+Temporal uses a dedicated PostgreSQL database (`folium-temporal-postgres`) separate from the application database.
 
 ## Usage Patterns
 
@@ -92,7 +92,7 @@ Copy `.env.example` to `.env` and customize:
 cp .env.example .env
 ```
 
-Default configuration assumes the shared SouthDrift PostgreSQL container is running on the `south-drift-network` Docker network.
+Default configuration assumes the shared Folium PostgreSQL container is running on the `south-drift-network` Docker network.
 
 ### Connecting Workers
 

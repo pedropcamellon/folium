@@ -6,7 +6,7 @@ positions:
   filename: /tmp/positions.yaml
 
 clients:
-  - url: http://southdrift-loki:3100/loki/api/v1/push
+  - url: http://folium-loki:3100/loki/api/v1/push
 
 scrape_configs:
   - job_name: docker
@@ -29,7 +29,7 @@ scrape_configs:
           ["__meta_docker_container_label_com_docker_compose_project"]
         target_label: "project"
 
-      # Only scrape southdrift containers
+      # Only scrape folium containers
       - source_labels:
           ["__meta_docker_container_label_com_docker_compose_project"]
         regex: "south-drift"

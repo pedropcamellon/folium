@@ -2,7 +2,7 @@
 
 ## Overview
 
-Azure hosts the main SouthDrift application backend using App Service, Blob Storage, and Application Insights.
+Azure hosts the main Folium application backend using App Service, Blob Storage, and Application Insights.
 
 ## Architecture
 

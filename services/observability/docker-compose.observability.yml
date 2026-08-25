@@ -1,7 +1,7 @@
 services:
-  southdrift-prometheus:
+  folium-prometheus:
     image: prom/prometheus:v3.10.0
-    container_name: southdrift-prometheus
+    container_name: folium-prometheus
     ports:
       - "9090:9090"
     volumes:
@@ -15,9 +15,9 @@ services:
       - "--web.enable-lifecycle"
     restart: unless-stopped
 
-  southdrift-grafana:
+  folium-grafana:
     image: grafana/grafana:12.4.2
-    container_name: southdrift-grafana
+    container_name: folium-grafana
     ports:
       - "3001:3000"
     environment:
@@ -30,9 +30,9 @@ services:
       - grafana-data:/var/lib/grafana
       - ./provisioning:/etc/grafana/provisioning:ro
     depends_on:
-      southdrift-prometheus:
+      folium-prometheus:
         condition: service_started
-      southdrift-loki:
+      folium-loki:
         condition: service_started
     restart: unless-stopped
     develop:
@@ -40,9 +40,9 @@ services:
         - action: restart
           path: ./provisioning/dashboards
 
-  southdrift-loki:
+  folium-loki:
     image: grafana/loki:3.7.1
-    container_name: southdrift-loki
+    container_name: folium-loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
@@ -50,15 +50,15 @@ services:
       - loki-data:/loki
     restart: unless-stopped
 
-  southdrift-promtail:
+  folium-promtail:
     image: grafana/promtail:3.6.8
-    container_name: southdrift-promtail
+    container_name: folium-promtail
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./promtail-config.yml:/etc/promtail/config.yml:ro
     command: -config.file=/etc/promtail/config.yml
     depends_on:
-      - southdrift-loki
+      - folium-loki
     restart: unless-stopped
 
 volumes:

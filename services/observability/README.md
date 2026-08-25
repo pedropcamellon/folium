@@ -1,6 +1,6 @@
 # Observability Stack
 
-Prometheus and Grafana for monitoring SouthDrift services.
+Prometheus and Grafana for monitoring Folium services.
 
 ## Services
 

@@ -7,7 +7,7 @@ locals {
 
   default_config = {
     naming = {
-      prefix = "southdrift"
+      prefix = "folium"
     }
     features = {
       network               = false
@@ -38,13 +38,13 @@ locals {
     }
     postgres = {
       version                       = "16"
-      administrator_login           = "southdriftadmin"
+      administrator_login           = "foliumadmin"
       sku_name                      = "B_Standard_B1ms"
       storage_mb                    = 32768
       backup_retention_days         = 7
       zone                          = "1"
       public_network_access_enabled = true
-      database_name                 = "southdrift_db"
+      database_name                 = "folium_db"
     }
     container_apps = {
       target_port  = 8000
@@ -62,7 +62,7 @@ locals {
     }
     openai = {
       sku_name              = "S0"
-      custom_subdomain_name = format("southdrift-openai-%s", var.environment)
+      custom_subdomain_name = format("folium-openai-%s", var.environment)
       deployments = {
         gpt5_nano = {
           name                   = "gpt-5-nano"

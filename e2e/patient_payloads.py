@@ -26,7 +26,7 @@ def build_provider_test_patient() -> PatientPayload:
         last_name=f"Flow{suffix[-4:]}",
         date_of_birth="1992-04-15",
         gender="Female",
-        contact_info=f"e2e+{suffix}@southdrift.test",
+        contact_info=f"e2e+{suffix}@folium.test",
     )
 
 

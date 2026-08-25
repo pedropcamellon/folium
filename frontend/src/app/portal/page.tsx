@@ -69,7 +69,7 @@ export default function PortalPage() {
                         </div>
                         <p className="mt-2 text-sm text-slate-600">
                             Family medicine follow-up with Dr. Rivera at
-                            SouthDrift Clinic.
+                            Folium Clinic.
                         </p>
                     </div>
                     <div className="flex flex-col gap-3 sm:flex-row">

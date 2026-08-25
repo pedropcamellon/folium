@@ -1,6 +1,6 @@
 # Azure Infrastructure
 
-Azure resources for the SouthDrift main application backend.
+Azure resources for the Folium main application backend.
 
 ## Resources
 
@@ -39,7 +39,7 @@ Azure resources for the SouthDrift main application backend.
 
    # Create storage account
    az storage account create `
-     --name southdrifttfstate `
+     --name foliumtfstate `
      --resource-group rg-terraform-state `
      --location "East US" `
      --sku Standard_LRS
@@ -47,7 +47,7 @@ Azure resources for the SouthDrift main application backend.
    # Create container
    az storage container create `
      --name tfstate `
-     --account-name southdrifttfstate
+     --account-name foliumtfstate
    ```
 
 4. **Container Apps Provider Registration**: Register `Microsoft.App` once at the subscription level before creating Azure Container Apps resources.
@@ -186,7 +186,7 @@ az webapp config appsettings set `
 ```powershell
 # Build and push to Azure Container Registry
 az acr build `
-  --registry southdriftacr `
+  --registry foliumacr `
   --image backend:latest `
   --file backend/Dockerfile `
   .
@@ -195,7 +195,7 @@ az acr build `
 az webapp config container set `
   --name app-south-drift-backend-dev `
   --resource-group rg-south-drift-dev `
-  --docker-custom-image-name southdriftacr.azurecr.io/backend:latest
+  --docker-custom-image-name foliumacr.azurecr.io/backend:latest
 ```
 
 **Option 2: GitHub Actions (CI/CD)**
