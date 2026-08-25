@@ -21,7 +21,7 @@ variable "postgres_version" {
 
 variable "administrator_login" {
   type    = string
-  default = "southdriftadmin"
+  default = "foliumadmin"
 }
 
 variable "administrator_password" {

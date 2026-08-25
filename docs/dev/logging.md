@@ -1,6 +1,6 @@
 # Structured Logging & Audit Trail
 
-SouthDrift uses structured JSON logging with correlation IDs for end-to-end request tracing and audit fields for HIPAA compliance.
+Folium uses structured JSON logging with correlation IDs for end-to-end request tracing and audit fields for HIPAA compliance.
 
 ## Architecture
 
@@ -127,8 +127,8 @@ Query in Grafana: `{correlation_id="abc123"}` → see entire request flow
 
 Visit http://localhost:3001 (admin/admin):
 
-1. **SouthDrift Audit & Logs**: Audit trail, errors, service logs
-2. **SouthDrift Service Health**: Metrics (requests, latency, errors)
+1. **Folium Audit & Logs**: Audit trail, errors, service logs
+2. **Folium Service Health**: Metrics (requests, latency, errors)
 3. **MinIO**: Storage metrics
 
 ## Adding Audit Logging to New Endpoints

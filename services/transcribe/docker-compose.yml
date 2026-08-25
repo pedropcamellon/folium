@@ -1,44 +1,35 @@
 services:
   # Self-hosted Whisper (HIPAA compliant, default)
-  southdrift-transcribe:
+  folium-transcribe:
     build:
-      context: .
+      context: ../..
+      dockerfile: services/transcribe/Dockerfile
       args:
         PROVIDER: whisper # Change to: aws, azure
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
     ports:
       - "8001:8001"
     environment:
-      # Provider selection
-      - TRANSCRIPTION_PROVIDER=whisper # Must match build arg
-
-      # Whisper settings (if provider=whisper)
-      - WHISPER_MODEL_SIZE=base
-      - WHISPER_DEVICE=cpu
-
-      # AWS settings (if provider=aws)
-      # - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-      # - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-      # - AWS_REGION=us-east-1
-      # - TEMP_S3_BUCKET=southdrift-transcribe-temp
-
-      # Azure settings (if provider=azure)
-      # - AZURE_SPEECH_KEY=${AZURE_SPEECH_KEY}
-      # - AZURE_SPEECH_REGION=eastus
-
-      # Service settings
-      - PORT=8001
-      - LOG_LEVEL=info
-      - HF_HOME=/app/.cache/huggingface # Use cached models from image
+      TRANSCRIPTION_PROVIDER: ${TRANSCRIPTION_PROVIDER:-whisper}
+      WHISPER_MODEL_SIZE: ${WHISPER_MODEL_SIZE:-base}
+      WHISPER_DEVICE: ${WHISPER_DEVICE:-cpu}
+      PORT: "8001"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      HF_HOME: /workspace/services/transcribe/.cache/huggingface
     volumes:
       # Optional: Persist models outside container (for model updates without rebuild)
-      - whisper-models:/app/.cache/huggingface
+      - whisper-models:/workspace/services/transcribe/.cache/huggingface
     # Network will be overridden by parent docker-compose.yml
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+    command: uv run --frozen --no-sync --package transcribe uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
     develop:
       watch:
         - action: sync
           path: ./app
-          target: /app/app
+          target: /workspace/services/transcribe/app
           ignore:
             - __pycache__/
             - "*.pyc"

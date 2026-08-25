@@ -225,7 +225,7 @@ Unified document management for all patient-related documents.
 
 ### Voice Processing Microservice
 
-**Container**: `southdrift-voice-processing` (FastAPI)
+**Container**: `folium-voice-processing` (FastAPI)
 
 **Endpoints**:
 
@@ -252,7 +252,7 @@ Main backend handles audio inline:
    {
      "interactionId": "interaction-123",
      "audioUrl": "https://storage.blob.core.windows.net/audio/abc.webm",
-     "callbackUrl": "https://api.southdrift.com/api/interactions/interaction-123/note"
+     "callbackUrl": "https://api.folium.com/api/interactions/interaction-123/note"
    }
    ```
 
@@ -277,7 +277,7 @@ Main backend handles audio inline:
 
 ### Medical Imaging Microservice
 
-**Container**: `southdrift-imaging-analysis` (FastAPI + CUDA)
+**Container**: `folium-imaging-analysis` (FastAPI + CUDA)
 
 **Endpoints**:
 
@@ -299,7 +299,7 @@ Not yet implemented (Phase 3).
      "patientId": "patient-123",
      "imageUrl": "https://storage.blob.core.windows.net/images/xray-456.dcm",
      "imageType": "ChestXRay",
-     "callbackUrl": "https://api.southdrift.com/api/clinical-documents"
+     "callbackUrl": "https://api.folium.com/api/clinical-documents"
    }
    ```
 

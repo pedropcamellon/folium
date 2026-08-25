@@ -1,4 +1,4 @@
-# AWS Infrastructure for SouthDrift Summarization Service
+# AWS Infrastructure for Folium Summarization Service
 # Provisions IAM roles, policies, and Bedrock access
 
 terraform {
@@ -116,7 +116,7 @@ resource "aws_cloudwatch_log_metric_filter" "bedrock_invocations" {
 
   metric_transformation {
     name      = "BedrockInvocations"
-    namespace = "SouthDrift/Summarization"
+    namespace = "Folium/Summarization"
     value     = "1"
   }
 }
@@ -128,7 +128,7 @@ resource "aws_cloudwatch_log_metric_filter" "bedrock_errors" {
 
   metric_transformation {
     name      = "BedrockErrors"
-    namespace = "SouthDrift/Summarization"
+    namespace = "Folium/Summarization"
     value     = "1"
   }
 }
@@ -148,7 +148,7 @@ resource "aws_cloudwatch_metric_alarm" "bedrock_error_rate" {
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = "2"
   metric_name         = "BedrockErrors"
-  namespace           = "SouthDrift/Summarization"
+  namespace           = "Folium/Summarization"
   period              = "300"
   statistic           = "Sum"
   threshold           = var.error_threshold

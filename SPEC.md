@@ -1,8 +1,8 @@
-# SouthDrift Technical Specification
+# Folium Technical Specification
 
 ## Architecture Overview
 
-SouthDrift uses a modern, cloud-native architecture with clear separation of concerns:
+Folium uses a modern, cloud-native architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

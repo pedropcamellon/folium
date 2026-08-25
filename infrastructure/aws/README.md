@@ -1,6 +1,6 @@
 # AWS Bedrock Infrastructure Setup
 
-This directory contains Terraform configuration for AWS Bedrock access for the SouthDrift clinical summarization service.
+This directory contains Terraform configuration for AWS Bedrock access for the Folium clinical summarization service.
 
 ## Quick Start
 
@@ -132,7 +132,7 @@ Monitor Bedrock usage:
 ```bash
 # View metrics in CloudWatch
 aws cloudwatch get-metric-statistics \
-  --namespace "SouthDrift/Summarization" \
+  --namespace "Folium/Summarization" \
   --metric-name "BedrockInvocations" \
   --start-time 2026-01-01T00:00:00Z \
   --end-time 2026-01-02T00:00:00Z \
@@ -193,7 +193,7 @@ terraform destroy -target=aws_iam_role.summarization_service
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  SouthDrift Backend                     │
+│                  Folium Backend                     │
 │                   (FastAPI 8000)                        │
 └───────────────────┬─────────────────────────────────────┘
                     │

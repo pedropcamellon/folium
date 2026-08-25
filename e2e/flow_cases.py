@@ -17,16 +17,16 @@ class FlowCase:
 
 PROVIDER_FLOW = FlowCase(
     name="provider",
-    email=os.getenv("SOUTHDRIFT_PROVIDER_EMAIL", "provider@southdrift.com"),
-    password=os.getenv("SOUTHDRIFT_PROVIDER_PASSWORD", "Provider123!"),
+    email=os.getenv("FOLIUM_PROVIDER_EMAIL", "provider@folium.com"),
+    password=os.getenv("FOLIUM_PROVIDER_PASSWORD", "Provider123!"),
     expected_path="/provider",
     expected_heading="Provider Portal",
 )
 
 PATIENT_FLOW = FlowCase(
     name="patient",
-    email=os.getenv("SOUTHDRIFT_PATIENT_EMAIL", "patient@southdrift.com"),
-    password=os.getenv("SOUTHDRIFT_PATIENT_PASSWORD", "Patient123!"),
+    email=os.getenv("FOLIUM_PATIENT_EMAIL", "patient@folium.com"),
+    password=os.getenv("FOLIUM_PATIENT_PASSWORD", "Patient123!"),
     expected_path="/portal",
     expected_heading="Patient Portal",
 )

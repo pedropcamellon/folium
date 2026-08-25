@@ -19,7 +19,7 @@ export default function SidebarHeader({
                 href="/"
                 className={`font-bold text-xl text-blue-700 transition-opacity duration-200 hover:text-blue-800 ${collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"}`}
             >
-                SouthDrift
+                Folium
             </Link>
             <button
                 className="p-2 rounded hover:bg-slate-100 ml-2"

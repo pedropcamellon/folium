@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from app.models.interaction import InteractionUpdate
 from app.services.interaction_service import InteractionService
 from app.services.storage.base import ObjectStorageProvider
-from app.services.voice_note_workflow_service import VoiceNoteWorkflowService
+from app.services.voicenotes import VoiceNotesService
 
 
 class VoiceNoteService:
@@ -17,7 +17,7 @@ class VoiceNoteService:
     def __init__(
         self,
         interaction_service: InteractionService,
-        workflow_service: VoiceNoteWorkflowService,
+        workflow_service: VoiceNotesService,
         storage_provider: ObjectStorageProvider,
     ) -> None:
         self.interaction_service = interaction_service
@@ -100,7 +100,7 @@ class VoiceNoteService:
             internal=True,
         )
 
-        workflow_execution = await self.workflow_service.start_voice_note_workflow(
+        workflow_execution = await self.workflow_service.start_voicenotes(
             interaction_id=interaction_id,
             patient_id=interaction.patientId,
             storage_key=storage_key,
@@ -142,7 +142,7 @@ class VoiceNoteService:
                 "interaction": interaction.model_dump(),
             }
 
-        workflow_state = await self.workflow_service.get_voice_note_workflow_state(workflow_id, run_id)
+        workflow_state = await self.workflow_service.get_voicenotes_state(workflow_id, run_id)
         temporal_status = workflow_state["status"]
         status_value = "processing"
         error_message = workflow_state.get("errorMessage")
@@ -243,4 +243,4 @@ class VoiceNoteService:
 
     @staticmethod
     def _now_iso() -> str:
-        return datetime.now(timezone.utc).isoformat()
+        return datetime.now(UTC).isoformat()

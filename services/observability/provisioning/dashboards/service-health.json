@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "SouthDrift Service Health Monitoring",
+  "description": "Folium Service Health Monitoring",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -519,7 +519,7 @@
   "preload": false,
   "refresh": "10s",
   "schemaVersion": 42,
-  "tags": ["southdrift", "health"],
+  "tags": ["folium", "health"],
   "templating": {
     "list": []
   },
@@ -529,7 +529,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "SouthDrift Service Health",
+  "title": "Folium Service Health",
   "uid": "a2a7a749-1497-4f04-bb3c-fbdfceb4ee8a",
   "version": 4,
   "weekStart": ""

@@ -65,7 +65,7 @@ The storage system uses SOLID principles with Abstract Base Class + Factory patt
 # Configuration-driven provider selection
 config = StorageConfig(
     provider='minio',  # 'aws', 'azure', 'minio'
-    bucket='southdrift-dev',
+    bucket='folium-dev',
     region='us-east-1',
     endpoint_url='http://minio:9000',  # Required for MinIO/Azure
     access_key='minioadmin',
@@ -98,7 +98,7 @@ STORAGE_PROVIDER=minio
 STORAGE_ENDPOINT=http://minio:9000
 STORAGE_ACCESS_KEY=minioadmin
 STORAGE_SECRET_KEY=minioadmin
-STORAGE_BUCKET=southdrift-dev
+STORAGE_BUCKET=folium-dev
 STORAGE_REGION=us-east-1
 ```
 
@@ -109,7 +109,7 @@ STORAGE_PROVIDER=aws
 STORAGE_ENDPOINT=  # Leave empty (uses default AWS endpoints)
 STORAGE_ACCESS_KEY=AKIAIOSFODNN7EXAMPLE
 STORAGE_SECRET_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
-STORAGE_BUCKET=southdrift-prod-us-east-1
+STORAGE_BUCKET=folium-prod-us-east-1
 STORAGE_REGION=us-east-1
 STORAGE_CDN_URL=https://d111111abcdef8.cloudfront.net
 ```
@@ -118,12 +118,12 @@ STORAGE_CDN_URL=https://d111111abcdef8.cloudfront.net
 
 ```env
 STORAGE_PROVIDER=azure
-STORAGE_ENDPOINT=https://southdrift.blob.core.windows.net
-AZURE_STORAGE_ACCOUNT_NAME=southdrift
+STORAGE_ENDPOINT=https://folium.blob.core.windows.net
+AZURE_STORAGE_ACCOUNT_NAME=folium
 AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=https;...
 STORAGE_BUCKET=documents
 STORAGE_REGION=eastus
-STORAGE_CDN_URL=https://southdrift.azureedge.net
+STORAGE_CDN_URL=https://folium.azureedge.net
 ```
 
 **On-Premise Enterprise (MinIO Cluster)**:

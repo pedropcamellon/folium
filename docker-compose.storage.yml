@@ -1,12 +1,13 @@
 services:
-  southdrift-minio:
-    image: minio/minio:latest
-    container_name: southdrift-minio
+  folium-minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    container_name: folium-minio
     ports:
       - "9000:9000" # S3 API
       - "9001:9001" # Web Console
     env_file:
-      - .env.storage
+      - path: .env
+        required: false
     environment:
       - MINIO_PROMETHEUS_AUTH_TYPE=public
     command: server /data --console-address ":9001"

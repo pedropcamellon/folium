@@ -1,18 +1,17 @@
 """Database configuration for user management."""
 
 import logging
-import sys
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from fastapi import Depends
 from fastapi_users_db_sqlalchemy import SQLAlchemyUserDatabase
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import settings
-from app.models.user import Base
 
 # Import all models to register them with Base.metadata
-from app.models.db import Patient, Interaction, Document  # noqa: F401
+from app.models.db import Document, Interaction, Patient  # noqa: F401
+from app.models.user import Base
 
 logger = logging.getLogger(__name__)
 
@@ -98,16 +97,16 @@ def _log_connection_error(error: Exception) -> None:
     logger.error("=" * 70)
 
 
-async def create_db_and_tables():
+async def create_db_and_tables() -> None:
     """Create database tables on startup."""
     try:
         logger.info("Connecting to database...")
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database connected and tables initialized")
-    except Exception as e:
-        _log_connection_error(e)
-        sys.exit(1)
+    except Exception as exc:
+        _log_connection_error(exc)
+        raise RuntimeError("Database initialization failed") from exc
 
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:

@@ -13,7 +13,7 @@ Grafana automatically loads dashboards from this directory via the provisioning 
 3. Enable **Export for sharing externally**
 4. Click **Save to file**
 5. Save JSON file to this directory
-6. Restart Grafana: `docker compose restart southdrift-grafana`
+6. Restart Grafana: `docker compose restart folium-grafana`
 
 ### Method 2: Copy From Grafana Community
 
@@ -44,14 +44,14 @@ Use existing JSON files as templates. Key structure:
 
 ## Folder Organization
 
-Dashboards are automatically placed in the **SouthDrift** folder in Grafana.
+Dashboards are automatically placed in the **Folium** folder in Grafana.
 
 Configure in `dashboard.yml`:
 
 ```yaml
 providers:
   - name: "Default"
-    folder: "SouthDrift" # Change folder name here
+    folder: "Folium" # Change folder name here
 ```
 
 ## Settings

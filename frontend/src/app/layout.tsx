@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "SouthDrift",
+    title: "Folium",
     description:
         "A modern healthcare SaaS platform for clinical documentation and AI insights.",
 };

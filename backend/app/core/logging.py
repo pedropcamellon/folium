@@ -1,5 +1,5 @@
 """
-Structured logging with audit trail support for SouthDrift.
+Structured logging with audit trail support for Folium.
 
 Provides JSON-formatted logs with correlation IDs for end-to-end tracing
 and audit-relevant fields for HIPAA compliance.

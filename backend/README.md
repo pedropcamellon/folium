@@ -1,4 +1,4 @@
-# SouthDrift: AI-Powered Clinical Documentation Platform Backend
+# Folium: AI-Powered Clinical Documentation Platform Backend
 
 ## 🎯 Features
 
@@ -23,7 +23,7 @@
 PostgreSQL runs in Docker Compose. Connection configured via environment variables:
 
 ```
-DATABASE_URL=postgresql+asyncpg://southdrift:southdrift@postgres:5432/southdrift_db
+DATABASE_URL=postgresql+asyncpg://folium:folium@postgres:5432/folium_db
 ```
 
 ### Migrations
@@ -71,7 +71,7 @@ docker compose restart backend  # Triggers auto-reseed
 Access PostgreSQL directly:
 
 ```bash
-docker compose exec postgres psql -U southdrift -d southdrift_db
+docker compose exec postgres psql -U folium -d folium_db
 
 # Useful queries
 \dt                           # List tables

@@ -17,7 +17,7 @@ from ui import new_page
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Run SouthDrift Playwright e2e scenarios"
+        description="Run Folium Playwright e2e scenarios"
     )
     parser.add_argument(
         "--scenario",
@@ -44,7 +44,7 @@ def main() -> None:
 
     scenarios = resolve_scenarios(args.scenario_names)
 
-    print(f"Running SouthDrift e2e scenarios against {BASE_URL}")
+    print(f"Running Folium e2e scenarios against {BASE_URL}")
     print("Selected scenarios: " + ", ".join(scenario.name for scenario in scenarios))
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(

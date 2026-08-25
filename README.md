@@ -1,5 +1,5 @@
 
-# SouthDrift: AI-Powered Clinical Documentation Platform
+# Folium: AI-Powered Clinical Documentation Platform
 
 ## Problem
 
@@ -7,7 +7,7 @@ Healthcare providers spend significant time on manual documentation—voice note
 
 ## Solution
 
-SouthDrift is a SaaS platform that digitizes, analyzes, and automates clinical documentation through modular AI services:
+Folium is a SaaS platform that digitizes, analyzes, and automates clinical documentation through modular AI services:
 
 - **Voice Note Processing:** Upload and process voice notes from physicians or medical assistants about patient visits, histories, or labs.
 - **Automated Transcription & Summarization:** Calls are automatically transcribed and summarized using cloud AI models (e.g., AWS Lambda → Bedrock).

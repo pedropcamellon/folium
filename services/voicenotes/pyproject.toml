@@ -1,15 +1,19 @@
 [project]
-name = "voice-note-workflow"
+name = "voicenotes"
 version = "0.1.0"
-description = "Temporal worker service for SouthDrift voice note processing"
+description = "Temporal worker service for Folium voice note processing"
 readme = "README.md"
-requires-python = "==3.11.15"
+requires-python = ">=3.13,<3.14"
 dependencies = [
+    "folium-core>=0.1.0",
     "httpx==0.28.1",
     "pydantic==2.9.2",
     "pydantic-settings==2.6.0",
-    "temporalio==1.20.0",
+    "temporalio>=1.27.0,<2",
 ]
+
+[tool.uv.sources]
+folium-core = { workspace = true }
 
 [project.optional-dependencies]
 dev = [

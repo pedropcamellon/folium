@@ -1,0 +1,20 @@
+[project]
+name = "folium-workspace"
+version = "0.1.0"
+description = "Folium Python workspace"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[tool.uv]
+package = false
+keyring-provider = "subprocess"
+
+[tool.uv.workspace]
+members = [
+    "backend",
+    "e2e",
+    "packages/folium-core",
+    "services/summarize",
+    "services/transcribe",
+    "services/voicenotes",
+]

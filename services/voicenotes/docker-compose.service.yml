@@ -1,0 +1,51 @@
+services:
+  folium-voicenotes-worker:
+    image: folium-voicenotes-worker
+    pull_policy: build
+    build:
+      context: ../..
+      dockerfile: services/voicenotes/Dockerfile
+    container_name: folium-voicenotes-worker
+    env_file:
+      - path: ../../.env
+        required: false
+      - path: .env
+        required: false
+    depends_on:
+      folium-backend:
+        condition: service_healthy
+      folium-summarize:
+        condition: service_healthy
+      folium-temporal:
+        condition: service_healthy
+      folium-transcribe:
+        condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: "1"
+      TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
+      TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      VOICE_NOTE_TASK_QUEUE: ${VOICE_NOTE_TASK_QUEUE:-voice-notes-queue}
+      BACKEND_API_URL: ${BACKEND_API_URL:-http://folium-backend:8000}
+      TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://folium-transcribe:8001}
+      SUMMARIZATION_SERVICE_URL: ${SUMMARIZATION_SERVICE_URL:-http://folium-summarize:8002}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /workspace/services/voicenotes/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: sync
+          path: ../../packages/folium-core/src
+          target: /workspace/packages/folium-core/src
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ../../packages/folium-core/pyproject.toml

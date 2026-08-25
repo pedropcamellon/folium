@@ -1,11 +1,16 @@
 services:
-  southdrift-temporal-postgres:
+  folium-temporal-postgres:
     image: postgres:15-alpine
-    container_name: southdrift-temporal-postgres
+    container_name: folium-temporal-postgres
     ports:
       - "5433:5432" # Use 5433 externally to avoid conflict with app postgres
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
+    environment:
+      POSTGRES_DB: temporal
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD in root .env}
     volumes:
       - temporal-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -14,18 +19,24 @@ services:
       timeout: 5s
       retries: 10
 
-  southdrift-temporal:
-    image: temporalio/auto-setup:latest
-    container_name: southdrift-temporal-server
+  folium-temporal:
+    image: temporalio/auto-setup:1.27.2
+    container_name: folium-temporal-server
     ports:
       - "7233:7233"
-      - "9091:9090" # Prometheus metrics (9091 external, 9090 internal)
+      - "9464:8000" # Prometheus metrics; avoids the backend host port 8000.
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
     environment:
-      - POSTGRES_SEEDS=southdrift-temporal-postgres
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: ${TEMPORAL_POSTGRES_PASSWORD:?Set TEMPORAL_POSTGRES_PASSWORD in root .env}
+      POSTGRES_SEEDS: folium-temporal-postgres
+      PROMETHEUS_ENDPOINT: 0.0.0.0:8000
     depends_on:
-      southdrift-temporal-postgres:
+      folium-temporal-postgres:
         condition: service_healthy
     healthcheck:
       test:
@@ -33,7 +44,7 @@ services:
           "CMD",
           "tctl",
           "--address",
-          "southdrift-temporal:7233",
+          "folium-temporal:7233",
           "cluster",
           "health",
         ]
@@ -42,17 +53,18 @@ services:
       retries: 10
       start_period: 30s
 
-  southdrift-temporal-ui:
-    image: temporalio/ui:latest
-    container_name: southdrift-temporal-ui
+  folium-temporal-ui:
+    image: temporalio/ui:2.34.0
+    container_name: folium-temporal-ui
     ports:
       - "8233:8080"
     env_file:
-      - .env
+      - path: ../../.env
+        required: false
     environment:
-      - TEMPORAL_ADDRESS=southdrift-temporal:7233
+      TEMPORAL_ADDRESS: folium-temporal:7233
     depends_on:
-      - southdrift-temporal
+      - folium-temporal
 
 volumes:
   temporal-postgres-data:

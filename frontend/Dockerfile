@@ -1,8 +1,8 @@
 # Frontend Dockerfile - Next.js with pnpm for fast builds
-FROM node:20-alpine AS base
+FROM node:20.20.2-alpine AS base
 
-# Install pnpm globally
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Activate the package-manager version declared in package.json.
+RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
 
 # Dependencies stage (shared by development and builder)
 FROM base AS dependencies

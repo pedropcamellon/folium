@@ -84,7 +84,7 @@ def resolve_scenarios(requested_names: list[str] | None = None) -> list[Scenario
 
 
 def _scenario_names_from_env() -> list[str]:
-    raw = os.getenv("SOUTHDRIFT_E2E_SCENARIOS", "").strip()
+    raw = os.getenv("FOLIUM_E2E_SCENARIOS", "").strip()
     if not raw:
         return []
     return [part.strip() for part in raw.split(",") if part.strip()]

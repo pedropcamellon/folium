@@ -1,6 +1,6 @@
-# SouthDrift Deployment Guide
+# Folium Deployment Guide
 
-This document outlines the deployment strategy for the SouthDrift application with frontend on Vercel and backend on Azure App Service.
+This document outlines the deployment strategy for the Folium application with frontend on Vercel and backend on Azure App Service.
 
 ## Architecture Overview
 

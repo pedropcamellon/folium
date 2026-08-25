@@ -7,7 +7,7 @@ from temporalio.worker import Worker
 from app.activities.voice_note_activities import VoiceNoteActivities
 from app.clients.transcription_client import TranscriptionServiceClient
 from app.config import settings
-from app.workflows.voice_note_workflow import VoiceNoteWorkflow
+from app.workflows.voicenotes_workflow import VoiceNoteWorkflow
 
 
 async def main() -> None:

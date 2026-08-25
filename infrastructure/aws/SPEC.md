@@ -2,7 +2,7 @@
 
 ## Overview
 
-AWS hosts the complete SouthDrift application infrastructure including:
+AWS hosts the complete Folium application infrastructure including:
 
 - **Containers**: ECS Fargate for backend services
 - **Storage**: S3 for file uploads and static assets
@@ -385,7 +385,7 @@ Must request access in AWS Console:
 
 ### CloudWatch Metrics
 
-- **Namespace**: `SouthDrift/Summarization`
+- **Namespace**: `Folium/Summarization`
 - **Metrics**:
   - `BedrockInvocations`: Total API calls
   - `BedrockErrors`: Failed API calls
@@ -694,7 +694,7 @@ aws logs filter-log-events `
 
 ```powershell
 aws cloudwatch get-metric-statistics `
-  --namespace "SouthDrift/Summarization" `
+  --namespace "Folium/Summarization" `
   --metric-name "BedrockInvocations" `
   --start-time 2026-01-01T00:00:00Z `
   --end-time 2026-01-02T00:00:00Z `
@@ -706,7 +706,7 @@ aws cloudwatch get-metric-statistics `
 
 ```powershell
 aws cloudwatch get-metric-statistics `
-  --namespace "SouthDrift/Summarization" `
+  --namespace "Folium/Summarization" `
   --metric-name "BedrockErrors" `
   --start-time 2026-01-01T00:00:00Z `
   --end-time 2026-01-02T00:00:00Z `
