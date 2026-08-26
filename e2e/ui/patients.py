@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator, Page
-
 from flow_cases import FlowCase
 from patient_payloads import PatientPayload
+from playwright.sync_api import Locator, Page
 
 from .session import log_step
 
