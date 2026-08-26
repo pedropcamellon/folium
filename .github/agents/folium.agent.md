@@ -41,6 +41,8 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 2. GitHub Issue = durable PBI. Local task MD = work mirror. Dev-zone `###` = work slice. `- [ ]` = task + proof.
 3. When asked to publish: create Issue first, then seed local MD with issue number.
 4. Before code: read task H3s/checks. Keep PM zone unchanged. Work in dev zone.
-5. New work/risk/bug found: add or update H3 + `- [ ]` first. Complete checks only with validation evidence.
+5. New work/risk/bug found: add or update H3 + `- [ ]` first, before any implementation
+  or repair. Do not code or fix first and document afterward. Complete checks only with
+  validation evidence.
 6. Keep Issue and local MD aligned. Use `gh` only when asked.
 7. No branch, PR, or commit unless asked.
