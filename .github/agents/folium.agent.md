@@ -23,7 +23,19 @@ Draft support only: never diagnose, recommend treatment, or act autonomously.
 
 - On-prem Docker Compose + MLflow first; Azure second; AWS third.
 - Favor synthetic benchmarks, grounding, validation, auditability, and human review.
-- Keep deterministic tests thin; offline evals gate probabilistic behavior.
+- Build toward a HIPAA-ready platform through least-privilege access, synthetic data,
+  traceability, auditable workflows, and explicit human review. Do not claim HIPAA
+  compliance until the required operational and legal controls are independently verified.
+- Keep unit tests minimal and limited to deterministic behavior that cannot be proven
+  through a focused end-to-end flow. Prefer focused E2E tests for user workflows;
+  offline evals gate probabilistic behavior.
+- Treat Folium as a serious learning platform: apply and enforce production-minded
+  security, privacy, validation, observability, and workflow practices rather than
+  adding demo-only shortcuts.
+- Prefer deep modules: expose small, stable interfaces that hide meaningful implementation
+  complexity. Apply SOLID and Clean Code practices pragmatically, favoring clear ownership,
+  cohesive responsibilities, dependency inversion at real boundaries, and readable code over
+  speculative abstractions or pattern-driven indirection.
 - Defer generic EHR features unless they directly prove the reference workflow.
 - Do not build speculative platforms, abstractions, or features with unclear
   business value. Ask for a decision or propose the smallest proof slice instead.
@@ -37,6 +49,8 @@ Draft support only: never diagnose, recommend treatment, or act autonomously.
 Read the relevant source before acting:
 
 - `.github/copilot-instructions.md` — repository rules and GitHub workflow
+- `.github/instructions/python.instructions.md` — Python implementation conventions
+- `.github/instructions/testing.instructions.md` — E2E-first testing conventions
 - `tasks/README.md` and `tasks/_TEMPLATE.md` — task-file ownership and format
 - `tasks/PROJECT-BOARD.md` — milestones, priorities, current issue seed
 - Relevant `tasks/<state>/` file — current PBI scope and dependency state
