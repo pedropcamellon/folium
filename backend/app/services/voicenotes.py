@@ -7,7 +7,12 @@ from dataclasses import asdict, is_dataclass
 from datetime import timedelta
 from uuid import uuid4
 
-from folium.core.models.workflow import AudioReference, VoiceNotesInput
+from folium.core.voicenotes import (
+    VOICENOTES_TASK_QUEUE,
+    VOICENOTES_WORKFLOW_NAME,
+    AudioReference,
+    VoiceNotesInput,
+)
 from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
 
 from app.config import settings
@@ -58,10 +63,10 @@ class VoiceNotesService:
         )
         workflow_id = self.build_workflow_id(interaction_id)
         handle = await client.start_workflow(
-            settings.VOICENOTES_WORKFLOW_NAME,
+            VOICENOTES_WORKFLOW_NAME,
             workflow_input,
             id=workflow_id,
-            task_queue=settings.VOICE_NOTE_TASK_QUEUE,
+            task_queue=VOICENOTES_TASK_QUEUE,
             execution_timeout=timedelta(
                 minutes=settings.VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES
             ),
