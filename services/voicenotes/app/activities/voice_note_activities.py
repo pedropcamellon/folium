@@ -1,10 +1,8 @@
+from folium.core.voicenotes import TRANSCRIBE_ACTIVITY_NAME
 from temporalio import activity
 
 from app.contracts.voice_note_models import AudioReference, TranscriptionResult
 from app.contracts.workflow_protocols import TranscriptionGateway
-from app.temporal_config import (
-    TRANSCRIBE_ACTIVITY_NAME,
-)
 
 
 class VoiceNoteActivities:

@@ -24,7 +24,6 @@ services:
       PYTHONUNBUFFERED: "1"
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
-      VOICE_NOTE_TASK_QUEUE: ${VOICE_NOTE_TASK_QUEUE:-voice-notes-queue}
       BACKEND_API_URL: ${BACKEND_API_URL:-http://folium-backend:8000}
       TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://folium-transcribe:8001}
       SUMMARIZATION_SERVICE_URL: ${SUMMARIZATION_SERVICE_URL:-http://folium-summarize:8002}

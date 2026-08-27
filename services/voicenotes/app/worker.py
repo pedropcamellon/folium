@@ -1,13 +1,14 @@
 import asyncio
 import logging
 
+from folium.core.voicenotes import VOICENOTES_TASK_QUEUE
 from temporalio.client import Client
 from temporalio.worker import Worker
 
-from app.activities.voice_note_activities import VoiceNoteActivities
-from app.clients.transcription_client import TranscriptionServiceClient
-from app.config import settings
-from app.workflows.voicenotes_workflow import VoiceNoteWorkflow
+from .activities.voice_note_activities import VoiceNoteActivities
+from .clients.transcription_client import TranscriptionServiceClient
+from .config import settings
+from .workflows.voicenotes_workflow import VoiceNoteWorkflow
 
 
 async def main() -> None:
@@ -27,7 +28,7 @@ async def main() -> None:
 
     worker = Worker(
         client,
-        task_queue=settings.VOICE_NOTE_TASK_QUEUE,
+        task_queue=VOICENOTES_TASK_QUEUE,
         workflows=[VoiceNoteWorkflow],
         activities=[
             activities.transcribe_audio,

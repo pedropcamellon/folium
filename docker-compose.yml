@@ -6,5 +6,6 @@ include:
   - services/temporal/docker-compose.infra.yml
   - services/transcribe/docker-compose.yml
   - services/summarize/docker-compose.yml
+  - services/chartreview/docker-compose.service.yml
   - services/voicenotes/docker-compose.service.yml
   - services/observability/docker-compose.observability.yml

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from folium.core.models.workflow import AudioReference, VoiceNotesInput
+from folium.core.voicenotes import AudioReference, VoiceNotesInput
 
 __all__ = [
     "AudioReference",
