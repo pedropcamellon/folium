@@ -1,15 +1,14 @@
 """Local LLM provider using llama-cpp-python."""
 
-import logging
 import json
+import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Any
 
-from llama_cpp import Llama
-
-from app.providers.base import SummarizationProvider
 from app.config import settings
+from app.inference.local import local_inference_engine
 from app.prompts import format_prompt
+from app.providers.base import SummarizationProvider
 
 logger = logging.getLogger(__name__)
 
@@ -27,49 +26,18 @@ class LocalLLMProvider(SummarizationProvider):
         Model is loaded lazily on first summarize() call to avoid
         startup delays in Docker healthchecks.
         """
-        self._model: Optional[Llama] = None
         self._model_name = settings.local_model_name
         logger.info(
             f"[INIT] Local LLM provider initialized (model: {self._model_name})"
         )
 
-    def _load_model(self):
-        """Load the GGUF model file (lazy initialization)."""
-        if self._model is not None:
-            return
-
-        model_path = settings.local_model_path
-        if not model_path:
-            raise ValueError(
-                "LOCAL_MODEL_PATH environment variable not set. "
-                "Specify path to GGUF model file."
-            )
-
-        logger.info(f"[LOAD] Loading local LLM from {model_path}...")
-        start = time.time()
-
-        self._model = Llama(
-            model_path=model_path,
-            n_ctx=settings.local_n_ctx,
-            n_threads=settings.local_n_threads,
-            n_batch=512,
-            use_mmap=True,
-            use_mlock=False,
-            verbose=False,
-        )
-
-        elapsed = time.time() - start
-        logger.info(
-            f"[OK] Model loaded in {elapsed:.2f}s (context: {settings.local_n_ctx} tokens)"
-        )
-
     async def summarize(
         self,
         transcript: str,
-        interaction_type: Optional[str] = None,
+        interaction_type: str | None = None,
         format: str = "soap",
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Generate clinical summary using local LLM.
 
         Args:
@@ -85,9 +53,6 @@ class LocalLLMProvider(SummarizationProvider):
             ValueError: If model path not configured
             Exception: If generation fails
         """
-        # Lazy load model on first call
-        self._load_model()
-
         logger.info(
             f"[PROC] Starting summarization (transcript length: {len(transcript)} chars)"
         )
@@ -98,7 +63,7 @@ class LocalLLMProvider(SummarizationProvider):
 
         try:
             # Generate summary with optimized settings
-            response = self._model.create_chat_completion(
+            response = local_inference_engine.chat_completion(
                 messages=[
                     {
                         "role": "system",

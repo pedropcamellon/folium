@@ -2,7 +2,22 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class ChatMessage(BaseModel):
+    role: str = Field(..., pattern="^(system|user|assistant)$")
+    content: str = Field(..., min_length=1, max_length=40_000)
+
+
+class ChatCompletionsRequest(BaseModel):
+    """Subset of the OpenAI chat-completions request used by local workers."""
+
+    model: str = Field(..., min_length=1)
+    messages: list[ChatMessage] = Field(..., min_length=1, max_length=20)
+    temperature: float | None = Field(None, ge=0, le=2)
+    max_tokens: int | None = Field(None, ge=1, le=4_000)
+    response_format: dict[str, str] | None = None
 
 
 class SummarizeRequest(BaseModel):
@@ -102,19 +117,9 @@ class StructuredSummary(BaseModel):
 class SummarizeResponse(BaseModel):
     """Response schema for summarization endpoint."""
 
-    summary: str = Field(..., description="Full narrative summary")
-    structured_data: StructuredSummary = Field(
-        ..., description="Structured clinical data in SOAP format"
-    )
-    processing_time: float = Field(..., description="Processing time in seconds")
-    model_used: str = Field(..., description="Name of the model used")
-    provider: str = Field(..., description="Provider name (local, openai, etc.)")
-    usage: dict[str, Any] | None = Field(
-        None, description="Token usage and cost information (if applicable)"
-    )
-
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        protected_namespaces=(),
+        json_schema_extra={
             "example": {
                 "summary": "Patient presenting with chest pain likely due to costochondritis. Vital signs stable. Plan includes NSAIDs and follow-up.",
                 "structured_data": {
@@ -135,7 +140,19 @@ class SummarizeResponse(BaseModel):
                 "provider": "local",
                 "usage": None,
             }
-        }
+        },
+    )
+
+    summary: str = Field(..., description="Full narrative summary")
+    structured_data: StructuredSummary = Field(
+        ..., description="Structured clinical data in SOAP format"
+    )
+    processing_time: float = Field(..., description="Processing time in seconds")
+    model_used: str = Field(..., description="Name of the model used")
+    provider: str = Field(..., description="Provider name (local, openai, etc.)")
+    usage: dict[str, Any] | None = Field(
+        None, description="Token usage and cost information (if applicable)"
+    )
 
 
 class HealthResponse(BaseModel):
@@ -148,6 +165,8 @@ class HealthResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response schema."""
+
+    model_config = ConfigDict(protected_namespaces=())
 
     error: str = Field(..., description="Error type")
     detail: str = Field(..., description="Error details")
