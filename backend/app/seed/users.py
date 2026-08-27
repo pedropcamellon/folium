@@ -1,8 +1,8 @@
 """Seed users with all 4 roles."""
 
+from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from passlib.context import CryptContext
 
 from app.models.user import User, UserRole
 
