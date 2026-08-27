@@ -1,63 +1,39 @@
-"""Validated contracts for synthetic chart-review draft support."""
+"""Backend response model plus shared chart-review workflow contracts."""
 
-from enum import Enum
+from datetime import datetime
 
-from pydantic import BaseModel, Field, model_validator
-
-
-class ChartReviewSourceType(str, Enum):
-    """Supported sources for a chart-review context bundle."""
-
-    TIMELINE = "timeline"
-    DOCUMENT = "document"
-    INTERACTION = "interaction"
-    TRANSCRIPT = "transcript"
+from folium.core.chart_review import (
+    ChartReviewSourceType,
+    ChartReviewStatus,
+)
+from pydantic import BaseModel, ConfigDict, Field
 
 
-class ChartReviewSourceChunk(BaseModel):
-    """A traceable synthetic input record supplied to the review agent."""
+class ChartReviewCitationResponse(BaseModel):
+    """Public display metadata for a cited immutable chart-review source."""
 
-    source_id: str = Field(..., min_length=1, max_length=100)
-    source_type: ChartReviewSourceType
-    content: str = Field(..., min_length=1, max_length=20_000)
+    model_config = ConfigDict(populate_by_name=True)
 
-
-class ChartReviewInput(BaseModel):
-    """Synthetic patient context used to create a bounded draft review."""
-
-    patient_id: str = Field(..., min_length=1, max_length=100)
-    interaction_id: str = Field(..., min_length=1, max_length=100)
-    timeline: list[ChartReviewSourceChunk] = Field(default_factory=list)
-    documents: list[ChartReviewSourceChunk] = Field(default_factory=list)
-    interactions: list[ChartReviewSourceChunk] = Field(default_factory=list)
-    transcript: ChartReviewSourceChunk | None = None
-
-    @model_validator(mode="after")
-    def validate_source_ids(self) -> "ChartReviewInput":
-        source_ids = [source.source_id for source in self.source_chunks]
-        if len(source_ids) != len(set(source_ids)):
-            raise ValueError("Chart review source IDs must be unique")
-        return self
-
-    @property
-    def source_chunks(self) -> list[ChartReviewSourceChunk]:
-        """Return all supplied source chunks in a stable order."""
-        transcript = [self.transcript] if self.transcript else []
-        return [*self.timeline, *self.documents, *self.interactions, *transcript]
+    source_type: ChartReviewSourceType = Field(..., alias="sourceType")
+    resource_id: str | None = Field(None, alias="resourceId")
+    display_label: str | None = Field(None, alias="displayLabel")
+    content_role: str | None = Field(None, alias="contentRole")
+    occurred_at: datetime | None = Field(None, alias="occurredAt")
 
 
-class ChartReviewSourceRef(BaseModel):
-    """Reference to one source chunk used by a generated draft."""
+class ChartReviewResponse(BaseModel):
+    """Persisted draft-support review returned to the interaction UI."""
 
-    source_id: str = Field(..., min_length=1, max_length=100)
+    model_config = ConfigDict(populate_by_name=True)
 
-
-class ChartReviewOutput(BaseModel):
-    """Validated draft-support output returned by a chart-review provider."""
-
-    summary: str = Field(..., min_length=1, max_length=10_000)
-    missing_info: list[str] = Field(default_factory=list)
-    follow_up_questions: list[str] = Field(default_factory=list)
-    source_refs: list[ChartReviewSourceRef] = Field(default_factory=list)
-    confidence: float = Field(..., ge=0, le=1)
-    review_flags: list[str] = Field(default_factory=list)
+    id: str
+    interaction_id: str = Field(..., alias="interactionId")
+    status: ChartReviewStatus
+    summary: str | None = None
+    reasoning: str | None = None
+    missing_info: list[str] = Field(default_factory=list, alias="missingInfo")
+    follow_up_questions: list[str] = Field(default_factory=list, alias="followUpQuestions")
+    source_refs: list[ChartReviewCitationResponse] = Field(default_factory=list, alias="sourceRefs")
+    confidence: float | None = None
+    review_flags: list[str] = Field(default_factory=list, alias="reviewFlags")
+    failure_message: str | None = Field(None, alias="failureMessage")

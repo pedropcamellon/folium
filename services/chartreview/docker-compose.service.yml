@@ -1,0 +1,38 @@
+services:
+  folium-chartreview-worker:
+    build:
+      context: ../..
+      dockerfile: services/chartreview/Dockerfile
+    container_name: folium-chartreview-worker
+    depends_on:
+      folium-temporal:
+        condition: service_healthy
+      folium-summarize:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: folium-temporal:7233
+      TEMPORAL_NAMESPACE: default
+      CHARTREVIEW_TASK_QUEUE: chartreview-queue
+      AI_SERVICE_BASE_URL: http://folium-summarize:8002
+      AI_PROVIDER_NAME: local
+      AI_MODEL_NAME: ${LOCAL_MODEL_NAME:-mediphi-clinical}
+    restart: unless-stopped
+    develop:
+      watch:
+        - action: sync
+          path: ./app
+          target: /workspace/services/chartreview/app
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+            - .pytest_cache/
+        - action: rebuild
+          path: ./pyproject.toml
+        - action: sync
+          path: ../../packages/folium-core/src
+          target: /workspace/packages/folium-core/src
+          ignore:
+            - __pycache__/
+            - "*.pyc"
+        - action: rebuild
+          path: ../../packages/folium-core/pyproject.toml

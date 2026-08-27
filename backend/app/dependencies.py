@@ -4,9 +4,12 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_async_session
+from app.repositories.chart_review_repository import ChartReviewRepository
 from app.repositories.document_repository import DocumentRepository
 from app.repositories.interaction_repository import InteractionRepository
 from app.repositories.patient_repository import PatientRepository
+from app.services.chart_review_request_service import ChartReviewRequestService
+from app.services.chart_review_workflow_service import ChartReviewWorkflowService
 from app.services.document_service import DocumentService
 from app.services.interaction_service import InteractionService
 from app.services.patient_service import PatientService
@@ -21,6 +24,7 @@ from app.services.voicenotes import VoiceNotesService
 _transcription_service = None
 _summarization_service = None
 _voicenotes_service = None
+_chart_review_workflow_service = None
 
 
 def get_patient_repository(session: AsyncSession = Depends(get_async_session)) -> PatientRepository:
@@ -61,6 +65,31 @@ def get_document_service(
 ) -> DocumentService:
     """Get document service with injected repository"""
     return DocumentService(repository)
+
+
+def get_chart_review_repository(
+    session: AsyncSession = Depends(get_async_session),
+) -> ChartReviewRepository:
+    """Get chart-review repository with database session."""
+    return ChartReviewRepository(session)
+
+
+def get_chart_review_request_service(
+    repository: ChartReviewRepository = Depends(get_chart_review_repository),
+    interaction_service: InteractionService = Depends(get_interaction_service),
+    workflow_service: ChartReviewWorkflowService = Depends(
+        lambda: get_chart_review_workflow_service()
+    ),
+) -> ChartReviewRequestService:
+    """Get the explicit clinician-requested chart-review service."""
+    return ChartReviewRequestService(repository, interaction_service, workflow_service)
+
+
+def get_chart_review_workflow_service() -> ChartReviewWorkflowService:
+    global _chart_review_workflow_service
+    if _chart_review_workflow_service is None:
+        _chart_review_workflow_service = ChartReviewWorkflowService()
+    return _chart_review_workflow_service
 
 
 def get_transcription_service() -> TranscriptionService:

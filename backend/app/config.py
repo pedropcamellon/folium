@@ -55,8 +55,6 @@ class Settings(BaseSettings):
     # Temporal
     TEMPORAL_ADDRESS: str = "localhost:7233"
     TEMPORAL_NAMESPACE: str = "default"
-    VOICE_NOTE_TASK_QUEUE: str = "voice-notes-queue"
-    VOICENOTES_WORKFLOW_NAME: str = "voicenotes"
     VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
 
     # Legacy settings (deprecated)

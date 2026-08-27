@@ -3,10 +3,15 @@
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 
-from app.core.logging import setup_structured_logging
+from app.core.logging import AuditLogger, setup_structured_logging
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
-from app.dependencies import get_interaction_service, get_voice_note_service
+from app.dependencies import (
+    get_chart_review_request_service,
+    get_interaction_service,
+    get_voice_note_service,
+)
+from app.models.chart_review import ChartReviewResponse
 from app.models.interaction import (
     InteractionCreate,
     InteractionResponse,
@@ -15,10 +20,11 @@ from app.models.interaction import (
     SummaryUpdateRequest,
 )
 from app.models.user import User
+from app.services.chart_review_request_service import ChartReviewRequestService
 from app.services.interaction_service import InteractionService
 from app.services.voice_note_service import VoiceNoteService
 
-logger = setup_structured_logging("backend")
+logger: AuditLogger = setup_structured_logging("backend")
 
 router = APIRouter(prefix="/interactions")
 
@@ -216,7 +222,7 @@ async def get_audio(
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     except Exception as exc:
         logger.error(f"[GET] Download failed: {exc}")
-        raise HTTPException(status_code=500, detail=f"Storage download failed: {str(exc)}") from exc
+        raise HTTPException(status_code=500, detail=f"Storage download failed: {exc!s}") from exc
 
     return Response(
         content=audio_download["content"],
@@ -258,3 +264,31 @@ async def get_voice_note_status(
 ):
     """Get current voice note workflow status for an interaction."""
     return await voice_note_service.get_workflow_status(interaction_id)
+
+
+@router.post("/{interaction_id}/chart-review", response_model=ChartReviewResponse)
+async def request_chart_review(
+    interaction_id: str,
+    current_user: User = Depends(require_permission(Permission.INTERACTIONS_SUMMARIZE)),
+    service: ChartReviewRequestService = Depends(get_chart_review_request_service),
+):
+    """Generate an explicitly requested, mock-backed draft chart review."""
+    result = await service.request_for_interaction(interaction_id)
+    logger.audit(
+        action="chart_review_requested",
+        user_id=str(current_user.id),
+        interaction_id=interaction_id,
+        method="POST",
+        endpoint=f"/api/v1/interactions/{interaction_id}/chart-review",
+    )
+    return result
+
+
+@router.get("/{interaction_id}/chart-review", response_model=ChartReviewResponse | None)
+async def get_chart_review(
+    interaction_id: str,
+    _: object = Depends(require_permission(Permission.INTERACTIONS_READ)),
+    service: ChartReviewRequestService = Depends(get_chart_review_request_service),
+):
+    """Read the latest persisted draft review for an interaction."""
+    return await service.get_for_interaction(interaction_id)
