@@ -87,6 +87,32 @@ export interface VoiceNoteWorkflowStatusResponse {
     interaction?: PatientInteraction;
 }
 
+import type { ChartReviewStatus } from "@/constants/chartReview";
+
+export type { ChartReviewStatus };
+
+export interface ChartReviewSourceRef {
+    sourceType: "timeline" | "document" | "interaction" | "transcript";
+    resourceId?: string | null;
+    displayLabel?: string | null;
+    contentRole?: string | null;
+    occurredAt?: string | null;
+}
+
+export interface ChartReview {
+    id: string;
+    interactionId: string;
+    status: ChartReviewStatus;
+    summary?: string | null;
+    reasoning?: string | null;
+    missingInfo: string[];
+    followUpQuestions: string[];
+    sourceRefs: ChartReviewSourceRef[];
+    confidence?: number | null;
+    reviewFlags: string[];
+    failureMessage?: string | null;
+}
+
 // ============== SUMMARIZATION TYPES ==============
 export interface StructuredSummary {
     chief_complaint: string;

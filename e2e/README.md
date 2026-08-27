@@ -29,11 +29,11 @@ Current organization:
 
 Run options:
 
-- Run everything: `uv run .\main.py`
-- List scenarios: `uv run .\main.py --list`
-- Run one scenario: `uv run .\main.py --scenario provider-voice-note`
-- Run summary only: `uv run .\main.py --scenario provider-summary`
-- Run multiple scenarios: `uv run .\main.py --scenario provider-patient-crud --scenario patient-portal`
+- Run everything: `uv run ./main.py`
+- List scenarios: `uv run ./main.py --list`
+- Run one scenario: `uv run ./main.py --scenario provider-voice-note`
+- Run summary only: `uv run ./main.py --scenario provider-summary`
+- Run multiple scenarios: `uv run ./main.py --scenario provider-patient-crud --scenario patient-portal`
 - Use env selection instead of flags: set `FOLIUM_E2E_SCENARIOS=provider-voice-note`
 
 Expected outcome: a quick pass/fail signal that role routing, session boundaries, and core provider CRUD interactions still work end to end.

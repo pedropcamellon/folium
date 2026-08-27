@@ -12,6 +12,7 @@ import { PatientInteraction } from "@/types";
 
 import { NotesSection } from "./NotesSection";
 import { SummarySection } from "./SummarySection";
+import { ChartReviewSection } from "./ChartReviewSection";
 
 interface PatientInteractionDetailsModalProps {
     interaction: PatientInteraction;
@@ -30,12 +31,12 @@ export default function PatientInteractionDetailsModal({
 }: PatientInteractionDetailsModalProps) {
     return (
         <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-xl max-h-[85vh] flex flex-col">
+            <DialogContent className="w-full max-w-md sm:max-w-lg md:max-w-2xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
                     <DialogTitle>Interaction Details</DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-4 overflow-y-auto">
+                <div className="flex flex-col gap-4 overflow-y-auto pr-3">
                     <SummarySection
                         interaction={interaction}
                         note={interaction.note || ""}
@@ -47,6 +48,7 @@ export default function PatientInteractionDetailsModal({
                         onAudioSubmitted={onAudioSubmitted}
                         transcriptionState={transcriptionState}
                     />
+                    <ChartReviewSection interactionId={interaction.id} />
                 </div>
 
                 <div className="pt-4 border-t flex justify-end">

@@ -35,6 +35,8 @@ export const API_ENDPOINTS = {
         `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/summary`,
     interactionVoiceNoteStatus: (id: string) =>
         `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/voice-note-status`,
+    interactionChartReview: (id: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/interactions/${id}/chart-review`,
 
     // Clinical Documents
     documents: `${FASTAPI_BASE_URL}/api/v1/clinical-documents`,
