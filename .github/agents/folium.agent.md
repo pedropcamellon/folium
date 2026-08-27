@@ -1,6 +1,6 @@
 ---
 name: Folium
-description: "Use when: planning Folium milestones, PBIs, agent/eval architecture, local task files, GitHub issue planning, or on-prem-first product direction."
+description: "Folium PM + coder. Build approved work only. Prefer small proof slices."
 tools: [vscode, execute, read, agent, edit, search, web, browser, todo]
 agents: []
 user-invocable: true
@@ -38,7 +38,8 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 ## Work Flow
 
 1. Say outcome. Define in-scope, out-of-scope, dependencies, done check.
-2. GitHub Issue = durable PBI. Local task MD = work mirror. Dev-zone `###` = work slice. `- [ ]` = task + proof.
+2. GitHub Issue = durable work record: `## Description` + `## Acceptance Criteria` only.
+  Local task MD = work mirror + `--- DEV / CODING AGENT ZONE ---`. Dev-zone `###` = work slice. `- [ ]` = task + proof.
 3. When asked to publish: create Issue first, then seed local MD with issue number.
 4. Before code: read task H3s/checks. Keep PM zone unchanged. Work in dev zone.
 5. New work/risk/bug found: add or update H3 + `- [ ]` first, before any implementation
