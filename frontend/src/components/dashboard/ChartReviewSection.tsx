@@ -149,7 +149,7 @@ export function ChartReviewSection({ interactionId }: ChartReviewSectionProps) {
                         <ReviewList title="Follow-up questions" items={review.followUpQuestions} />
                     </div>
                     <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
-                        <span>Confidence: {Math.round((review.confidence ?? 0) * 100)}%</span>
+                        <span>Confidence: {review.confidence ?? "Not available"}</span>
                         <span>Sources: {review.sourceRefs.length}</span>
                     </div>
                     {review.sourceRefs.length ? (

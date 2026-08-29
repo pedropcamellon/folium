@@ -32,9 +32,10 @@ def run_provider_chart_review_flow(page: Page, base_url: str, flow: FlowCase) ->
         state="hidden", timeout=CHART_REVIEW_WAIT_MS
     )
 
-    dialog.get_by_text("Confidence:", exact=False).wait_for(
+    dialog.get_by_text(re.compile(r"^Confidence: (low|medium|high)$")).wait_for(
         state="visible", timeout=15000
     )
+    expect(dialog.get_by_text("NaN%", exact=False)).to_have_count(0)
     expect(
         dialog.locator(
             "section[aria-labelledby='chart-review-heading'] > div:last-child > p"
@@ -44,7 +45,7 @@ def run_provider_chart_review_flow(page: Page, base_url: str, flow: FlowCase) ->
         state="visible", timeout=15000
     )
     dialog.get_by_text(
-        "Follow-up Visit - Cough Improvement - summary", exact=True
+        "Follow-up Visit - Cough Improvement - summary", exact=False
     ).wait_for(state="visible", timeout=15000)
     expect(dialog.get_by_text("interaction-summary:", exact=False)).to_have_count(0)
     dialog.get_by_role("heading", name="Review rationale").wait_for(

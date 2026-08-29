@@ -90,6 +90,7 @@ export interface VoiceNoteWorkflowStatusResponse {
 import type { ChartReviewStatus } from "@/constants/chartReview";
 
 export type { ChartReviewStatus };
+export type ChartReviewConfidence = "low" | "medium" | "high";
 
 export interface ChartReviewSourceRef {
     sourceType: "timeline" | "document" | "interaction" | "transcript";
@@ -108,7 +109,7 @@ export interface ChartReview {
     missingInfo: string[];
     followUpQuestions: string[];
     sourceRefs: ChartReviewSourceRef[];
-    confidence?: number | null;
+    confidence?: ChartReviewConfidence | null;
     reviewFlags: string[];
     failureMessage?: string | null;
 }
