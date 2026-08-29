@@ -1,6 +1,33 @@
 
 # Folium: AI-Powered Clinical Documentation Platform
 
+## Local Runtime
+
+The root tooling package provides the supported local runtime command:
+
+```bash
+uv run folium
+```
+
+It defaults to `start --target local`, validates Docker and the rendered Compose
+configuration, and does not download a model unless explicitly requested.
+
+```bash
+uv run folium status
+uv run folium start --rebuild --recreate
+uv run folium start --target azure
+uv run folium down
+```
+
+Running `uv run folium` with no subcommand opens an interactive checkbox picker.
+Use `Space` to select a service, `b` to mark buildable services for an image
+build, `x` to force-recreate a selected container, and `Enter` to run the plan.
+
+For a verified GGUF artifact, populate the URL, SHA-256, and size fields in
+`src/folium_runtime/model-artifact.toml`, then run `uv run folium --download-model`.
+`bootstrap-state --target azure` is the only cloud-mutating command; it also
+requires `--confirm` and a storage-account name.
+
 ## Problem
 
 Healthcare providers spend significant time on manual documentation—voice notes, visit summaries, lab result comments—that slows clinical workflow and wastes valuable practitioner time.
