@@ -32,16 +32,16 @@ Alembic manages database schema changes:
 
 ```bash
 # Create a new migration after model changes
-docker compose exec backend alembic revision --autogenerate -m "Description"
+docker compose exec folium-backend alembic revision --autogenerate -m "Description"
 
 # Apply pending migrations
-docker compose exec backend alembic upgrade head
+docker compose exec folium-backend alembic upgrade head
 
 # Rollback last migration
-docker compose exec backend alembic downgrade -1
+docker compose exec folium-backend alembic downgrade -1
 
 # View migration history
-docker compose exec backend alembic history
+docker compose exec folium-backend alembic history
 ```
 
 ### Seed Data
@@ -53,17 +53,20 @@ Test data automatically seeds on startup via `app/main.py`:
 - **Interactions**: 10 diverse encounters (appointments, voice notes, lab work, vaccinations)
 - **Documents**: 3 clinical documents (imaging reports, forms, lab results)
 
-To manually reseed:
+Run maintenance commands through the running Compose service. This uses the same
+image, network, and injected environment settings as the API.
+
+To manually reseed when no interaction records exist:
 
 ```bash
-docker compose exec backend python -m app.seed_db
+docker compose exec folium-backend python -m app.seed_db
 ```
 
-To clear interactions and documents:
+To reset and recreate synthetic interactions and documents:
 
 ```bash
-docker compose exec backend sh -c "cd /app && python -m app.clear_data"
-docker compose restart backend  # Triggers auto-reseed
+docker compose exec folium-backend python -m app.clear_data
+docker compose exec folium-backend python -m app.seed_db
 ```
 
 ### Database Console
@@ -71,7 +74,7 @@ docker compose restart backend  # Triggers auto-reseed
 Access PostgreSQL directly:
 
 ```bash
-docker compose exec postgres psql -U folium -d folium_db
+docker compose exec folium-postgres psql -U folium -d folium_db
 
 # Useful queries
 \dt                           # List tables
@@ -112,26 +115,27 @@ For complete API documentation, see [SPEC.md](./SPEC.md)
 docker compose up
 
 # View logs
-docker compose logs backend -f
+docker compose logs folium-backend -f
 
 # Restart backend after code changes
-docker compose restart backend
+docker compose restart folium-backend
 
 # Access backend shell
-docker compose exec backend sh
+docker compose exec folium-backend sh
 ```
 
 ### Database Management
 
 ```bash
 # Run migrations
-docker compose exec backend alembic upgrade head
+docker compose exec folium-backend alembic upgrade head
 
 # Create new migration
-docker compose exec backend alembic revision --autogenerate -m "Add field"
+docker compose exec folium-backend alembic revision --autogenerate -m "Add field"
 
-# Reseed database
-docker compose restart backend  # Auto-seeds on startup
+# Reset and reseed synthetic interactions and documents
+docker compose exec folium-backend python -m app.clear_data
+docker compose exec folium-backend python -m app.seed_db
 ```
 
 ### API Testing

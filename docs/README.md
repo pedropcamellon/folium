@@ -8,6 +8,9 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
 
 - **User guides** are the final, task-focused instructions for people using
   Folium. They describe supported workflows, not build or implementation detail.
+  A supported user-guide claim is a product contract: it requires implementation
+  and validation evidence. Planned behavior must be marked as planned and must
+  not appear as a procedural user workflow until it is delivered.
 - **Developer guides** preserve operational lessons, technical decisions, and
   tradeoffs for maintainers and coding agents. Start here before changing the
   related part of the system.
@@ -30,9 +33,11 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
 - [Clinical Documents](user-guide/documents.md) - Upload and manage patient documents
 - [Voice Notes](user-guide/voice-notes.md) - Record and transcribe clinical notes
 - [AI Summaries](user-guide/summaries.md) - Generate and edit clinical summaries
+- [Chart Review Drafts](user-guide/chart-review.md) - Request and review bounded AI draft support
 
 ### Developer Guides
 
+- [Chart Review Agent Lessons](dev/chart-review-agent.md) - Local operations and bounded retrieval constraints
 - [Local LLM Build Compatibility](dev/local-llm-builds.md) - A Linux ARM build
   lesson and the portable local-summarizer default
 
