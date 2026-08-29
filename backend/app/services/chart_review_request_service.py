@@ -4,6 +4,9 @@ import logging
 from uuid import UUID
 
 from folium.core.chart_review import (
+    ChartReviewConfidence,
+    ChartReviewHistoryRequest,
+    ChartReviewHistoryResponse,
     ChartReviewInput,
     ChartReviewSourceChunk,
     ChartReviewSourceType,
@@ -67,6 +70,50 @@ class ChartReviewRequestService:
             return None
         await self._refresh_workflow_result(review)
         return self._to_response(review)
+
+    async def retrieve_prior_interaction_blocks(
+        self, request: ChartReviewHistoryRequest
+    ) -> ChartReviewHistoryResponse:
+        """Return a bounded set of patient-scoped prior interaction source blocks."""
+        active_interaction = await self._interaction_service.get_by_id(request.interaction_id)
+        if str(active_interaction.patientId) != request.patient_id:
+            raise ValueError("Chart-review history request does not match the active interaction")
+
+        prior_interactions = await self._interaction_service.get_by_patient_id(request.patient_id)
+        source_chunks: list[ChartReviewSourceChunk] = []
+        for interaction in prior_interactions:
+            if str(interaction.id) == request.interaction_id:
+                continue
+            for chunk in self._history_chunks_matching_terms(interaction, request.search_terms):
+                source_chunks.append(
+                    ChartReviewSourceChunk(
+                        source_id=f"history-{chunk.source_id}",
+                        source_type=chunk.source_type,
+                        content=chunk.content,
+                        resource_id=chunk.resource_id,
+                        display_label=chunk.display_label,
+                        content_role=chunk.content_role,
+                        occurred_at=chunk.occurred_at,
+                    )
+                )
+                if len(source_chunks) == request.max_blocks:
+                    return ChartReviewHistoryResponse(source_chunks=source_chunks)
+        return ChartReviewHistoryResponse(source_chunks=source_chunks)
+
+    @staticmethod
+    def _history_chunks_matching_terms(
+        interaction, search_terms: list[str]
+    ) -> list[ChartReviewSourceChunk]:
+        """Return curated interaction blocks matching the agent's bounded search terms."""
+        note_chunk = ChartReviewRequestService._transcript_chunk(interaction)
+        candidate_chunks = ChartReviewRequestService._selected_interaction_chunks(interaction)
+        if note_chunk is not None:
+            candidate_chunks.append(note_chunk)
+        return [
+            chunk
+            for chunk in candidate_chunks
+            if any(term.casefold() in chunk.content.casefold() for term in search_terms)
+        ]
 
     async def _build_input(self, interaction_id: str) -> ChartReviewInput:
         interaction = await self._interaction_service.get_by_id(interaction_id)
@@ -177,7 +224,9 @@ class ChartReviewRequestService:
             missingInfo=output.get("missing_info", []),
             followUpQuestions=output.get("follow_up_questions", []),
             sourceRefs=source_refs,
-            confidence=chart_review.confidence,
+            confidence=ChartReviewConfidence(chart_review.confidence)
+            if chart_review.confidence
+            else None,
             reviewFlags=chart_review.review_flags or [],
             failureMessage=chart_review.failure_message,
         )

@@ -7,18 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.db import Interaction, Patient
 
-CHART_REVIEW_DEMO_TITLE = "Follow-up Visit - Cough Improvement"
-CHART_REVIEW_DEMO_TRANSCRIPT = (
-    "Clinician: Thanks for coming back today. How has the cough been since the last visit?\n\n"
-    "Patient: It is much better. I still cough a little at night, but I am sleeping through most "
-    "of the night now. I have not had fever, chills, chest pain, or shortness of breath.\n\n"
-    "Clinician: Have you been using the inhaler, and has anything made the cough worse?\n\n"
-    "Patient: I used it once or twice a day during the first week and less often now. Cold air "
-    "seems to trigger a brief cough. I have not needed urgent care and I am able to work normally.\n\n"
-    "Clinician: We reviewed your symptoms and exam today. Please contact the clinic if breathing "
-    "difficulty, fever, chest pain, or worsening cough develops."
-)
-
 
 async def seed_interactions(session: AsyncSession, patients: list[Patient]) -> list[Interaction]:
     """Seed interactions for all patients with diverse encounter types."""
@@ -33,7 +21,6 @@ async def seed_interactions(session: AsyncSession, patients: list[Patient]) -> l
     result = await session.execute(select(Interaction).limit(1))
     existing = result.scalar_one_or_none()
     if existing:
-        await _backfill_chart_review_demo_transcript(session)
         print(f"[DEBUG] Interactions already seeded (found interaction: {existing.id})")
         return []
 
@@ -56,10 +43,11 @@ async def seed_interactions(session: AsyncSession, patients: list[Patient]) -> l
             type="VoiceNote",
             title="Initial Consultation - Persistent Cough",
             interaction_date=datetime(2026, 3, 1, 10, 30, tzinfo=UTC),
-            description="Patient reports persistent cough for the past two weeks. "
-            "No fever. Cough is worse at night. Has been taking over-the-counter "
-            "cough medicine with minimal relief. Non-smoker. No recent travel.",
-            summary="2-week persistent cough, worse at night, OTC meds ineffective",
+            description="Patient reports persistent cough for the past two weeks. Diagnosed with acute "
+            "bronchitis at this visit and prescribed an albuterol inhaler. No fever. Cough is worse "
+            "at night. Has been taking over-the-counter cough medicine with minimal relief. "
+            "Non-smoker. No recent travel.",
+            summary="Acute bronchitis diagnosed; albuterol inhaler prescribed for persistent nighttime cough",
             chief_complaint="Persistent cough for 2 weeks",
             clinical_assessment="Likely upper respiratory irritation, rule out bronchitis",
             treatment_plan="Prescribe inhaler, follow-up in 2 weeks",
@@ -72,16 +60,23 @@ async def seed_interactions(session: AsyncSession, patients: list[Patient]) -> l
         Interaction(
             patient_id=patients[0].id,
             type="Appointment",
-            title=CHART_REVIEW_DEMO_TITLE,
+            title="Follow-up Visit - Cough Improvement",
             interaction_date=datetime(2026, 3, 8, 14, 15, tzinfo=UTC),
-            description="Follow-up visit. Patient reports cough has improved with prescribed "
-            "inhaler. No shortness of breath. Lung sounds clear. Continue current "
-            "treatment plan. Recheck in 2 weeks if symptoms persist.",
-            summary="Follow-up: cough improved with inhaler, lungs clear",
-            note=CHART_REVIEW_DEMO_TRANSCRIPT,
+            description="Follow-up visit. Patient reports cough has improved. Patient reports using an "
+            "inhaler, but its type is not documented in this interaction. The timing of the original "
+            "diagnosis is also not documented here. No shortness of breath. Lung sounds clear.",
+            summary="Follow-up: cough improved; inhaler type and original diagnosis timing not documented",
+            note="Clinician: Thanks for coming back today. How has the cough been since the last visit?\n\n"
+            "Patient: It is much better. I still cough a little at night, but I am sleeping through most "
+            "of the night now. I have not had fever, chills, chest pain, or shortness of breath.\n\n"
+            "Clinician: Have you been using the inhaler, and has anything made the cough worse?\n\n"
+            "Patient: I used it once or twice a day during the first week and less often now. Cold air "
+            "seems to trigger a brief cough. I have not needed urgent care and I am able to work normally.\n\n"
+            "Clinician: We reviewed your symptoms and exam today. Please contact the clinic if breathing "
+            "difficulty, fever, chest pain, or worsening cough develops.",
             chief_complaint="Follow-up for persistent cough",
-            clinical_assessment="Significant improvement, lungs clear on auscultation",
-            treatment_plan="Continue inhaler as needed, return if symptoms worsen",
+            clinical_assessment=None,
+            treatment_plan=None,
             location="Main Clinic - Room 203",
             is_compliant=True,
             provider_id="prov-001",
@@ -250,15 +245,3 @@ async def seed_interactions(session: AsyncSession, patients: list[Patient]) -> l
 
     print(f"Seeded {len(interactions)} interactions for {len(patients)} patients")
     return interactions
-
-
-async def _backfill_chart_review_demo_transcript(session: AsyncSession) -> None:
-    result = await session.execute(
-        select(Interaction).where(Interaction.title == CHART_REVIEW_DEMO_TITLE)
-    )
-    interaction = result.scalar_one_or_none()
-    if interaction is None or interaction.note == CHART_REVIEW_DEMO_TRANSCRIPT:
-        return
-
-    interaction.note = CHART_REVIEW_DEMO_TRANSCRIPT
-    await session.commit()

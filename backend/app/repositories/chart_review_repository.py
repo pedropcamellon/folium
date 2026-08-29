@@ -67,7 +67,7 @@ class ChartReviewRepository:
         """Persist validated output and explicit model citations in one transaction."""
         chart_review.status = ChartReviewStatus.COMPLETED.value
         chart_review.output_json = output.model_dump(mode="json")
-        chart_review.confidence = output.confidence
+        chart_review.confidence = output.confidence.value
         chart_review.review_flags = output.review_flags
         chart_review.provider_name = output.provider_name
         chart_review.cited_source_refs = [

@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 from uuid import UUID, uuid4
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, String, Text
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.user import Base
@@ -29,7 +29,7 @@ class ChartReview(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     input_snapshot: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     output_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
-    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    confidence: Mapped[str | None] = mapped_column(String(10), nullable=True)
     review_flags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     provider_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
     failure_message: Mapped[str | None] = mapped_column(Text, nullable=True)

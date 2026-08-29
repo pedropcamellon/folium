@@ -1,8 +1,12 @@
 """Patient interaction endpoints - API route handlers"""
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from fastapi.responses import Response
+from secrets import compare_digest
 
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile, status
+from fastapi.responses import Response
+from folium.core.chart_review import ChartReviewHistoryRequest, ChartReviewHistoryResponse
+
+from app.config import settings
 from app.core.logging import AuditLogger, setup_structured_logging
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
@@ -292,3 +296,18 @@ async def get_chart_review(
 ):
     """Read the latest persisted draft review for an interaction."""
     return await service.get_for_interaction(interaction_id)
+
+
+@router.post("/internal/chart-review/history", response_model=ChartReviewHistoryResponse)
+async def retrieve_chart_review_history(
+    request: ChartReviewHistoryRequest,
+    internal_token: str = Header(..., alias="X-ChartReview-Internal-Token"),
+    service: ChartReviewRequestService = Depends(get_chart_review_request_service),
+):
+    """Serve the worker's bounded, backend-curated prior-interaction blocks."""
+    if not compare_digest(internal_token, settings.CHARTREVIEW_INTERNAL_TOKEN):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid internal token")
+    try:
+        return await service.retrieve_prior_interaction_blocks(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc

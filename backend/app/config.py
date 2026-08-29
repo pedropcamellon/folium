@@ -1,7 +1,12 @@
 """Application configuration using Pydantic settings"""
 
+from pathlib import Path
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
+
+ROOT_ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+BACKEND_ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
 
 
 class Settings(BaseSettings):
@@ -56,6 +61,7 @@ class Settings(BaseSettings):
     TEMPORAL_ADDRESS: str = "localhost:7233"
     TEMPORAL_NAMESPACE: str = "default"
     VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
+    CHARTREVIEW_INTERNAL_TOKEN: str = ""
 
     # Legacy settings (deprecated)
 
@@ -79,6 +85,9 @@ class Settings(BaseSettings):
         if not self.JWT_SECRET.strip():
             missing_fields.append("JWT_SECRET")
 
+        if not self.CHARTREVIEW_INTERNAL_TOKEN.strip():
+            missing_fields.append("CHARTREVIEW_INTERNAL_TOKEN")
+
         if self.STORAGE_PROVIDER in {"aws", "minio"}:
             if not self.STORAGE_ACCESS_KEY.strip():
                 missing_fields.append("STORAGE_ACCESS_KEY")
@@ -95,7 +104,7 @@ class Settings(BaseSettings):
         return self
 
     class Config:
-        env_file = ".env"
+        env_file = (ROOT_ENV_FILE, BACKEND_ENV_FILE)
         env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"  # Ignore extra environment variables (e.g., from .NET Core)

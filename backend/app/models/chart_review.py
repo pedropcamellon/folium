@@ -3,6 +3,7 @@
 from datetime import datetime
 
 from folium.core.chart_review import (
+    ChartReviewConfidence,
     ChartReviewSourceType,
     ChartReviewStatus,
 )
@@ -34,6 +35,6 @@ class ChartReviewResponse(BaseModel):
     missing_info: list[str] = Field(default_factory=list, alias="missingInfo")
     follow_up_questions: list[str] = Field(default_factory=list, alias="followUpQuestions")
     source_refs: list[ChartReviewCitationResponse] = Field(default_factory=list, alias="sourceRefs")
-    confidence: float | None = None
+    confidence: ChartReviewConfidence | None = None
     review_flags: list[str] = Field(default_factory=list, alias="reviewFlags")
     failure_message: str | None = Field(None, alias="failureMessage")
