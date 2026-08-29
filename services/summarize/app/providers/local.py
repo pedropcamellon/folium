@@ -9,6 +9,7 @@ from app.config import settings
 from app.inference.local import local_inference_engine
 from app.prompts import format_prompt
 from app.providers.base import SummarizationProvider
+from folium.ai import system_message, user_message
 
 logger = logging.getLogger(__name__)
 
@@ -65,11 +66,8 @@ class LocalLLMProvider(SummarizationProvider):
             # Generate summary with optimized settings
             response = local_inference_engine.chat_completion(
                 messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a clinical documentation assistant.",
-                    },
-                    {"role": "user", "content": prompt},
+                    system_message("You are a clinical documentation assistant."),
+                    user_message(prompt),
                 ],
                 temperature=settings.local_temperature,
                 max_tokens=settings.local_max_tokens,

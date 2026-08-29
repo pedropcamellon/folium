@@ -3,6 +3,9 @@
 from folium.core.models.chart_review import (
     CHARTREVIEW_TASK_QUEUE,
     CHARTREVIEW_WORKFLOW_NAME,
+    ChartReviewConfidence,
+    ChartReviewHistoryRequest,
+    ChartReviewHistoryResponse,
     ChartReviewInput,
     ChartReviewOutput,
     ChartReviewSourceChunk,
@@ -15,6 +18,9 @@ from folium.core.models.chart_review import (
 __all__ = [
     "CHARTREVIEW_TASK_QUEUE",
     "CHARTREVIEW_WORKFLOW_NAME",
+    "ChartReviewConfidence",
+    "ChartReviewHistoryRequest",
+    "ChartReviewHistoryResponse",
     "ChartReviewInput",
     "ChartReviewOutput",
     "ChartReviewSourceChunk",

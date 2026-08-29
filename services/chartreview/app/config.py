@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     ai_service_base_url: str
     ai_provider_name: str = "local"
     ai_model_name: str = "mediphi-clinical"
+    chartreview_backend_url: str
+    chartreview_internal_token: str
     request_timeout_seconds: float = 120.0
     activity_start_to_close_timeout_seconds: int = 120
     activity_max_attempts: int = 2

@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 CHARTREVIEW_WORKFLOW_NAME = "chartreview"
 CHARTREVIEW_TASK_QUEUE = "chartreview-queue"
@@ -21,6 +21,12 @@ class ChartReviewStatus(StrEnum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class ChartReviewConfidence(StrEnum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 
 class ChartReviewSourceChunk(BaseModel):
@@ -58,6 +64,31 @@ class ChartReviewSourceRef(BaseModel):
     source_id: str = Field(..., min_length=1, max_length=100)
 
 
+class ChartReviewHistoryRequest(BaseModel):
+    patient_id: str = Field(..., min_length=1, max_length=100)
+    interaction_id: str = Field(..., min_length=1, max_length=100)
+    search_terms: list[str] = Field(..., min_length=1, max_length=3)
+    max_blocks: int = Field(default=3, ge=1, le=3)
+
+    @field_validator("search_terms")
+    @classmethod
+    def normalize_search_terms(cls, search_terms: list[str]) -> list[str]:
+        normalized_terms = [term.strip() for term in search_terms if term.strip()]
+        if not normalized_terms:
+            raise ValueError("Chart-review history search terms must not be blank")
+        if any(len(term) > 80 for term in normalized_terms):
+            raise ValueError(
+                "Chart-review history search terms must be at most 80 characters"
+            )
+        return normalized_terms
+
+
+class ChartReviewHistoryResponse(BaseModel):
+    source_chunks: list[ChartReviewSourceChunk] = Field(
+        default_factory=list, max_length=3
+    )
+
+
 class ChartReviewOutput(BaseModel):
     summary: str = Field(..., min_length=1, max_length=10_000)
     provider_name: str = Field(..., min_length=1, max_length=100)
@@ -65,7 +96,7 @@ class ChartReviewOutput(BaseModel):
     missing_info: list[str] = Field(default_factory=list)
     follow_up_questions: list[str] = Field(default_factory=list)
     source_refs: list[ChartReviewSourceRef] = Field(default_factory=list)
-    confidence: float = Field(..., ge=0, le=1)
+    confidence: ChartReviewConfidence
     review_flags: list[str] = Field(default_factory=list)
 
 

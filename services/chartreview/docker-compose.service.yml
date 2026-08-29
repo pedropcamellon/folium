@@ -16,6 +16,8 @@ services:
       AI_SERVICE_BASE_URL: http://folium-summarize:8002
       AI_PROVIDER_NAME: local
       AI_MODEL_NAME: ${LOCAL_MODEL_NAME:-mediphi-clinical}
+      CHARTREVIEW_BACKEND_URL: http://folium-backend:8000
+      CHARTREVIEW_INTERNAL_TOKEN: ${CHARTREVIEW_INTERNAL_TOKEN:?Set CHARTREVIEW_INTERNAL_TOKEN in root .env}
     restart: unless-stopped
     develop:
       watch:
