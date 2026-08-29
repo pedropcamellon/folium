@@ -30,6 +30,30 @@ unbounded query text. When no approved block matches, it returns no history.
 Historical document retrieval remains deferred until it has a separately
 evaluated extraction contract.
 
+## Future Retrieval Quality
+
+The current graph uses a one-step ReAct-style decision: given the active
+interaction, the model either returns bounded `search_terms` or skips the
+lookup. This keeps the runtime constrained, but the decision can be locally
+myopic. For example, it may request a fact already present in the active
+transcript, or choose an overly specific phrase that cannot match a prior
+approved block.
+
+A future plan-then-act design should remain bounded. A planning step first
+names the active-context factual gap and permitted evidence scope. A separate
+acting step then supplies one to three concise lexical search terms. The
+backend continues to enforce patient scope, approved fields, active-interaction
+exclusion, source-block cap, and exact returned provenance. Planning must not
+authorize diagnosis, treatment, autonomous action, arbitrary queries, or extra
+retrieval rounds.
+
+Evaluate this policy through the synthetic offline benchmark in task #39, not
+by adding backend synonym maps or fallback search. Benchmark cases should score
+redundant, irrelevant, overly broad, overly specific, and lexically grounded
+terms across prior interactions. Historical document retrieval is a separate
+future evaluation track: it requires an approved extraction contract and
+benchmark evidence before the runtime may search document-derived blocks.
+
 ## Contract Failures
 
 Treat provider JSON as a strict transport contract. The history-decision output
