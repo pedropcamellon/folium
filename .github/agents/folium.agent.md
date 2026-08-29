@@ -26,6 +26,7 @@ Draft support only. No diagnosis, treatment, or autonomous action.
   Never put central business logic there.
 - Use typed approved blocks and versioned policies. Never arbitrary user code.
 - Do not claim HIPAA compliance.
+- Update user docs with approved work. Claims in docs require implemented, validated behavior.
 
 ## Read First
 
