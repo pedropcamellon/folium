@@ -24,7 +24,7 @@ Use `Space` to select a service, `b` to mark buildable services for an image
 build, `x` to force-recreate a selected container, and `Enter` to run the plan.
 
 For a verified GGUF artifact, populate the URL, SHA-256, and size fields in
-`src/folium_runtime/model-artifact.toml`, then run `uv run folium --download-model`.
+`tools/folium_runtime/src/folium_runtime/model-artifact.toml`, then run `uv run folium --download-model`.
 `bootstrap-state --target azure` is the only cloud-mutating command; it also
 requires `--confirm` and a storage-account name.
 

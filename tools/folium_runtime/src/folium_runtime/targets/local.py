@@ -9,15 +9,16 @@ import re
 import shutil
 import subprocess
 import sys
-import tomllib
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from folium_runtime import picker
-from folium_runtime import ui
+import tomllib
 
-ROOT = Path(__file__).resolve().parents[2]
+from folium_runtime import picker, ui
+from folium_runtime.models import DownRequest, RuntimeResult, StartRequest
+
+ROOT = Path(__file__).resolve().parents[5]
 COMPOSE_COMMAND = ["docker", "compose"]
 TARGETS = ("local", "azure", "aws")
 LOCAL_ENDPOINTS = (
@@ -81,7 +82,7 @@ def compose_files() -> list[Path]:
 
 
 def load_artifact() -> ModelArtifact:
-    manifest_path = Path(__file__).with_name("model-artifact.toml")
+    manifest_path = Path(__file__).parents[1] / "model-artifact.toml"
     contents = tomllib.loads(manifest_path.read_text())
     artifact = contents["artifact"]
     return ModelArtifact(
@@ -113,7 +114,7 @@ def describe_model(artifact: ModelArtifact) -> str:
     if not artifact.configured:
         return (
             f"No verified model artifact is configured. Expected model path: {artifact.destination}. "
-            "Set the URL, SHA-256, and size in src/folium_runtime/model-artifact.toml before using --download-model."
+            "Set the URL, SHA-256, and size in tools/folium_runtime/src/folium_runtime/model-artifact.toml before using --download-model."
         )
     return f"Model path: {artifact.destination} ({artifact.size_bytes / 1_000_000_000:.2f} GB)."
 
@@ -317,3 +318,28 @@ def main() -> None:
     else:
         code = start(args.target, args.rebuild, args.recreate, args.download_model)
     raise SystemExit(code)
+
+
+class LocalComposeTarget:
+    """Docker Compose-backed local runtime target."""
+
+    name = "local"
+
+    def status(self) -> RuntimeResult:
+        return RuntimeResult(exit_code=status())
+
+    def start(self, request: StartRequest) -> RuntimeResult:
+        return RuntimeResult(
+            exit_code=start(
+                "local",
+                bool(request.services and request.build_services == frozenset(request.services)),
+                bool(request.services and request.recreate_services == frozenset(request.services)),
+                request.download_model,
+                list(request.services),
+                list(request.build_services),
+                list(request.recreate_services),
+            )
+        )
+
+    def down(self, request: DownRequest) -> RuntimeResult:
+        return RuntimeResult(exit_code=down(request.volumes))
