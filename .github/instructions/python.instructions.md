@@ -11,6 +11,7 @@ description: "Use when editing Python files in Folium."
 - Use logger from logging instead of print
 - Be explicit about required vs optional fields in both backend and frontend
 - Use `return` instead of `return None`.
-- Use modern Python typing syntax: `str | None`, `list[str]`, and `dict[str, Any]` instead of `Optional`, `List`, and `Dict` from `typing`.
+- Use modern Python typing: `str | None`, `list[str]`, and `dict[str, Any]`. Do not use deprecated `typing.Optional`, `typing.List`, or `typing.Dict`.
+- Prefer strict contracts: Pydantic models at API, persistence, and external-provider boundaries; frozen `@dataclass` models for validated internal value objects that need no Pydantic behavior. Avoid untyped dicts when a named contract is practical.
 - Use enum types (e.g., `DataStatus`) instead of boolean flags for state
 - Prefer `pathlib.Path` over string file paths for filesystem operations.

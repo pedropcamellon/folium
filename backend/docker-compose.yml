@@ -30,6 +30,7 @@ services:
       SUMMARIZATION_SERVICE_URL: ${SUMMARIZATION_SERVICE_URL:-http://folium-summarize:8002}
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
+      CHARTREVIEW_INTERNAL_TOKEN: ${CHARTREVIEW_INTERNAL_TOKEN:?Set CHARTREVIEW_INTERNAL_TOKEN in root .env}
     volumes:
       - backend_cache:/root/.cache
     working_dir: /workspace/backend

@@ -91,7 +91,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "up",
+          "expr": "up{instance=~\"folium-.*\"}",
           "legendFormat": "{{job}}",
           "refId": "A"
         }

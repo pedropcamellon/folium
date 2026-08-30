@@ -1,18 +1,17 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable
-
-from playwright.sync_api import Page
 
 from flow_cases import PATIENT_FLOW, PROVIDER_FLOW, FlowCase
 from flows.patient_portal import run_patient_portal_flow
+from flows.provider_chart_review import run_provider_chart_review_flow
 from flows.provider_patient_crud import run_provider_patient_crud
 from flows.provider_summary import run_provider_summary_flow
 from flows.provider_voice_note import run_provider_voice_note_flow
+from playwright.sync_api import Page
 from settings import FAKE_TRANSCRIPT, PROVIDER_WAIT_MS
-
 
 ScenarioRunner = Callable[[Page, str, FlowCase], None]
 
@@ -41,6 +40,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         name="provider-patient-crud",
         flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
         runner=run_provider_patient_crud,
+    ),
+    Scenario(
+        name="provider-chart-review",
+        flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
+        runner=run_provider_chart_review_flow,
     ),
     Scenario(
         name="provider-voice-note",

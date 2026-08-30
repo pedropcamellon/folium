@@ -1,0 +1,36 @@
+[project]
+name = "chartreview"
+version = "0.1.0"
+description = "Temporal and LangGraph worker for synthetic chart-review draft support"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "folium-core>=0.1.0",
+    "httpx>=0.28.1",
+    "langgraph>=1.0.0",
+    "pydantic>=2.9.2",
+    "pydantic-settings>=2.6.0",
+    "temporalio[langgraph]==1.32.0",
+    "typing-extensions>=4.12.0",
+]
+
+[tool.uv.sources]
+folium-core = { workspace = true }
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.6.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

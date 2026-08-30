@@ -6,7 +6,7 @@ Run with: python -m app.seed_db
 import asyncio
 
 from app.core.database import async_session_maker, create_db_and_tables
-from app.seed import seed_users, seed_patients, seed_interactions, seed_documents
+from app.seed import seed_documents, seed_interactions, seed_patients, seed_users
 
 
 async def main():

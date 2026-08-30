@@ -16,5 +16,6 @@ members = [
     "packages/folium-core",
     "services/summarize",
     "services/transcribe",
+    "services/chartreview",
     "services/voicenotes",
 ]

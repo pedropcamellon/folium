@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from urllib.parse import urlparse
 
-
 BASE_URL = os.getenv("FOLIUM_BASE_URL", "http://localhost:3000")
 HEADLESS = os.getenv("PLAYWRIGHT_HEADLESS", "false").lower() == "true"
 SLOW_MO_MS = int(os.getenv("PLAYWRIGHT_SLOW_MO_MS", "250"))
@@ -28,5 +27,11 @@ SUMMARY_WAIT_MS = int(
     os.getenv(
         "FOLIUM_SUMMARY_WAIT_MS",
         "120000" if _is_local_base_url(BASE_URL) else "15000",
+    )
+)
+CHART_REVIEW_WAIT_MS = int(
+    os.getenv(
+        "FOLIUM_CHART_REVIEW_WAIT_MS",
+        "180000" if _is_local_base_url(BASE_URL) else "30000",
     )
 )

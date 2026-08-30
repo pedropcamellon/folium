@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from folium.core.voicenotes import TRANSCRIBE_ACTIVITY_NAME, VOICENOTES_WORKFLOW_NAME
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 from temporalio.exceptions import ApplicationError
@@ -9,10 +10,6 @@ from app.contracts.voice_note_models import (
     VoiceNoteWorkflowInput,
     VoiceNoteWorkflowResult,
     VoiceNoteWorkflowStatus,
-)
-from app.temporal_config import (
-    TRANSCRIBE_ACTIVITY_NAME,
-    VOICENOTES_WORKFLOW_NAME,
 )
 
 

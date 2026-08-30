@@ -2,6 +2,9 @@
 
 from dataclasses import dataclass
 
+VOICENOTES_WORKFLOW_NAME = "voicenotes"
+VOICENOTES_TASK_QUEUE = "voice-notes-queue"
+
 
 @dataclass
 class AudioReference:
