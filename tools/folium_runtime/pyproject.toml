@@ -1,0 +1,21 @@
+[project]
+name = "folium_runtime"
+version = "0.1.0"
+description = "Folium local runtime developer tool"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = ["questionary>=2.1.1", "rich>=13,<14"]
+
+[project.scripts]
+folium = "folium_runtime.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.8.13,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "folium_runtime"
+module-path = "src/folium_runtime"
+
+[dependency-groups]
+dev = ["pytest==8.0.0"]

@@ -1,7 +1,9 @@
 from pathlib import Path
 
-from folium_runtime.cli import ModelArtifact, environment_file_variables, missing_environment_variables, parser, required_environment_variables
+from folium_runtime import cli
+from folium_runtime.cli import parser
 from folium_runtime.picker import BUILDABLE_SERVICES, SERVICES, ServiceSelection
+from folium_runtime.targets.local import ModelArtifact, environment_file_variables, missing_environment_variables, required_environment_variables
 
 
 def test_required_environment_variables_reads_compose_interpolation(tmp_path: Path) -> None:
@@ -76,3 +78,14 @@ def test_service_selection_tracks_independent_build_and_recreate_marks() -> None
 
     assert selection.build == ["folium-backend"]
     assert selection.recreate == ["frontend"]
+
+
+def test_top_level_model_download_flag_is_rejected(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli.sys, "argv", ["folium", "--download-model"])
+
+    try:
+        cli.main()
+    except SystemExit as error:
+        assert error.code == 2
+
+    assert "uv run folium start --download-model" in capsys.readouterr().err

@@ -8,6 +8,7 @@ members = [
     "e2e",
     "folium",
     "folium-core",
+    "folium-runtime",
     "folium-workspace",
     "summarize",
     "transcribe",
@@ -751,9 +752,9 @@ dependencies = [
 requires-dist = [{ name = "pydantic", specifier = ">=2.9.2" }]
 
 [[package]]
-name = "folium-workspace"
+name = "folium-runtime"
 version = "0.1.0"
-source = { editable = "." }
+source = { editable = "tools/folium_runtime" }
 dependencies = [
     { name = "questionary" },
     { name = "rich" },
@@ -772,6 +773,17 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = "==8.0.0" }]
+
+[[package]]
+name = "folium-workspace"
+version = "0.1.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "folium-runtime" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "folium-runtime", editable = "tools/folium_runtime" }]
 
 [[package]]
 name = "fsspec"
