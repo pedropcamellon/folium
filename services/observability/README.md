@@ -61,3 +61,16 @@ Check the `provisioning/dashboards/` directory for pre-configured dashboards.
 - `prometheus.yml`: Scrape configuration
 - `provisioning/datasources/`: Grafana datasource configuration
 - `provisioning/dashboards/`: Dashboard provisioning configuration
+
+### Temporal Metrics Policy
+
+Temporal is scraped once per minute with a post-relabel sample limit of 1,000.
+Prometheus retains workflow completion/timeout, request/error, task-queue
+backlog/lag, worker and poller capacity, and request-latency count/sum signals.
+All other Temporal metric families are dropped before storage, along with
+deployment-specific or unbounded labels such as worker build, partition,
+namespace ID, workflow ID, and run ID.
+
+The service-health dashboard uses `workflow_success` for workflow completions
+and `service_errors` for request errors. Temporal's local endpoint does not
+currently emit a `workflow_failed` metric.

@@ -215,8 +215,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(temporal_workflow_completed_total{job=\"temporal\"}[5m])",
-          "legendFormat": "Successful - {{workflow_type}}",
+          "expr": "rate(workflow_success{job=\"temporal\"}[5m])",
+          "legendFormat": "Workflow completed - {{namespace}} / {{taskqueue}}",
           "refId": "A"
         },
         {
@@ -224,12 +224,12 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "rate(temporal_workflow_failed_total{job=\"temporal\"}[5m])",
-          "legendFormat": "Failed - {{workflow_type}}",
+          "expr": "rate(service_errors{job=\"temporal\"}[5m])",
+          "legendFormat": "Request errors - {{service_name}} / {{operation}}",
           "refId": "B"
         }
       ],
-      "title": "Temporal Workflow Success Rate",
+      "title": "Temporal Workflow Completions and Request Errors",
       "type": "timeseries"
     },
     {
