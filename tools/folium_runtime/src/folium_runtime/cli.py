@@ -10,6 +10,8 @@ from folium_runtime.models import DownRequest, RuntimeResult, StartRequest
 from folium_runtime.targets import registry
 from folium_runtime.targets.local import (
     bootstrap_state as bootstrap_azure_state,
+)
+from folium_runtime.targets.local import (
     service_states,
 )
 
@@ -29,18 +31,26 @@ def render(result: RuntimeResult) -> int:
 
 
 def parser() -> argparse.ArgumentParser:
-    result = argparse.ArgumentParser(description="Run and inspect Folium runtime targets.")
+    result = argparse.ArgumentParser(
+        description="Run and inspect Folium runtime targets."
+    )
     commands = result.add_subparsers(dest="command")
-    start_command = commands.add_parser("start", help="Start a selected runtime target.")
+    start_command = commands.add_parser(
+        "start", help="Start a selected runtime target."
+    )
     start_command.add_argument("--target", choices=TARGETS, default="local")
     start_command.add_argument("--rebuild", action="store_true")
     start_command.add_argument("--recreate", action="store_true")
     start_command.add_argument("--download-model", action="store_true")
     commands.add_parser("status", help="Report target state without changing it.")
-    down_command = commands.add_parser("down", help="Stop local Compose services without removing volumes.")
+    down_command = commands.add_parser(
+        "down", help="Stop local Compose services without removing volumes."
+    )
     down_command.add_argument("--target", choices=TARGETS, default="local")
     down_command.add_argument("--volumes", action="store_true")
-    bootstrap = commands.add_parser("bootstrap-state", help="Create Azure Terraform state storage only.")
+    bootstrap = commands.add_parser(
+        "bootstrap-state", help="Create Azure Terraform state storage only."
+    )
     bootstrap.add_argument("--target", required=True, choices=TARGETS)
     bootstrap.add_argument("--confirm", action="store_true")
     bootstrap.add_argument("--resource-group", default="rg-folium-tfstate")
@@ -82,8 +92,14 @@ def main() -> None:
     if args.command == "down":
         raise SystemExit(render(target.down(DownRequest(args.volumes))))
     request = StartRequest(
-        build_services=frozenset() if not args.rebuild else frozenset(picker.BUILDABLE_SERVICES),
-        recreate_services=frozenset() if not args.recreate else frozenset(picker.SERVICES[index][0] for index in range(len(picker.SERVICES))),
+        build_services=frozenset()
+        if not args.rebuild
+        else frozenset(picker.BUILDABLE_SERVICES),
+        recreate_services=frozenset()
+        if not args.recreate
+        else frozenset(
+            picker.SERVICES[index][0] for index in range(len(picker.SERVICES))
+        ),
         download_model=args.download_model,
     )
     raise SystemExit(render(target.start(request)))

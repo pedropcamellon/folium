@@ -60,12 +60,16 @@ class ServiceSelection:
     recreate: list[str]
 
 
-def select_services(service_states: dict[str, str] | None = None) -> ServiceSelection | None:
+def select_services(
+    service_states: dict[str, str] | None = None,
+) -> ServiceSelection | None:
     """Return selected Compose services and services marked for b/x actions."""
     service_states = service_states or {}
     choices = [
         Choice(
-            title=f"{label} ({service_states[name]})" if name in service_states else label,
+            title=f"{label} ({service_states[name]})"
+            if name in service_states
+            else label,
             value=name,
             checked=True,
         )
@@ -82,11 +86,23 @@ def select_services(service_states: dict[str, str] | None = None) -> ServiceSele
             marks.append("build")
         if choice.value in recreate:
             marks.append("recreate")
-        choice.title = f"{titles[choice.value]} [{' | '.join(marks)}]" if marks else titles[choice.value]
+        choice.title = (
+            f"{titles[choice.value]} [{' | '.join(marks)}]"
+            if marks
+            else titles[choice.value]
+        )
 
     def prompt_tokens():
-        tokens = [("class:qmark", "FOLIUM"), ("class:question", " Select services to run")]
-        tokens.append(("class:instruction", "\n  Space toggle  b build image  x recreate  a all  i invert  Enter run  Ctrl-C cancel"))
+        tokens = [
+            ("class:qmark", "FOLIUM"),
+            ("class:question", " Select services to run"),
+        ]
+        tokens.append(
+            (
+                "class:instruction",
+                "\n  Space toggle  b build image  x recreate  a all  i invert  Enter run  Ctrl-C cancel",
+            )
+        )
         return tokens
 
     layout = common.create_inquirer_layout(control, prompt_tokens)
@@ -127,11 +143,19 @@ def select_services(service_states: dict[str, str] | None = None) -> ServiceSele
 
     @bindings.add("a", eager=True)
     def toggle_all(_event):
-        control.selected_options = [] if len(control.selected_options) == len(choices) else [choice.value for choice in choices]
+        control.selected_options = (
+            []
+            if len(control.selected_options) == len(choices)
+            else [choice.value for choice in choices]
+        )
 
     @bindings.add("i", eager=True)
     def invert(_event):
-        control.selected_options = [choice.value for choice in choices if choice.value not in control.selected_options]
+        control.selected_options = [
+            choice.value
+            for choice in choices
+            if choice.value not in control.selected_options
+        ]
 
     @bindings.add(Keys.Down, eager=True)
     @bindings.add("j", eager=True)
@@ -145,15 +169,21 @@ def select_services(service_states: dict[str, str] | None = None) -> ServiceSele
 
     @bindings.add(Keys.ControlM, eager=True)
     def submit(event):
-        event.app.exit(result=[choice.value for choice in control.get_selected_values()])
+        event.app.exit(
+            result=[choice.value for choice in control.get_selected_values()]
+        )
 
     @bindings.add(Keys.Any)
     def consume(_event):
         return
 
     try:
-        selected = Application(layout=layout, key_bindings=bindings, style=PICKER_STYLE).run()
+        selected = Application(
+            layout=layout, key_bindings=bindings, style=PICKER_STYLE
+        ).run()
     except KeyboardInterrupt:
         return None
     selected_set = set(selected)
-    return ServiceSelection(selected, sorted(build & selected_set), sorted(recreate & selected_set))
+    return ServiceSelection(
+        selected, sorted(build & selected_set), sorted(recreate & selected_set)
+    )

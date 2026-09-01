@@ -227,7 +227,10 @@ def tail_development_logs(selected_services: list[str]) -> int:
         return 0
     ui.notice("Following development container logs. Press Ctrl-C to stop tailing.")
     try:
-        return run([*COMPOSE_COMMAND, "logs", "--follow", "--tail", "100", *services], stream=True).returncode
+        return run(
+            [*COMPOSE_COMMAND, "logs", "--follow", "--tail", "100", *services],
+            stream=True,
+        ).returncode
     except KeyboardInterrupt:
         ui.notice("Stopped log tailing; containers remain running.")
         return 0
