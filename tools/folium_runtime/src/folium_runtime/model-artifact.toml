@@ -1,0 +1,8 @@
+# Verified against the publisher's MediPhi-Clinical-GGUF release metadata.
+# The runner verifies size and SHA-256 after download.
+[artifact]
+name = "mediphi-clinical-q4-k-s"
+url = "https://huggingface.co/mradermacher/MediPhi-Clinical-GGUF/resolve/main/MediPhi-Clinical.Q4_K_S.gguf?download=true"
+sha256 = "67f10ffa20693ea803d2178cf11e1dfccc13d12bf4802b0acfddacac37e28473"
+size_bytes = 2188761248
+destination = "services/summarize/models/model.gguf"
