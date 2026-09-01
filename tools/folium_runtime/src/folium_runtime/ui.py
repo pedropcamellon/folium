@@ -4,20 +4,30 @@ from __future__ import annotations
 
 from rich import box
 from rich.console import Console
-from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
 console = Console()
 
+FOLIUM_WORDMARK = (
+    " ███████╗ ██████╗ ██╗     ██╗██╗   ██╗███╗   ███╗",
+    " ██╔════╝██╔═══██╗██║     ██║██║   ██║████╗ ████║",
+    " █████╗  ██║   ██║██║     ██║██║   ██║██╔████╔██║",
+    " ██╔══╝  ██║   ██║██║     ██║██║   ██║██║╚██╔╝██║",
+    " ██║     ╚██████╔╝███████╗██║╚██████╔╝██║ ╚═╝ ██║",
+    " ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ ╚═╝     ╚═╝",
+)
+WORDMARK_STYLES = ("bright_white", "white", "grey82", "grey70", "grey58", "grey46")
+
 
 def banner() -> None:
-    mark = Text(
-        "FOLIUM\nLOCAL RUNTIME",
-        style="bold black on white",
-        justify="center",
+    console.print()
+    for line, style in zip(FOLIUM_WORDMARK, WORDMARK_STYLES, strict=True):
+        console.print(Text(line, style=f"bold {style}", justify="center"))
+    console.print(
+        Text("[ LOCAL RUNTIME ]", style="bold black on white", justify="center")
     )
-    console.print(Panel(mark, box=box.SQUARE, border_style="white", padding=(1, 8)))
+    console.print()
 
 
 def error(message: str) -> None:
@@ -29,7 +39,11 @@ def notice(message: str) -> None:
 
 
 def endpoints(values: tuple[tuple[str, str], ...]) -> None:
-    table = Table(title="LOCAL ENDPOINTS", box=box.SIMPLE_HEAVY, header_style="bold black on white")
+    table = Table(
+        title="LOCAL ENDPOINTS",
+        box=box.SIMPLE_HEAVY,
+        header_style="bold black on white",
+    )
     table.add_column("Service", style="bold white")
     table.add_column("URL", style="white")
     for name, url in values:
@@ -38,7 +52,11 @@ def endpoints(values: tuple[tuple[str, str], ...]) -> None:
 
 
 def services(value: str) -> None:
-    table = Table(title="COMPOSE SERVICES", box=box.SIMPLE_HEAVY, header_style="bold black on white")
+    table = Table(
+        title="COMPOSE SERVICES",
+        box=box.SIMPLE_HEAVY,
+        header_style="bold black on white",
+    )
     table.add_column("Service", style="bold white")
     table.add_column("State", style="white")
     rows = [line.split("\t", maxsplit=1) for line in value.splitlines() if line.strip()]

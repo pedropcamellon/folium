@@ -8,7 +8,10 @@ import sys
 from folium_runtime import picker, ui
 from folium_runtime.models import DownRequest, RuntimeResult, StartRequest
 from folium_runtime.targets import registry
-from folium_runtime.targets.local import bootstrap_state as bootstrap_azure_state
+from folium_runtime.targets.local import (
+    bootstrap_state as bootstrap_azure_state,
+    service_states,
+)
 
 TARGETS = ("local", "azure", "aws")
 
@@ -57,11 +60,16 @@ def main() -> None:
         raise SystemExit(2)
     if not arguments:
         ui.banner()
-        selection = picker.select_services()
+        selection = picker.select_services(service_states())
         if selection is None:
             ui.notice("Cancelled.")
             return
-        request = StartRequest(tuple(selection.services), frozenset(selection.build), frozenset(selection.recreate))
+        request = StartRequest(
+            services=tuple(selection.services),
+            build_services=frozenset(selection.build),
+            recreate_services=frozenset(selection.recreate),
+            tail_logs=True,
+        )
         raise SystemExit(render(registry()["local"].start(request)))
     args = parser().parse_args(arguments)
     if args.command != "bootstrap-state" or args.confirm:

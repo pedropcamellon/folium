@@ -1,91 +1,100 @@
-from pathlib import Path
+import subprocess
 
+import pytest
 from folium_runtime import cli
-from folium_runtime.cli import parser
-from folium_runtime.picker import BUILDABLE_SERVICES, SERVICES, ServiceSelection
-from folium_runtime.targets.local import ModelArtifact, environment_file_variables, missing_environment_variables, required_environment_variables
+from folium_runtime.models import RuntimeResult, StartRequest
+from folium_runtime.picker import ServiceSelection
+from folium_runtime.targets import local, registry
 
 
-def test_required_environment_variables_reads_compose_interpolation(tmp_path: Path) -> None:
-    compose_file = tmp_path / "compose.yml"
-    compose_file.write_text("PASSWORD: ${POSTGRES_PASSWORD:?set it}\nOPTIONAL: ${LOG_LEVEL:-INFO}\n")
+def test_folium_runs_picker_selection_on_local_target(monkeypatch) -> None:
+    requests: list[StartRequest] = []
 
-    assert required_environment_variables([compose_file]) == {"POSTGRES_PASSWORD"}
+    class LocalTarget:
+        def start(self, request: StartRequest) -> RuntimeResult:
+            requests.append(request)
+            return RuntimeResult()
 
+    monkeypatch.setattr(cli.sys, "argv", ["folium"])
+    monkeypatch.setattr(cli.ui, "banner", lambda: None)
+    monkeypatch.setattr(cli, "service_states", lambda: {"frontend": "running"})
+    picker_states: list[dict[str, str]] = []
 
-def test_missing_environment_variables_does_not_return_values(tmp_path: Path, monkeypatch) -> None:
-    compose_file = tmp_path / "compose.yml"
-    compose_file.write_text("TOKEN: ${RUNTIME_TOKEN:?set it}\n")
-    monkeypatch.delenv("RUNTIME_TOKEN", raising=False)
+    def select_services(states: dict[str, str]) -> ServiceSelection:
+        picker_states.append(states)
+        return ServiceSelection(["frontend"], [], [])
 
-    assert missing_environment_variables([compose_file]) == ["RUNTIME_TOKEN"]
+    monkeypatch.setattr(cli.picker, "select_services", select_services)
+    monkeypatch.setattr(cli, "registry", lambda: {"local": LocalTarget()})
 
-
-def test_environment_file_variables_returns_names_only(tmp_path: Path) -> None:
-    environment_file = tmp_path / ".env"
-    environment_file.write_text("# comment\nRUNTIME_TOKEN=secret-value\nEMPTY=\n")
-
-    assert environment_file_variables(environment_file) == {"RUNTIME_TOKEN", "EMPTY"}
-
-
-def test_model_readiness_requires_expected_size(tmp_path: Path) -> None:
-    destination = tmp_path / "model.gguf"
-    destination.write_bytes(b"short")
-    artifact = ModelArtifact("test", "https://example.test/model", "a" * 64, 10, destination)
-
-    assert artifact.configured
-    assert destination.stat().st_size != artifact.size_bytes
-
-
-def test_start_defaults_to_local_target() -> None:
-    arguments = parser().parse_args(["start"])
-
-    assert arguments.target == "local"
-    assert not arguments.rebuild
-    assert not arguments.recreate
-
-
-def test_down_requires_explicit_volume_removal() -> None:
-    arguments = parser().parse_args(["down"])
-
-    assert not arguments.volumes
-
-
-def test_azure_bootstrap_requires_an_explicit_target() -> None:
-    arguments = parser().parse_args(["bootstrap-state", "--target", "azure", "--storage-account", "foliumstate123"])
-
-    assert arguments.target == "azure"
-    assert not arguments.confirm
-
-
-def test_service_picker_has_unique_compose_service_names() -> None:
-    service_names = [name for name, _label in SERVICES]
-
-    assert len(service_names) == len(set(service_names))
-    assert "folium-backend" in service_names
-    assert "frontend" in service_names
-
-
-def test_buildable_picker_services_are_all_known_services() -> None:
-    service_names = {name for name, _label in SERVICES}
-
-    assert BUILDABLE_SERVICES <= service_names
-    assert "folium-postgres" not in BUILDABLE_SERVICES
-
-
-def test_service_selection_tracks_independent_build_and_recreate_marks() -> None:
-    selection = ServiceSelection(["folium-backend", "frontend"], ["folium-backend"], ["frontend"])
-
-    assert selection.build == ["folium-backend"]
-    assert selection.recreate == ["frontend"]
-
-
-def test_top_level_model_download_flag_is_rejected(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(cli.sys, "argv", ["folium", "--download-model"])
-
-    try:
+    with pytest.raises(SystemExit) as error:
         cli.main()
-    except SystemExit as error:
-        assert error.code == 2
 
-    assert "uv run folium start --download-model" in capsys.readouterr().err
+    assert error.value.code == 0
+    assert picker_states == [{"frontend": "running"}]
+    assert requests == [StartRequest(services=("frontend",), tail_logs=True)]
+
+
+def test_local_target_runs_selected_services(monkeypatch) -> None:
+    commands: list[tuple[list[str], bool]] = []
+
+    def fake_run(
+        command: list[str], *, check: bool = False, stream: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        commands.append((command, stream))
+        return subprocess.CompletedProcess(command, 0, stdout="")
+
+    monkeypatch.setattr(local, "docker_preflight", list)
+    monkeypatch.setattr(local, "model_ready", lambda artifact: True)
+    monkeypatch.setattr(local, "print_endpoints", lambda: None)
+    monkeypatch.setattr(local, "run", fake_run)
+
+    result = registry()["local"].start(
+        StartRequest(services=("frontend",), tail_logs=True)
+    )
+
+    assert result.succeeded
+    assert commands == [
+        (["docker", "compose", "ps", "--status", "running", "--services"], False),
+        (["docker", "compose", "up", "--detach", "frontend"], True),
+        (["docker", "compose", "logs", "--follow", "--tail", "100", "frontend"], True),
+    ]
+
+
+def test_local_target_attaches_to_selected_running_services(monkeypatch) -> None:
+    commands: list[tuple[list[str], bool]] = []
+
+    def fake_run(
+        command: list[str], *, check: bool = False, stream: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        commands.append((command, stream))
+        return subprocess.CompletedProcess(command, 0, stdout="frontend\n")
+
+    monkeypatch.setattr(local, "docker_preflight", list)
+    monkeypatch.setattr(local, "model_ready", lambda artifact: True)
+    monkeypatch.setattr(local, "print_endpoints", lambda: None)
+    monkeypatch.setattr(local, "run", fake_run)
+
+    result = registry()["local"].start(
+        StartRequest(services=("frontend",), tail_logs=True)
+    )
+
+    assert result.succeeded
+    assert commands == [
+        (["docker", "compose", "ps", "--status", "running", "--services"], False),
+        (["docker", "compose", "logs", "--follow", "--tail", "100", "frontend"], True),
+    ]
+
+
+def test_registry_selects_the_local_target() -> None:
+    assert registry()["local"].name == "local"
+
+
+@pytest.mark.parametrize("target_name", ["azure", "aws"])
+def test_cloud_targets_do_not_execute_lifecycle_commands(target_name: str) -> None:
+    result = registry()[target_name].start(StartRequest())
+
+    assert result.exit_code == 2
+    assert result.errors == (
+        "No cloud, infrastructure, or lifecycle command was executed.",
+    )

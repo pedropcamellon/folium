@@ -60,9 +60,17 @@ class ServiceSelection:
     recreate: list[str]
 
 
-def select_services() -> ServiceSelection | None:
+def select_services(service_states: dict[str, str] | None = None) -> ServiceSelection | None:
     """Return selected Compose services and services marked for b/x actions."""
-    choices = [Choice(title=label, value=name, checked=True) for name, label in SERVICES]
+    service_states = service_states or {}
+    choices = [
+        Choice(
+            title=f"{label} ({service_states[name]})" if name in service_states else label,
+            value=name,
+            checked=True,
+        )
+        for name, label in SERVICES
+    ]
     titles = {choice.value: choice.title for choice in choices}
     build: set[str] = set()
     recreate: set[str] = set()

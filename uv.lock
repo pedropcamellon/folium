@@ -756,6 +756,7 @@ name = "folium-runtime"
 version = "0.1.0"
 source = { editable = "tools/folium_runtime" }
 dependencies = [
+    { name = "folium-core" },
     { name = "questionary" },
     { name = "rich" },
 ]
@@ -767,6 +768,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "folium-core", editable = "packages/folium-core" },
     { name = "questionary", specifier = ">=2.1.1" },
     { name = "rich", specifier = ">=13,<14" },
 ]
