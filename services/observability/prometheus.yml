@@ -25,9 +25,18 @@ scrape_configs:
 
   # Temporal Server
   - job_name: "temporal"
+    scrape_interval: 1m
+    sample_limit: 1000
     static_configs:
       - targets: ["folium-temporal:8000"]
     metrics_path: "/metrics"
+    metric_relabel_configs:
+      # Keep only workflow health, worker capacity, task-queue, and latency aggregates.
+      - source_labels: [__name__]
+        regex: "(workflow_success|workflow_failed|workflow_timeout|temporal_request_failure(_attempt)?|service_errors|service_error_with_type|service_requests|approximate_backlog_(count|age_seconds)|task_lag_per_tl|temporal_worker_task_slots_(available|used)|temporal_(worker|poller)_start|temporal_workflow_task_queue_poll_empty|temporal_request_latency(_attempt)?_(count|sum))"
+        action: keep
+      - action: labeldrop
+        regex: "(worker_build_id|partition|namespace_id|workflow_id|run_id)"
 
   # PostgreSQL Exporter (optional, if added later)
   # - job_name: 'postgres'
