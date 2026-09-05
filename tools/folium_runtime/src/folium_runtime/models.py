@@ -12,6 +12,7 @@ class StartRequest:
     recreate_services: frozenset[str] = frozenset()
     download_model: bool = False
     tail_logs: bool = False
+    watch: bool = False
 
 
 @dataclass(frozen=True)

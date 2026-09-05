@@ -32,7 +32,9 @@ def test_folium_runs_picker_selection_on_local_target(monkeypatch) -> None:
 
     assert error.value.code == 0
     assert picker_states == [{"frontend": "running"}]
-    assert requests == [StartRequest(services=("frontend",), tail_logs=True)]
+    assert requests == [
+        StartRequest(services=("frontend",), tail_logs=True, watch=True)
+    ]
 
 
 def test_local_target_runs_selected_services(monkeypatch) -> None:
@@ -83,6 +85,27 @@ def test_local_target_attaches_to_selected_running_services(monkeypatch) -> None
     assert commands == [
         (["docker", "compose", "ps", "--status", "running", "--services"], False),
         (["docker", "compose", "logs", "--follow", "--tail", "100", "frontend"], True),
+    ]
+
+
+def test_local_target_runs_selected_services_in_watch_mode(monkeypatch) -> None:
+    commands: list[tuple[list[str], bool]] = []
+
+    def fake_run(
+        command: list[str], *, check: bool = False, stream: bool = False
+    ) -> subprocess.CompletedProcess[str]:
+        commands.append((command, stream))
+        return subprocess.CompletedProcess(command, 0, stdout="")
+
+    monkeypatch.setattr(local, "docker_preflight", list)
+    monkeypatch.setattr(local, "model_ready", lambda artifact: True)
+    monkeypatch.setattr(local, "run", fake_run)
+
+    result = registry()["local"].start(StartRequest(services=("frontend",), watch=True))
+
+    assert result.succeeded
+    assert commands == [
+        (["docker", "compose", "up", "--watch", "--build", "frontend"], True)
     ]
 
 

@@ -258,6 +258,7 @@ def start(
     build_services: list[str] | None = None,
     recreate_services: list[str] | None = None,
     tail_logs: bool = False,
+    watch: bool = False,
 ) -> int:
     if target != "local":
         ui.notice(
@@ -284,6 +285,14 @@ def start(
                 "Local model is unavailable; starting the configured non-local summarization provider."
             )
     selected_services = services or []
+    if watch:
+        ui.notice(
+            "Starting selected services in Compose watch mode. Press Ctrl-C to stop."
+        )
+        return run(
+            [*COMPOSE_COMMAND, "up", "--watch", "--build", *selected_services],
+            stream=True,
+        ).returncode
     build_targets = selected_services if rebuild else build_services or []
     recreate_targets = selected_services if recreate else recreate_services or []
     attach_to_running_services = (
@@ -552,6 +561,7 @@ class LocalComposeTarget:
                 list(request.build_services),
                 list(request.recreate_services),
                 request.tail_logs,
+                request.watch,
             )
         )
 

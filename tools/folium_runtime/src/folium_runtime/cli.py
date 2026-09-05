@@ -42,6 +42,20 @@ def parser() -> argparse.ArgumentParser:
     start_command.add_argument("--rebuild", action="store_true")
     start_command.add_argument("--recreate", action="store_true")
     start_command.add_argument("--download-model", action="store_true")
+    start_command.add_argument(
+        "--service",
+        action="append",
+        choices=tuple(name for name, _ in picker.SERVICES),
+        default=[],
+        help="Start one service; repeat for additional services.",
+    )
+    start_command.add_argument(
+        "--no-watch",
+        dest="watch",
+        action="store_false",
+        default=True,
+        help="Disable Compose watch mode (enabled by default).",
+    )
     commands.add_parser("status", help="Report target state without changing it.")
     down_command = commands.add_parser(
         "down", help="Stop local Compose services without removing volumes."
@@ -79,6 +93,7 @@ def main() -> None:
             build_services=frozenset(selection.build),
             recreate_services=frozenset(selection.recreate),
             tail_logs=True,
+            watch=True,
         )
         raise SystemExit(render(registry()["local"].start(request)))
     args = parser().parse_args(arguments)
@@ -92,6 +107,7 @@ def main() -> None:
     if args.command == "down":
         raise SystemExit(render(target.down(DownRequest(args.volumes))))
     request = StartRequest(
+        services=tuple(args.service),
         build_services=frozenset()
         if not args.rebuild
         else frozenset(picker.BUILDABLE_SERVICES),
@@ -101,5 +117,6 @@ def main() -> None:
             picker.SERVICES[index][0] for index in range(len(picker.SERVICES))
         ),
         download_model=args.download_model,
+        watch=args.watch,
     )
     raise SystemExit(render(target.start(request)))

@@ -20,6 +20,11 @@ export const metadata: Metadata = {
     title: "Folium",
     description:
         "A modern healthcare SaaS platform for clinical documentation and AI insights.",
+    icons: {
+        icon: "/favicon-32x32.png",
+        apple: "/apple-touch-icon.png",
+    },
+    manifest: "/site.webmanifest",
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect } from "react";
 
 import { useRouter } from "next/navigation";
@@ -26,8 +27,16 @@ export default function Home() {
     }, [loading, router, user]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500">
-            Loading dashboard...
+        <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-slate-50 px-6 text-slate-500">
+            <Image
+                src="/banner.png"
+                alt="Folium EHR"
+                width={473}
+                height={149}
+                priority
+                className="h-auto w-full max-w-[473px]"
+            />
+            <p>Loading dashboard...</p>
         </div>
     );
 }

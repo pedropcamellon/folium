@@ -20,5 +20,6 @@ members = [
     "services/transcribe",
     "services/chartreview",
     "services/voicenotes",
+    "tools/favicon_generator",
     "tools/folium_runtime",
 ]
