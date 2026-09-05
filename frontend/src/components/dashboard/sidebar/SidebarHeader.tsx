@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -17,9 +18,27 @@ export default function SidebarHeader({
         <div className="flex items-center h-16 px-4 border-b justify-between">
             <Link
                 href="/"
-                className={`font-bold text-xl text-blue-700 transition-opacity duration-200 hover:text-blue-800 ${collapsed ? "opacity-0 w-0" : "opacity-100 w-auto"}`}
+                aria-label="Folium home"
+                className="flex min-w-0 items-center"
             >
-                Folium
+                {collapsed ? (
+                    <Image
+                        src="/logo-icon.png"
+                        alt="Folium"
+                        width={28}
+                        height={34}
+                        className="h-9 w-auto object-contain"
+                    />
+                ) : (
+                    <Image
+                        src="/banner.png"
+                        alt="Folium EHR"
+                        width={473}
+                        height={149}
+                        priority
+                        className="h-auto max-h-10 w-auto max-w-[160px] object-contain"
+                    />
+                )}
             </Link>
             <button
                 className="p-2 rounded hover:bg-slate-100 ml-2"

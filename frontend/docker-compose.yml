@@ -17,16 +17,17 @@ services:
     command: pnpm dev
     develop:
       watch:
-        - action: sync
+        - action: sync+restart
           path: .
           target: /app
           ignore:
             - node_modules/
             - .next/
             - .git/
-            - "*.md"
         - action: rebuild
           path: package.json
+        - action: rebuild
+          path: pnpm-lock.yaml
 
 volumes:
   frontend_node_modules:

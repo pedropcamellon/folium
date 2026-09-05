@@ -1,0 +1,1 @@
+"""Folium favicon asset generator."""

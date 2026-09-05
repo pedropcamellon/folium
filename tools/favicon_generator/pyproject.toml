@@ -1,0 +1,17 @@
+[project]
+name = "folium-favicon-generator"
+version = "0.1.0"
+description = "Generate Folium browser icon assets from the approved logo"
+requires-python = ">=3.13,<3.14"
+dependencies = ["pillow>=11.0,<12.0"]
+
+[project.scripts]
+folium-generate-favicons = "folium_favicon_generator.main:main"
+
+[build-system]
+requires = ["uv_build>=0.8.13,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "folium_favicon_generator"
+module-path = "src/folium_favicon_generator"
