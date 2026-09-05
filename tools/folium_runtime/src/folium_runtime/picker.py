@@ -94,8 +94,7 @@ def select_services(
 
     def prompt_tokens():
         tokens = [
-            ("class:qmark", "FOLIUM"),
-            ("class:question", " Select services to run"),
+            ("class:question", "Select services to run"),
         ]
         tokens.append(
             (

@@ -9,21 +9,35 @@ from rich.text import Text
 
 console = Console()
 
-FOLIUM_WORDMARK = (
-    " ███████╗ ██████╗ ██╗     ██╗██╗   ██╗███╗   ███╗",
-    " ██╔════╝██╔═══██╗██║     ██║██║   ██║████╗ ████║",
-    " █████╗  ██║   ██║██║     ██║██║   ██║██╔████╔██║",
-    " ██╔══╝  ██║   ██║██║     ██║██║   ██║██║╚██╔╝██║",
-    " ██║     ╚██████╔╝███████╗██║╚██████╔╝██║ ╚═╝ ██║",
-    " ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ ╚═╝     ╚═╝",
+# Leaf mark followed by a lowercase "folium" glyph, both drawn as plain ASCII blocks.
+_LEAF = (
+    "  ▄▄ ▄ ",
+    " ██ ██ ",
+    " █ ███ ",
+    " ██ ▄  ",
+    " ██    ",
 )
-WORDMARK_STYLES = ("bright_white", "white", "grey82", "grey70", "grey58", "grey46")
+_F = ("  ▄▄▄ ", "  █   ", " ████ ", "  █   ", "  █   ")
+_O = (" ▄▄▄  ", "█   █ ", "█   █ ", "█   █ ", " ███  ")
+_L = ("▄    ", "█    ", "█    ", "█    ", "█████")
+_I = ("▄", " ", "█", "█", "█")
+_U = ("▄   ▄ ", "█   █ ", "█   █ ", "█   █ ", " ███  ")
+_M = ("▄    ▄ ", "██  ██ ", "█ ██ █ ", "█    █ ", "█    █ ")
+
+FOLIUM_WORDMARK = tuple(
+    " ".join(glyph[row] for glyph in (_LEAF, _F, _O, _L, _I, _U, _M))
+    for row in range(5)
+)
+WORDMARK_STYLES = ("bright_white", "white", "grey70", "grey58", "grey46")
 
 
 def banner() -> None:
     console.print()
     for line, style in zip(FOLIUM_WORDMARK, WORDMARK_STYLES, strict=True):
         console.print(Text(line, style=f"bold {style}", justify="center"))
+    console.print(
+        Text(" ", justify="center"),
+    )
     console.print(
         Text("[ LOCAL RUNTIME ]", style="bold black on white", justify="center")
     )
