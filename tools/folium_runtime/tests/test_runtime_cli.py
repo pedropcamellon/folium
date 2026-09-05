@@ -101,9 +101,7 @@ def test_local_target_runs_selected_services_in_watch_mode(monkeypatch) -> None:
     monkeypatch.setattr(local, "model_ready", lambda artifact: True)
     monkeypatch.setattr(local, "run", fake_run)
 
-    result = registry()["local"].start(
-        StartRequest(services=("frontend",), watch=True)
-    )
+    result = registry()["local"].start(StartRequest(services=("frontend",), watch=True))
 
     assert result.succeeded
     assert commands == [

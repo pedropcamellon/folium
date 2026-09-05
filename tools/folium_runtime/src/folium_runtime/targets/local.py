@@ -286,7 +286,9 @@ def start(
             )
     selected_services = services or []
     if watch:
-        ui.notice("Starting selected services in Compose watch mode. Press Ctrl-C to stop.")
+        ui.notice(
+            "Starting selected services in Compose watch mode. Press Ctrl-C to stop."
+        )
         return run(
             [*COMPOSE_COMMAND, "up", "--watch", "--build", *selected_services],
             stream=True,
