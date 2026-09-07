@@ -31,7 +31,7 @@ jobs:
   # ============================================
   build:
     name: "Build"
-    uses: ./.github/workflows/shared/build.yml
+    uses: ./.github/workflows/build.yml
     with:
       context: ./backend
       dockerfile: ./backend/Dockerfile
@@ -44,7 +44,7 @@ jobs:
   approval:
     name: "Approval"
     needs: build
-    uses: ./.github/workflows/shared/approval.yml
+    uses: ./.github/workflows/approval.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       cloud_provider: ${{ github.event.inputs.cloud_provider }}
@@ -57,7 +57,7 @@ jobs:
     name: "Infra (Azure)"
     needs: approval
     if: github.event.inputs.cloud_provider == 'azure' && github.event.inputs.skip_terraform != 'true'
-    uses: ./.github/workflows/azure/terraform.yml
+    uses: ./.github/workflows/azure-terraform.yml
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets:
@@ -70,7 +70,7 @@ jobs:
     name: "Infra (AWS)"
     needs: approval
     if: github.event.inputs.cloud_provider == 'aws' && github.event.inputs.skip_terraform != 'true'
-    uses: ./.github/workflows/aws/terraform.yml
+    uses: ./.github/workflows/aws-terraform.yml
     with:
       environment: ${{ github.event.inputs.environment }}
     secrets:
@@ -89,7 +89,7 @@ jobs:
       github.event.inputs.cloud_provider == 'azure' &&
       needs.approval.result == 'success' &&
       (needs.terraform-azure.result == 'success' || needs.terraform-azure.result == 'skipped')
-    uses: ./.github/workflows/azure/deploy.yml
+    uses: ./.github/workflows/azure-deploy.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       image_name: folium-backend
@@ -108,14 +108,14 @@ jobs:
       github.event.inputs.cloud_provider == 'aws' &&
       needs.approval.result == 'success' &&
       (needs.terraform-aws.result == 'success' || needs.terraform-aws.result == 'skipped')
-    uses: ./.github/workflows/aws/deploy.yml
+    uses: ./.github/workflows/aws-deploy.yml
     with:
       environment: ${{ github.event.inputs.environment }}
       image_name: folium-backend
       artifact_name: folium-backend-image
       ecs_cluster: ${{ needs.terraform-aws.outputs.ecs_cluster_name || format('folium-{0}', github.event.inputs.environment) }}
       ecs_service: ${{ needs.terraform-aws.outputs.ecs_service_name || 'backend' }}
-      ecr_repository: ${{ needs.terraform-aws.outputs.ecr_repository || format('{0}.dkr.ecr.{1}.amazonaws.com/folium-backend', secrets.AWS_ACCOUNT_ID, secrets.AWS_REGION) }}
+      ecr_repository: ${{ needs.terraform-aws.outputs.ecr_repository }}
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

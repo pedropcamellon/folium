@@ -1,7 +1,7 @@
 {
   "folders": [
     {
-      "name": "Folium",
+      "name": "folium",
       "path": ".",
     },
     {
@@ -27,22 +27,21 @@
       "**/dist": true,
       "**/.next": true,
     },
+    "editor.formatOnSave": true,
   },
   "extensions": {
     "recommendations": [
-      // Python (for transcribe service)
+      // Python
       "ms-python.python",
       "charliermarsh.ruff",
-      // Python (for backend FastAPI)
-      "ms-python.python",
       "dbaeumer.vscode-eslint",
+      // JavaScript / TypeScript
       "esbenp.prettier-vscode",
       "bradlc.vscode-tailwindcss",
       // Docker & Infrastructure
       "ms-azuretools.vscode-docker",
       "hashicorp.terraform",
       // General
-      "editorconfig.editorconfig",
       "github.copilot",
     ],
   },
