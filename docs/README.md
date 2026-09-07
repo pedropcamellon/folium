@@ -38,6 +38,14 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
 
 ### Developer Guides
 
+- [AIOps Architecture](dev/aiops-architecture.md) - Shared AIOps ownership
+  boundaries and package direction
+- [Offline Evaluation](dev/aiops-offline-evaluation.md) - Pre-release staging
+  qualification, evidence, gates, and performance baselines
+- [Online Evaluation](dev/aiops-online-evaluation.md) - Asynchronous served
+  model observation, delayed labels, shadow, and canary policy
+- [Chart-Review Evaluation](dev/chart-review-evaluation.md) - Synthetic
+  encounter benchmark, workflow protocol, trace, and deterministic rubric
 - [Chart Review Agent Lessons](dev/chart-review-agent.md) - Local operations and bounded retrieval constraints
 - [Local LLM Build Compatibility](dev/local-llm-builds.md) - A Linux ARM build
   lesson and the portable local-summarizer default

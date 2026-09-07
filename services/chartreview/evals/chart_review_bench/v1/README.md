@@ -1,30 +1,50 @@
 # ChartReviewBench-v1
 
-`ChartReviewBench-v1` is a committed, synthetic-only benchmark for the
-chart-review agent. It evaluates bounded draft-support behavior; it does not
-contain real patient data and does not authorize diagnosis, treatment, or
-autonomous action.
+Committed anonymized chart-review benchmark cases. Each `patient-###`
+directory is one case and contains a `case.yaml` seed plan.
 
-Each benchmark case has its own folder and a canonical `case.yaml` file:
+`case.yaml` contains non-identifying patient attributes, chronological
+encounters, one active encounter, and deterministic output, history, and
+validation assertions. The fixture loader validates the plan without touching
+persistence. A future staging adapter will create isolated records from the
+same plan and execute the workflow.
 
-```text
-v1/
-	README.md
-	<case-id>/
-		case.yaml
+Run the fast fixture-and-pipeline integration test:
+
+```bash
+cd services/chartreview
+uv run pytest tests/test_evals.py
 ```
+
+Run the complete local suite. The evaluator reads only the explicit
+`FOLIUM_EVAL_*` keys from the process environment or repository `.env`; it does
+not load other `.env` values:
+
+```bash
+cd ../..
+uv run --package chartreview chartreview-eval \
+  services/chartreview/evals/chart_review_bench/v1
+```
+
+Pass an individual `patient-###/case.yaml` to run one case. Set
+`FOLIUM_EVAL_ACCESS_TOKEN`, or both `FOLIUM_EVAL_USER_EMAIL` and
+`FOLIUM_EVAL_USER_PASSWORD`, before running. The runner defaults to
+`http://localhost:8000`; override it with `FOLIUM_EVAL_API_BASE_URL`. It creates
+an isolated temporary patient and native encounters through public APIs, creates
+the active final narrative, starts chart review, polls its terminal status,
+scores the public result, and deletes the temporary patient. It exercises
+backend routing, Temporal, the chart-review worker, and the local model service.
 
 ## Case Boundary
 
-A case describes three separate concerns:
+A case contains two separate concerns:
 
-- `input.active_review` is the immutable `ChartReviewInput` snapshot initially
-  supplied to the agent. It uses the production contract's `timeline`,
-  `documents`, `interactions`, and optional `transcript` source grouping.
-- `input.history_catalog` holds synthetic `ChartReviewSourceChunk` entries that
-  the fake bounded-history tool may return. These entries are not supplied to
-  the model unless its one history decision results in their retrieval.
-- `expected` contains evaluator assertions. It is never supplied to the model.
+- `fixture` holds non-identifying patient attributes, chronological native
+  encounters, and exactly one active encounter. The backend derives the
+  immutable `ChartReviewInput`; fixture YAML never supplies a model prompt or
+  agent input snapshot.
+- `expected` holds observable output, bounded-history, and validation
+  assertions. It is never supplied to the model.
 
 The case schema is intentionally chart-review-specific. Shared dataset or
 tracking abstractions remain deferred until a second service has a proven
@@ -32,31 +52,32 @@ compatible need.
 
 ## Expected Assertions
 
-`expected.output` uses atomic assertions instead of a complete expected
-`ChartReviewOutput` sentence-for-sentence:
+`expected.output` uses atomic assertions instead of a complete expected output
+sentence-for-sentence:
 
 - `summary_facts`: facts the summary must communicate.
 - `missing_information`: factual gaps that must remain visible and must not be
   invented away.
-- `allowed_source_ids`: exact source IDs supplied to final generation that may
-  be cited.
-- `forbidden_source_ids`: known invalid citations, including an unsupplied
-  content-role variant from the same interaction.
+- `required_source_roles`: fixture roles required by the future restricted
+  canonical-provenance scorer, such as `active.note`.
+- `forbidden_source_roles`: known invalid fixture roles, including an
+  unsupplied content-role variant from the same encounter.
 - `confidence`: optional until the confidence rubric is defined by task #40.
 
-`expected.history_decision` evaluates the separate bounded lookup step with
-`should_retrieve`, optional required or forbidden `search_terms`, and exact
-`expected_returned_source_ids`. A no-retrieval or no-match result is valid when
-the active context already has the relevant fact or no approved history block
-matches a genuine gap.
+`expected.history_decision` declares whether a bounded lookup is expected and
+the fixture roles expected to be returned. A no-retrieval or no-match result is
+valid when active context already has the relevant fact or no approved history
+block matches a genuine gap. Exact history and citation scoring remains deferred
+until the restricted evaluation trace is implemented.
 
 `expected.validation.expected_status` states whether the final provider result
 is expected to validate against `ChartReviewOutput`.
 
 ## Adding Cases
 
-Use synthetic identifiers and source content. Keep source IDs stable and
-unique within `active_review`; final citations must use only the source IDs
-actually supplied to final generation, not every entry in `history_catalog`.
-Add one case only after it can be loaded against the existing chart-review
-contracts and can express both acceptable behavior and the failure it guards.
+Use non-identifying keys and source content. Add one case only after it loads
+against the existing chart-review contracts and expresses both acceptable
+behavior and the failure it guards. Review suite evidence, update the fixture's
+human-approved `expected` assertions or add a narrowly scoped case, then rerun
+the fast fixture test and the affected local suite. Do not use model output to
+silently rewrite expected assertions.

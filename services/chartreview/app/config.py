@@ -1,8 +1,10 @@
 from folium.core.chart_review import CHARTREVIEW_TASK_QUEUE, CHARTREVIEW_WORKFLOW_NAME
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
+
     temporal_address: str = "localhost:7233"
     temporal_namespace: str = "default"
     chartreview_task_queue: str = CHARTREVIEW_TASK_QUEUE
@@ -18,10 +20,6 @@ class Settings(BaseSettings):
     activity_max_attempts: int = 2
     history_decision_max_tokens: int = 64
     review_max_tokens: int = 512
-
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
 
 
 settings = Settings()

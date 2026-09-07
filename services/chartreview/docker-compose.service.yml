@@ -28,6 +28,9 @@ services:
             - __pycache__/
             - "*.pyc"
             - .pytest_cache/
+        - action: sync
+          path: ./prompts
+          target: /workspace/services/chartreview/prompts
         - action: rebuild
           path: ./pyproject.toml
         - action: sync

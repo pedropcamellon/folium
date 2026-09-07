@@ -1,6 +1,6 @@
 # Chart Review Agent Service
 
-Dedicated Temporal and LangGraph worker for synthetic chart-review draft support.
+Dedicated Temporal and LangGraph worker for anonymized chart-review draft support.
 
 The backend assembles a validated, traceable patient-context bundle and persists
 terminal review states. This service runs the bounded agent workflow and returns
@@ -40,7 +40,7 @@ flowchart LR
 
 ## Boundaries
 
-- Synthetic data only.
+- Anonymized evaluation data only.
 - The active interaction snapshot is immutable for a review request.
 - The backend controls source selection and access policy.
 - The worker validates canonical citations rather than inferring missing source

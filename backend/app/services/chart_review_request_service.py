@@ -1,5 +1,6 @@
 """On-demand chart-review request orchestration for the encounter API."""
 
+import json
 import logging
 from uuid import UUID
 
@@ -159,53 +160,46 @@ class ChartReviewRequestService:
 
     @staticmethod
     def _selected_encounter_chunks(encounter) -> list[ChartReviewSourceChunk]:
-        chunks: list[ChartReviewSourceChunk] = []
-        if encounter.summary:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter-summary:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.summary,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="summary",
-                    occurred_at=encounter.started_at,
-                )
+        source_values = (
+            ("title", encounter.title),
+            ("summary", encounter.summary),
+            ("description", encounter.description),
+            ("chief complaint", encounter.chief_complaint),
+            ("clinical assessment", encounter.clinical_assessment),
+            ("treatment plan", encounter.treatment_plan),
+            (
+                "structured summary",
+                json.dumps(encounter.structured_summary, sort_keys=True)
+                if encounter.structured_summary
+                else None,
+            ),
+        )
+        return [
+            ChartReviewSourceChunk(
+                source_id=f"encounter-{content_role.replace(' ', '-')}:{encounter.id}",
+                source_type=ChartReviewSourceType.ENCOUNTER,
+                content=content,
+                resource_id=str(encounter.id),
+                display_label=encounter.title,
+                content_role=content_role,
+                occurred_at=encounter.started_at,
             )
-        if encounter.description:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter-description:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.description,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="description",
-                    occurred_at=encounter.started_at,
-                )
-            )
-        if not chunks:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.title,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="title",
-                    occurred_at=encounter.started_at,
-                )
-            )
-        return chunks
+            for content_role, content in source_values
+            if content
+        ]
 
     @staticmethod
     def _transcript_chunk(encounter) -> ChartReviewSourceChunk | None:
-        if not encounter.note:
+        final_narratives = [
+            narrative for narrative in encounter.narratives if narrative.status == "final"
+        ]
+        if not final_narratives:
             return None
+        narrative = max(final_narratives, key=lambda item: item.created_at)
         return ChartReviewSourceChunk(
             source_id=f"encounter-note:{encounter.id}",
             source_type=ChartReviewSourceType.TRANSCRIPT,
-            content=encounter.note,
+            content=narrative.content,
             resource_id=str(encounter.id),
             display_label=encounter.title,
             content_role="voice-note transcript",

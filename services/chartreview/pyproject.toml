@@ -1,7 +1,7 @@
 [project]
 name = "chartreview"
 version = "0.1.0"
-description = "Temporal and LangGraph worker for synthetic chart-review draft support"
+description = "Temporal and LangGraph worker for anonymized chart-review draft support"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
@@ -12,7 +12,12 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "temporalio[langgraph]==1.32.0",
     "typing-extensions>=4.12.0",
+    # Evals
+    "pyyaml>=6.0.2",
 ]
+
+[project.scripts]
+chartreview-eval = "app.e2e_eval_runner:main"
 
 [tool.uv.sources]
 folium-core = { workspace = true }

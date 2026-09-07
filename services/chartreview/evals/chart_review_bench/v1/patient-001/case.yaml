@@ -1,0 +1,50 @@
+id: cough-and-fever-redundant-history-request
+version: 1
+description: Active fall encounter supplies cough, fever, congestion, and a cough trigger.
+
+fixture:
+  patient:
+    key: patient-001
+    age_at_active_encounter: 14
+    date_of_birth: 2012-03-12
+    gender: male
+  encounters:
+    - key: prior-001
+      occurred_at: 2026-10-12T10:00:00Z
+      title: Routine encounter
+      summary: Prior routine encounter records no ongoing respiratory symptoms.
+      description: Internal anonymized description not supplied to the model.
+    - key: follow-up-001
+      occurred_at: 2026-11-12T10:00:00Z
+      title: Cough and fever encounter
+      note: >
+        Cough, nasal congestion, and fever are present. Cold air triggers
+        coughing. Symptom onset and fever duration are not available.
+  active_encounter_key: follow-up-001
+
+expected:
+  output:
+    summary_facts:
+      - Cough is present.
+      - Nasal congestion is present.
+      - Fever is present.
+      - Cold air triggers coughing.
+    missing_information:
+      - Symptom onset is not available.
+      - Fever duration is not available.
+    follow_up_questions:
+      - When did the symptoms begin?
+      - How long has the fever been present?
+    required_source_roles:
+      - active.note
+    forbidden_source_roles:
+      - prior-001.description
+    confidence: null
+  history_decision:
+    should_retrieve: false
+    forbidden_search_terms:
+      - cough
+      - fever
+    expected_returned_source_roles: []
+  validation:
+    expected_status: valid

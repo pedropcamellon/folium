@@ -9,9 +9,9 @@ Personal project. Use your personal GitHub account for all git/remote ops, never
 
 ## Rules
 
+- Use local runner `uv run folium` for development and testing.
 - API Calls: Use centralized API configuration never hardcode API URLs in components.
 - Frontend types must match backend models exactly (field names, data types). When changing backend models, update frontend types immediately
-- Types: Frontend types must match backend models exactly. Update both when changing either
 - Code examples in docs: Only short snippets (5-10 lines) to illustrate patterns
 - No PII: Never include personal names, company names, or identifiable information in public repo files
 - No emojis: Never use emojis in code generation (comments, strings, logs, or documentation). Use clear descriptive text instead.

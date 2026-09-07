@@ -43,10 +43,7 @@ async def decide_history(
 ) -> dict[str, list[str]]:
     """Temporal Activity that calls the provider to decide whether history is needed."""
     review_input = ChartReviewInput.model_validate(state["review_input"])
-    active_context = "\n\n".join(
-        f"[{source.source_id}] {source.source_type.value}: {source.content}"
-        for source in review_input.source_chunks
-    )
+    active_context = _format_active_context(review_input)
     messages = [
         system_message(load_prompt(CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH)),
         user_message(f"Active interaction context:\n{active_context}"),
@@ -98,10 +95,7 @@ async def retrieve_history(state: ChartReviewGraphState) -> dict[str, list[Chart
 async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReviewOutput]:
     """Temporal Activity that calls the provider with approved chart-review context."""
     review_input = ChartReviewInput.model_validate(state["review_input"])
-    active_context = "\n\n".join(
-        f"[{source.source_id}] {source.source_type.value}: {source.content}"
-        for source in review_input.source_chunks
-    )
+    active_context = _format_active_context(review_input)
     historical_source_chunks = [
         ChartReviewSourceChunk.model_validate(source)
         for source in state.get("historical_source_chunks", [])
@@ -186,6 +180,30 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
         )
         raise ValueError("MediPhi returned a source reference outside the supplied snapshot")
     return {"review_output": review_output}
+
+
+def _format_active_context(review_input: ChartReviewInput) -> str:
+    """Present the final active narrative first without excluding native encounter context."""
+    primary_narrative = [review_input.transcript] if review_input.transcript else []
+    supporting_context = [
+        source for source in review_input.source_chunks if source != review_input.transcript
+    ]
+    sections: list[str] = []
+    if primary_narrative:
+        source = primary_narrative[0]
+        sections.append(
+            "Current active encounter narrative (primary current-state source; cite this source "
+            f"for facts it establishes):\n[{source.source_id}] {source.source_type.value}: "
+            f"{source.content}"
+        )
+    if supporting_context:
+        formatted_sources = "\n\n".join(
+            f"[{source.source_id}] {source.source_type.value} ({source.content_role}): "
+            f"{source.content}"
+            for source in supporting_context
+        )
+        sections.append(f"Additional active encounter context:\n{formatted_sources}")
+    return "\n\n".join(sections)
 
 
 def _normalize_output(output: dict) -> dict:
