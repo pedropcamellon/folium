@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/chartreview.iml" filepath="$PROJECT_DIR$/.idea/chartreview.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/e2e.iml" filepath="$PROJECT_DIR$/.idea/e2e.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/folium.iml" filepath="$PROJECT_DIR$/.idea/folium.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/folium-core.iml" filepath="$PROJECT_DIR$/.idea/folium-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/folium-favicon-generator.iml" filepath="$PROJECT_DIR$/.idea/folium-favicon-generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/folium-workspace.iml" filepath="$PROJECT_DIR$/.idea/folium-workspace.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/folium_runtime.iml" filepath="$PROJECT_DIR$/.idea/folium_runtime.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/summarize.iml" filepath="$PROJECT_DIR$/.idea/summarize.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/transcribe.iml" filepath="$PROJECT_DIR$/.idea/transcribe.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/voicenotes.iml" filepath="$PROJECT_DIR$/.idea/voicenotes.iml" />
+    </modules>
+  </component>
+</project>
