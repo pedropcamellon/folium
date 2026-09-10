@@ -5,17 +5,21 @@ import logging
 from uuid import UUID
 
 from folium.core.chart_review import (
-    ChartReviewConfidence,
     ChartReviewHistoryRequest,
     ChartReviewHistoryResponse,
     ChartReviewInput,
+    ChartReviewOutput,
     ChartReviewSourceChunk,
     ChartReviewSourceType,
     ChartReviewStatus,
     ChartReviewWorkflowInput,
 )
 
-from app.models.chart_review import ChartReviewCitationResponse, ChartReviewResponse
+from app.models.chart_review import (
+    ChartReviewCitationResponse,
+    ChartReviewHistoryResultResponse,
+    ChartReviewResponse,
+)
 from app.models.db.chart_review import ChartReview
 from app.repositories.chart_review_repository import ChartReviewRepository
 from app.services.chart_review_workflow_service import ChartReviewWorkflowService
@@ -208,22 +212,35 @@ class ChartReviewRequestService:
 
     @staticmethod
     def _to_response(chart_review: ChartReview) -> ChartReviewResponse:
-        output = chart_review.output_json or {}
+        output = (
+            ChartReviewOutput.model_validate(chart_review.output_json)
+            if chart_review.output_json is not None
+            else None
+        )
         status = ChartReviewStatus(chart_review.status)
         source_refs = ChartReviewRequestService._public_source_refs(chart_review)
         return ChartReviewResponse(
             id=str(chart_review.id),
             encounterId=str(chart_review.encounter_id),
             status=status,
-            summary=output.get("summary"),
-            reasoning=output.get("reasoning"),
-            missingInfo=output.get("missing_info", []),
-            followUpQuestions=output.get("follow_up_questions", []),
+            summary=output.summary if output else None,
+            reasoning=output.reasoning if output else None,
+            missingInfo=output.missing_info if output else [],
+            followUpQuestions=output.follow_up_questions if output else [],
             sourceRefs=source_refs,
-            confidence=ChartReviewConfidence(chart_review.confidence)
-            if chart_review.confidence
-            else None,
-            reviewFlags=chart_review.review_flags or [],
+            confidence=output.confidence if output else None,
+            reviewFlags=output.review_flags if output else [],
+            historySearchTerms=output.history_search_terms if output else [],
+            historyResults=[
+                ChartReviewHistoryResultResponse(
+                    sourceType=chunk.source_type,
+                    displayLabel=chunk.display_label,
+                    contentRole=chunk.content_role,
+                    content=chunk.content,
+                    occurredAt=chunk.occurred_at,
+                )
+                for chunk in (output.history_source_chunks if output else [])
+            ],
             failureMessage=chart_review.failure_message,
         )
 

@@ -161,6 +161,10 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
         raw_output = json.loads(content)
         normalized_output = _normalize_output(raw_output)
         normalized_output["provider_name"] = settings.ai_provider_name
+        normalized_output["history_search_terms"] = state.get("history_search_terms", [])
+        normalized_output["history_source_chunks"] = [
+            source.model_dump(mode="json") for source in historical_source_chunks
+        ]
         review_output = ChartReviewOutput.model_validate(normalized_output)
     except (json.JSONDecodeError, ValueError) as exc:
         logger.error("MediPhi invalid chart-review completion: raw=%s error=%s", content, exc)
@@ -213,6 +217,9 @@ def _normalize_output(output: dict) -> dict:
         output["source_refs"] = [_normalize_source_ref(source_ref) for source_ref in source_refs]
 
     confidence = output.get("confidence")
+    if confidence is None:
+        logger.warning("Confidence not provided, defaulting to LOW.")
+        output["confidence"] = ChartReviewConfidence.LOW.value
     if isinstance(confidence, str):
         confidence_level, separator, confidence_explanation = confidence.partition("-")
         normalized_confidence = confidence_level.strip().lower()

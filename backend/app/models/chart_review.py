@@ -22,6 +22,18 @@ class ChartReviewCitationResponse(BaseModel):
     occurred_at: datetime | None = Field(None, alias="occurredAt")
 
 
+class ChartReviewHistoryResultResponse(BaseModel):
+    """Bounded historical block returned to the agent, surfaced for evaluation."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    source_type: ChartReviewSourceType = Field(..., alias="sourceType")
+    display_label: str | None = Field(None, alias="displayLabel")
+    content_role: str | None = Field(None, alias="contentRole")
+    content: str
+    occurred_at: datetime | None = Field(None, alias="occurredAt")
+
+
 class ChartReviewResponse(BaseModel):
     """Persisted draft-support review returned to the encounter UI."""
 
@@ -37,4 +49,8 @@ class ChartReviewResponse(BaseModel):
     source_refs: list[ChartReviewCitationResponse] = Field(default_factory=list, alias="sourceRefs")
     confidence: ChartReviewConfidence | None = None
     review_flags: list[str] = Field(default_factory=list, alias="reviewFlags")
+    history_search_terms: list[str] = Field(default_factory=list, alias="historySearchTerms")
+    history_results: list[ChartReviewHistoryResultResponse] = Field(
+        default_factory=list, alias="historyResults"
+    )
     failure_message: str | None = Field(None, alias="failureMessage")
