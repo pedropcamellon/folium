@@ -46,6 +46,8 @@ Folium is a modern Electronic Health Records (EHR) system designed for healthcar
   model observation, delayed labels, shadow, and canary policy
 - [Chart-Review Evaluation](dev/chart-review-evaluation.md) - Synthetic
   encounter benchmark, workflow protocol, trace, and deterministic rubric
+- [Chart-Review Experiments](dev/chart-review-experiments.md) - Immutable
+  evaluation setups and durable outcome summaries
 - [Chart Review Agent Lessons](dev/chart-review-agent.md) - Local operations and bounded retrieval constraints
 - [Local LLM Build Compatibility](dev/local-llm-builds.md) - A Linux ARM build
   lesson and the portable local-summarizer default

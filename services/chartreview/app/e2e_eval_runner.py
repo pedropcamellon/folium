@@ -20,6 +20,8 @@ STOP_WORDS = frozenset({"a", "an", "and", "are", "as", "has", "is", "of", "the",
 EVALUATION_TERM_EQUIVALENTS = {
     "onset": frozenset({"onset", "duration"}),
     "trigger": frozenset({"trigger", "exacerbat", "exacerbate"}),
+    "present": frozenset({"present", "intact", "experienc"}),
+    "occur": frozenset({"occur", "sustain"}),
 }
 EVALUATION_ENVIRONMENT_KEYS = frozenset(
     {
@@ -174,6 +176,16 @@ def score_review(case: ChartReviewBenchmarkCase, review: dict[str, Any]) -> list
         if not _preserves_missing_information(missing_information, output_terms):
             failures.append(f"missing-information item was not preserved: {missing_information}")
 
+    follow_up_terms = _normalized_terms(
+        "\n".join(str(question) for question in review.get("followUpQuestions", []))
+    )
+    for term in case.expected.output.required_follow_up_terms:
+        if not _preserves_expected_terms(_normalized_terms(term), follow_up_terms):
+            failures.append(f"follow-up questions omitted required term: {term}")
+    for term in case.expected.output.forbidden_follow_up_terms:
+        if _preserves_expected_terms(_normalized_terms(term), follow_up_terms):
+            failures.append(f"follow-up questions included forbidden term: {term}")
+
     return failures
 
 
@@ -215,7 +227,7 @@ async def _create_encounters(
             json={
                 "patientId": patient_id,
                 "encounterType": "outpatient",
-                "purpose": "follow_up",
+                "purpose": encounter.purpose,
                 "status": "completed",
                 "title": encounter.title,
                 "startedAt": encounter.occurred_at.isoformat(),

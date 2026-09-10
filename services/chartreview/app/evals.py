@@ -23,6 +23,7 @@ class Encounter(BaseModel):
     key: str = Field(min_length=1)
     occurred_at: datetime
     title: str = Field(min_length=1)
+    purpose: Literal["initial", "follow_up", "preventive", "procedure"] = "follow_up"
     summary: str | None = None
     description: str | None = None
     note: str | None = None
@@ -59,6 +60,8 @@ class OutputExpectation(BaseModel):
     summary_facts: list[str] = Field(min_length=1)
     missing_information: list[str] = Field(min_length=1)
     follow_up_questions: list[str] = Field(min_length=1)
+    required_follow_up_terms: list[str] = Field(default_factory=list)
+    forbidden_follow_up_terms: list[str] = Field(default_factory=list)
     required_source_roles: list[str] = Field(min_length=1)
     forbidden_source_roles: list[str] = Field(default_factory=list)
     confidence: Literal["low", "medium", "high"] | None = None
@@ -68,6 +71,11 @@ class OutputExpectation(BaseModel):
         overlap = set(self.required_source_roles) & set(self.forbidden_source_roles)
         if overlap:
             raise ValueError(f"source roles cannot be required and forbidden: {sorted(overlap)}")
+        follow_up_overlap = set(self.required_follow_up_terms) & set(self.forbidden_follow_up_terms)
+        if follow_up_overlap:
+            raise ValueError(
+                f"follow-up terms cannot be required and forbidden: {sorted(follow_up_overlap)}"
+            )
         return self
 
 

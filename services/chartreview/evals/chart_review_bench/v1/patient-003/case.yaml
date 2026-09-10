@@ -1,0 +1,82 @@
+id: soccer-related-right-foot-pain
+version: 1
+description: Office consultation documents right-foot pain after a soccer injury, with functional and imaging details still unavailable.
+
+fixture:
+  patient:
+    key: patient-003
+    age_at_active_encounter: 32
+    date_of_birth: 1994-06-22
+    gender: male
+  encounters:
+    - key: annual-exam-2024
+      occurred_at: 2024-11-13T09:00:00Z
+      title: Annual exam
+      purpose: preventive
+      summary: >
+        Annual exam is normal. Patient plays recreational soccer weekly. No
+        daily prescription medication is documented.
+      description: >
+        Routine screening laboratory results are within reference ranges.
+        Seasonal nasal allergy symptoms are managed with cetirizine as needed.
+      note: >
+        Patient reports no current pain or activity limitation. Examination is
+        unremarkable. Preventive counseling is documented.
+    - key: annual-exam-2025
+      occurred_at: 2025-11-13T09:00:00Z
+      title: Annual exam
+      purpose: preventive
+      summary: >
+        Annual exam is normal. Patient continues recreational soccer weekly.
+        No daily prescription medication is documented.
+      description: >
+        Routine screening laboratory results are within reference ranges.
+        Seasonal nasal allergy symptoms remain intermittent.
+      note: >
+        Patient reports no current pain or activity limitation. Examination is
+        unremarkable. Preventive counseling is documented.
+    - key: office-consultation-001
+      occurred_at: 2026-11-13T10:30:00Z
+      title: Office consultation
+      purpose: initial
+      note: >
+        Patient presents with right-foot pain and swelling after twisting the
+        foot during a soccer game yesterday. Distal sensation and toe movement
+        are present. Ability to bear weight and a right-foot radiograph result
+        are not available.
+  active_encounter_key: office-consultation-001
+
+expected:
+  output:
+    summary_facts:
+      - Right-foot pain is present.
+      - Right-foot swelling is present.
+      - Right-foot injury occurs during a soccer game.
+      - Distal sensation is present.
+      - Toe movement is present.
+    missing_information:
+      - Ability to bear weight is not available.
+      - Right-foot radiograph result is not available.
+    follow_up_questions:
+      - Can the patient bear weight on the right foot?
+      - Is a right-foot radiograph result available?
+    required_follow_up_terms:
+      - bear weight
+      - radiograph
+    forbidden_follow_up_terms:
+      - diagnosis
+      - treatment
+    required_source_roles:
+      - active.note
+    forbidden_source_roles:
+      - annual-exam-2024.summary
+      - annual-exam-2025.summary
+    confidence: null
+  history_decision:
+    should_retrieve: false
+    forbidden_search_terms:
+      - soccer
+      - foot pain
+    expected_returned_source_roles: []
+  validation:
+    expected_status: valid

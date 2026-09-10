@@ -58,6 +58,10 @@ sentence-for-sentence:
 - `summary_facts`: facts the summary must communicate.
 - `missing_information`: factual gaps that must remain visible and must not be
   invented away.
+- `required_follow_up_terms`: terms that the focused follow-up questions must
+  communicate for a declared decision-relevant gap.
+- `forbidden_follow_up_terms`: terms that would reopen a known fact or add
+  unsupported speculation to a follow-up question.
 - `required_source_roles`: fixture roles required by the future restricted
   canonical-provenance scorer, such as `active.note`.
 - `forbidden_source_roles`: known invalid fixture roles, including an
@@ -69,6 +73,10 @@ the fixture roles expected to be returned. A no-retrieval or no-match result is
 valid when active context already has the relevant fact or no approved history
 block matches a genuine gap. Exact history and citation scoring remains deferred
 until the restricted evaluation trace is implemented.
+
+The follow-up term assertions are deliberately narrow lexical checks. They
+create a deterministic floor for known-fact preservation and decision-relevant
+questions; physician review still determines clinical usefulness and clarity.
 
 `expected.validation.expected_status` states whether the final provider result
 is expected to validate against `ChartReviewOutput`.

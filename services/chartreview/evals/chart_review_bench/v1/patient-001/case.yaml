@@ -1,6 +1,6 @@
-id: cough-and-fever-redundant-history-request
+id: cough-and-fever-home-temperature
 version: 1
-description: Active fall encounter supplies cough, fever, congestion, and a cough trigger.
+description: Office consultation records a measured temperature while home readings during several days of cough and fever remain unknown.
 
 fixture:
   patient:
@@ -9,18 +9,20 @@ fixture:
     date_of_birth: 2012-03-12
     gender: male
   encounters:
-    - key: prior-001
+    - key: annual-exam-001
       occurred_at: 2026-10-12T10:00:00Z
-      title: Routine encounter
-      summary: Prior routine encounter records no ongoing respiratory symptoms.
-      description: Internal anonymized description not supplied to the model.
-    - key: follow-up-001
+      title: Annual exam
+      purpose: preventive
+      summary: Annual exam is normal.
+    - key: office-consultation-001
       occurred_at: 2026-11-12T10:00:00Z
-      title: Cough and fever encounter
+      title: Office consultation
+      purpose: initial
       note: >
-        Cough, nasal congestion, and fever are present. Cold air triggers
-        coughing. Symptom onset and fever duration are not available.
-  active_encounter_key: follow-up-001
+        Patient presents to the office with cough and fever for several days.
+        Nasal congestion is present. Office temperature is 38.3 C. Home
+        temperature readings during these days are not available.
+  active_encounter_key: office-consultation-001
 
 expected:
   output:
@@ -28,23 +30,28 @@ expected:
       - Cough is present.
       - Nasal congestion is present.
       - Fever is present.
-      - Cold air triggers coughing.
+      - Cough and fever are present for several days.
+      - Office temperature is 38.3 C.
     missing_information:
-      - Symptom onset is not available.
-      - Fever duration is not available.
+      - Home temperature readings during these days are not available.
     follow_up_questions:
-      - When did the symptoms begin?
-      - How long has the fever been present?
+      - What home temperature readings are available from these days?
+    required_follow_up_terms:
+      - home temperature
+    forbidden_follow_up_terms:
+      - medication
+      - treatment
     required_source_roles:
       - active.note
     forbidden_source_roles:
-      - prior-001.description
+      - annual-exam-001.summary
     confidence: null
   history_decision:
     should_retrieve: false
     forbidden_search_terms:
       - cough
       - fever
+      - home temperature
     expected_returned_source_roles: []
   validation:
     expected_status: valid

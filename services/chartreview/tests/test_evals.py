@@ -1,12 +1,19 @@
 """Fast request-sequence coverage for chart-review evaluation cases."""
 
 import asyncio
+import json
 import os
 from pathlib import Path
 
 import httpx
 
-from app.e2e_eval_runner import EvaluationSettings, benchmark_case_paths, evaluate_case
+from app.e2e_eval_runner import (
+    EvaluationSettings,
+    benchmark_case_paths,
+    evaluate_case,
+    score_review,
+)
+from app.evals import load_benchmark_case
 
 os.environ.setdefault("AI_SERVICE_BASE_URL", "http://localhost:8002")
 os.environ.setdefault("CHARTREVIEW_BACKEND_URL", "http://localhost:8000")
@@ -14,12 +21,11 @@ os.environ.setdefault("CHARTREVIEW_INTERNAL_TOKEN", "test-token")
 
 from folium.core.chart_review import ChartReviewInput, ChartReviewSourceChunk, ChartReviewSourceType
 
-from app.graph import _format_active_context
+from app.graph import _format_active_context, _normalize_output
 
 CASE_PATH = (
     Path(__file__).parents[1] / "evals" / "chart_review_bench" / "v1" / "patient-001" / "case.yaml"
 )
-PROMPT_PATH = Path(__file__).parents[1] / "prompts" / "chart_review.md"
 BENCHMARK_PATH = CASE_PATH.parents[1]
 
 
@@ -27,15 +33,31 @@ def test_benchmark_directory_resolves_committed_cases_in_order() -> None:
     assert benchmark_case_paths(BENCHMARK_PATH) == [
         BENCHMARK_PATH / "patient-001" / "case.yaml",
         BENCHMARK_PATH / "patient-002" / "case.yaml",
+        BENCHMARK_PATH / "patient-003" / "case.yaml",
     ]
 
 
-def test_chart_review_prompt_prioritizes_active_encounter_facts() -> None:
-    prompt = PROMPT_PATH.read_text(encoding="utf-8")
+def test_refined_case_follow_up_terms_reject_irrelevant_questions() -> None:
+    case = load_benchmark_case(BENCHMARK_PATH / "patient-002" / "case.yaml")
 
-    assert "active encounter context as the patient's current state" in prompt
-    assert "Do not ask follow-up questions for facts already stated" in prompt
-    assert "review_flags" not in prompt
+    failures = score_review(
+        case,
+        {
+            "status": "completed",
+            "summary": "Blood pressure is 168/96 mmHg. Glucose is elevated. Hypertension and diabetes are documented.",
+            "missingInfo": [
+                "Current blood-pressure medication record is not available.",
+                "Whether medication is taken as scheduled is not available.",
+            ],
+            "followUpQuestions": [
+                "Does the patient take the prescribed blood-pressure medication as scheduled?",
+                "Which blood-pressure medications are currently taken?",
+                "Should the medication change?",
+            ],
+        },
+    )
+
+    assert failures == ["follow-up questions included forbidden term: change"]
 
 
 def test_active_context_prioritizes_the_final_narrative_without_omitting_encounter_fields() -> None:
@@ -65,6 +87,12 @@ def test_active_context_prioritizes_the_final_narrative_without_omitting_encount
     )
     assert "primary current-state source" in context
     assert "Additional active encounter context" in context
+
+
+def test_normalize_output_defaults_missing_confidence_to_low() -> None:
+    normalized_output = _normalize_output({"summary": "Synthetic draft."})
+
+    assert normalized_output["confidence"] == "low"
 
 
 def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -> None:
@@ -108,12 +136,13 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
                 200,
                 json={
                     "status": "completed",
-                    "summary": "Cough, nasal congestion, and fever are present; cold air exacerbates coughing.",
-                    "reasoning": "Symptom duration is not specified.",
-                    "missingInfo": ["Duration of fever"],
+                    "summary": "Cough, nasal congestion, and fever are present for several days. Office temperature is 38.3 C.",
+                    "reasoning": "Home temperature readings during these days are not available.",
+                    "missingInfo": [
+                        "Home temperature readings during these days are not available.",
+                    ],
                     "followUpQuestions": [
-                        "When did symptoms begin?",
-                        "How long has the fever been present?",
+                        "What home temperature readings are available from these days?",
                     ],
                 },
             )
@@ -142,3 +171,9 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
         "GET",
         "DELETE",
     ]
+    encounter_payloads = [
+        json.loads(request.content)
+        for request in requests
+        if request.url.path == "/api/v1/encounters/"
+    ]
+    assert [payload["purpose"] for payload in encounter_payloads] == ["preventive", "initial"]
