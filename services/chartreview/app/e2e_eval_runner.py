@@ -186,6 +186,26 @@ def score_review(case: ChartReviewBenchmarkCase, review: dict[str, Any]) -> list
         if _preserves_expected_terms(_normalized_terms(term), follow_up_terms):
             failures.append(f"follow-up questions included forbidden term: {term}")
 
+    history_search_terms = [
+        str(search_term)
+        for search_term in review.get("historySearchTerms", [])
+        if isinstance(search_term, str)
+    ]
+    history_results = review.get("historyResults", [])
+    if not case.expected.history_decision.should_retrieve:
+        if history_search_terms:
+            failures.append("history retrieval was requested when no lookup was expected")
+        if history_results:
+            failures.append("history retrieval returned blocks when no lookup was expected")
+    elif not history_results:
+        failures.append("history retrieval did not return a required prior-context block")
+    for term in case.expected.history_decision.forbidden_search_terms:
+        if any(
+            _preserves_expected_terms(_normalized_terms(term), _normalized_terms(search_term))
+            for search_term in history_search_terms
+        ):
+            failures.append(f"history retrieval included forbidden search term: {term}")
+
     return failures
 
 

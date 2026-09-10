@@ -165,28 +165,30 @@ source chunks.
 
 #### Case 3 - Soccer-related right-foot pain
 
-The summary semantically preserves
-right-foot pain, swelling, the soccer-related twisting injury, and both
-declared gaps. The three summary-fact failures are lexical-rubric false
-negatives because the output uses equivalent wording rather than the expected
-"is present" and "occurs" forms. The weight-bearing question is relevant. The
-imaging question is not: it asks about obtaining an X-ray or MRI rather than
-whether the already-declared right-foot radiograph result is available. This
-expands from missing-record clarification toward proposing diagnostic action.
+- The summary semantically preserves
+  right-foot pain, swelling, the soccer-related twisting injury, and both
+  declared gaps. The three summary-fact failures are lexical-rubric false
+  negatives because the output uses equivalent wording rather than the expected
+  "is present" and "occurs" forms.
+- The weight-bearing question is relevant. The
+  imaging question is not: it asks about obtaining an X-ray or MRI rather than whether the already-declared right-foot radiograph result is available.
+- This
+  expands from missing-record clarification toward proposing diagnostic action.
 
-A subsequent trace for review `d6198f11-1a54-4074-aadb-dfec02c132e0` confirms
-a separate retrieval-quality failure: the history decision requests unrelated
-`inhaler` and `prescription` terms even though the active injury note declares
-no historical-information gap. The bounded tool correctly returns no source
-chunks. The final draft preserves the injury mechanism, pain, swelling, and
-unknown weight-bearing status, but omits the known distal sensation and toe
-movement. It invents a need to quantify pain and swelling, links unknown
-weight-bearing status to absent radiographs without support, and asks about
-bruising or discoloration as fracture evidence. Those additions are outside
-the declared chart gaps and introduce diagnostic framing. The question about
-weight bearing is relevant, but its added "without exacerbating symptoms"
-clause is unnecessary; no question asks whether the existing radiograph result
-is available.
+- A subsequent trace for review `d6198f11-1a54-4074-aadb-dfec02c132e0` confirms
+  a separate retrieval-quality failure: the history decision requests unrelated
+  `inhaler` and `prescription` terms even though the active injury note declares
+  no historical-information gap. The bounded tool correctly returns no source
+  chunks. The final draft preserves the injury mechanism, pain, swelling, and
+  unknown weight-bearing status, but omits the known distal sensation and toe
+  movement.
+- It invents a need to quantify pain and swelling, links unknown
+  weight-bearing status to absent radiographs without support, and asks about
+  bruising or discoloration as fracture evidence. Those additions are outside
+  the declared chart gaps and introduce diagnostic framing. The question about
+  weight bearing is relevant, but its added "without exacerbating symptoms"
+  clause is unnecessary; no question asks whether the existing radiograph result
+  is available.
 
 The later extended-chart run retains those defects. Its history decision asks
 for `radiograph` and `swelling` despite a no-history case; the empty bounded
@@ -345,3 +347,8 @@ history`. The focused backend test and the subsequent case-2 trace confirm
   `low` before validating `ChartReviewOutput`. This preserves an explicit
   conservative uncertainty level without weakening validation for other
   contract fields. Rerun this single case before the full suite.
+- **Completed preflight:** the runner reported a deterministic pass in
+  `48.875s`, but manual inspection found an unnecessary
+  `home temperature readings` lookup and an invented symptom-progression
+  question. Add public-response retrieval assertions before the full-suite
+  run; do not treat this output as a behavioral pass.

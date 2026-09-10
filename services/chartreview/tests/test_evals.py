@@ -54,6 +54,7 @@ def test_refined_case_follow_up_terms_reject_irrelevant_questions() -> None:
                 "Which blood-pressure medications are currently taken?",
                 "Should the medication change?",
             ],
+            "historyResults": [{"content": "Historical medication record."}],
         },
     )
 
@@ -93,6 +94,27 @@ def test_normalize_output_defaults_missing_confidence_to_low() -> None:
     normalized_output = _normalize_output({"summary": "Synthetic draft."})
 
     assert normalized_output["confidence"] == "low"
+
+
+def test_score_review_rejects_unexpected_history_lookup() -> None:
+    case = load_benchmark_case(CASE_PATH)
+
+    failures = score_review(
+        case,
+        {
+            "status": "completed",
+            "summary": "Cough, nasal congestion, and fever are present for several days. Office temperature is 38.3 C.",
+            "missingInfo": ["Home temperature readings during these days are not available."],
+            "followUpQuestions": ["What home temperature readings are available from these days?"],
+            "historySearchTerms": ["home temperature readings"],
+            "historyResults": [],
+        },
+    )
+
+    assert failures == [
+        "history retrieval was requested when no lookup was expected",
+        "history retrieval included forbidden search term: home temperature",
+    ]
 
 
 def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -> None:
