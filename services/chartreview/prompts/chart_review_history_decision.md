@@ -19,7 +19,10 @@ multi-word term only when one word would be too ambiguous. Return an empty
 active interaction that declares no historical-information gap.
 
 Request a lookup only when the active interaction explicitly lacks a factual
-detail. Do not request facts already supplied in the active context. Use short
+detail that prior interaction documentation could supply. Otherwise, return an
+empty `search_terms` list. Do not request facts already supplied in the active
+context, and do not search merely because the active interaction mentions a
+chronic condition, an active medication, or absent current symptoms. Use short
 lexical anchors likely to appear verbatim in prior interaction text, not a
 question, synonym, or detailed restatement of the missing fact.
 

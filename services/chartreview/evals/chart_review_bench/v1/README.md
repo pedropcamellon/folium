@@ -3,11 +3,22 @@
 Committed anonymized chart-review benchmark cases. Each `patient-###`
 directory is one case and contains a `case.yaml` seed plan.
 
-`case.yaml` contains non-identifying patient attributes, chronological
-encounters, one active encounter, and deterministic output, history, and
-validation assertions. The fixture loader validates the plan without touching
-persistence. A future staging adapter will create isolated records from the
-same plan and execute the workflow.
+`case.yaml` contains a short stable `id`, clinician-readable `title`,
+non-identifying patient attributes, chronological encounters, one active
+encounter, and deterministic output, history, and validation assertions. The
+fixture loader validates the plan without touching persistence. A future
+staging adapter will create isolated records from the same plan and execute the
+workflow.
+
+Each case's required `metadata` supports filtering:
+
+```yaml
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: current-only
+```
 
 Run the fast fixture-and-pipeline integration test:
 

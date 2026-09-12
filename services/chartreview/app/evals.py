@@ -17,6 +17,15 @@ class Patient(BaseModel):
     gender: str = Field(min_length=1, max_length=20)
 
 
+class CaseMetadata(BaseModel):
+    """Filterable clinical scope for one flat benchmark case."""
+
+    evaluation_pack: str = Field(min_length=1, max_length=100)
+    clinical_area: str = Field(min_length=1, max_length=100)
+    condition: str = Field(min_length=1, max_length=100)
+    scenario: str = Field(min_length=1, max_length=100)
+
+
 class Encounter(BaseModel):
     """An encounter used to build chart-review context."""
 
@@ -58,8 +67,8 @@ class OutputExpectation(BaseModel):
     """Deterministic assertions for the final structured draft."""
 
     summary_facts: list[str] = Field(min_length=1)
-    missing_information: list[str] = Field(min_length=1)
-    follow_up_questions: list[str] = Field(min_length=1)
+    missing_information: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
     required_follow_up_terms: list[str] = Field(default_factory=list)
     forbidden_follow_up_terms: list[str] = Field(default_factory=list)
     required_source_roles: list[str] = Field(min_length=1)
@@ -103,8 +112,10 @@ class ChartReviewBenchmarkCase(BaseModel):
     """Validated, committed anonymized benchmark case."""
 
     id: str = Field(min_length=1)
+    title: str = Field(min_length=1, max_length=200)
     version: int = Field(ge=1)
     description: str = Field(min_length=1)
+    metadata: CaseMetadata
     fixture: CaseFixture
     expected: CaseExpectations
 

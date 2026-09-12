@@ -1,60 +1,54 @@
-id: hypertension-medication-reconciliation
+id: cad-history-needed
+title: CAD follow-up with prior stent and statin history
 version: 1
-description: Office consultation documents elevated blood pressure in a patient with hypertension; annual exams provide prior medication context but current medication and adherence records remain unverified.
+description: CAD follow-up lacks a prior stent date and statin detail, which a bounded prior encounter lookup can supply.
+
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: history-needed
 
 fixture:
   patient:
     key: patient-002
     age_at_active_encounter: 73
     date_of_birth: 1953-05-08
-    gender: female
+    gender: male
   encounters:
-    - key: annual-exam-2024
-      occurred_at: 2024-11-13T09:00:00Z
-      title: Annual exam
-      purpose: preventive
-      summary: >
-        Annual exam is normal. Hypertension is documented. Blood pressure is
-        142/86 mmHg in clinic, and the patient reports lower readings at home.
-    - key: annual-exam-2025
+    - key: cardiology-follow-up-2025
       occurred_at: 2025-11-13T09:00:00Z
-      title: Annual exam
-      purpose: preventive
+      title: Cardiology follow-up
+      purpose: follow_up
       summary: >
-        Annual exam is normal. Blood-pressure medication record lists
-        lisinopril 10 mg each morning for hypertension. Patient reports
-        medication adherence at this visit. Blood pressure is 140/84 mmHg in
-        clinic, and the patient reports lower readings at home.
-    - key: office-consultation-001
+        Coronary artery disease history includes a drug-eluting coronary stent
+        placed in 2024. Atorvastatin 40 mg is documented at this visit.
+    - key: cad-follow-up-001
       occurred_at: 2026-11-13T10:30:00Z
-      title: Office consultation
-      purpose: initial
+      title: CAD follow-up
+      purpose: follow_up
       note: >
-        Patient presents for an office consultation. Blood pressure is 168/96
-        mmHg and glucose is elevated today. Hypertension and diabetes are
-        documented. The current blood-pressure medication record and whether
-        medication is taken as scheduled are not available.
-  active_encounter_key: office-consultation-001
+        Patient returns for coronary artery disease follow-up. No chest pain is
+        reported today. Prior coronary stent date and prior statin detail are
+        not available in the active encounter.
+  active_encounter_key: cad-follow-up-001
 
 expected:
   output:
     summary_facts:
-      - Blood pressure is 168/96 mmHg.
-      - Glucose is elevated.
-      - Hypertension is documented.
-      - Diabetes is documented.
+      - Coronary artery disease follow-up is documented.
+      - Chest pain is not reported today.
     missing_information:
-      - Current blood-pressure medication record is not available.
-      - Whether medication is taken as scheduled is not available.
+      - Prior coronary stent date is not available in the active encounter.
+      - Prior statin detail is not available in the active encounter.
     follow_up_questions:
-      - Does the patient take the prescribed blood-pressure medication as scheduled?
-      - Which blood-pressure medications are currently taken?
+      - Can the prior coronary stent date be confirmed?
+      - Can the prior statin detail be confirmed?
     required_follow_up_terms:
-      - blood pressure
-      - medication
-      - scheduled
+      - stent
+      - statin
     forbidden_follow_up_terms:
-      - new symptoms
+      - treatment
       - change
     required_source_roles:
       - active.note
@@ -64,8 +58,8 @@ expected:
     should_retrieve: true
     forbidden_search_terms:
       - treatment
-      - diabetes
+      - chest pain
     expected_returned_source_roles:
-      - annual-exam-2025.summary
+      - cardiology-follow-up-2025.summary
   validation:
     expected_status: valid

@@ -89,12 +89,20 @@ class EvaluationSettings:
         )
 
 
+class EvaluationAxisResult(BaseModel):
+    """One independently scored chart-review quality dimension."""
+
+    name: str
+    passed: bool
+    failures: list[str]
+
+
 class EvaluationResult(BaseModel):
     """Public terminal-review evidence produced for one evaluation case."""
 
     case_id: str
     passed: bool
-    failures: list[str]
+    axes: list[EvaluationAxisResult]
     review_status: str
     elapsed_seconds: float
     review: dict[str, Any]
@@ -153,12 +161,21 @@ def _preserves_expected_terms(expectation_terms: set[str], output_terms: set[str
     )
 
 
-def score_review(case: ChartReviewBenchmarkCase, review: dict[str, Any]) -> list[str]:
-    """Score public terminal-review behavior available to the E2E evaluator."""
+def score_review_axes(
+    case: ChartReviewBenchmarkCase, review: dict[str, Any]
+) -> list[EvaluationAxisResult]:
+    """Score independently actionable validation, draft, and retrieval evidence."""
     status = review.get("status")
     if status != "completed":
-        return [f"chart review finished with status: {status}"]
+        return [
+            EvaluationAxisResult(
+                name="validation",
+                passed=False,
+                failures=[f"chart review finished with status: {status}"],
+            )
+        ]
 
+    draft_failures: list[str] = []
     output_text = "\n".join(
         [
             str(review.get("summary") or ""),
@@ -168,24 +185,29 @@ def score_review(case: ChartReviewBenchmarkCase, review: dict[str, Any]) -> list
         ]
     )
     output_terms = _normalized_terms(output_text)
-    failures: list[str] = []
     for fact in case.expected.output.summary_facts:
         if not _preserves_expected_terms(_normalized_terms(fact), output_terms):
-            failures.append(f"summary did not preserve required fact: {fact}")
+            draft_failures.append(f"summary did not preserve required fact: {fact}")
     for missing_information in case.expected.output.missing_information:
         if not _preserves_missing_information(missing_information, output_terms):
-            failures.append(f"missing-information item was not preserved: {missing_information}")
+            draft_failures.append(
+                f"missing-information item was not preserved: {missing_information}"
+            )
 
+    follow_up_questions = review.get("followUpQuestions", [])
+    if not case.expected.output.follow_up_questions and follow_up_questions:
+        draft_failures.append("follow-up questions were returned when none were expected")
     follow_up_terms = _normalized_terms(
-        "\n".join(str(question) for question in review.get("followUpQuestions", []))
+        "\n".join(str(question) for question in follow_up_questions)
     )
     for term in case.expected.output.required_follow_up_terms:
         if not _preserves_expected_terms(_normalized_terms(term), follow_up_terms):
-            failures.append(f"follow-up questions omitted required term: {term}")
+            draft_failures.append(f"follow-up questions omitted required term: {term}")
     for term in case.expected.output.forbidden_follow_up_terms:
         if _preserves_expected_terms(_normalized_terms(term), follow_up_terms):
-            failures.append(f"follow-up questions included forbidden term: {term}")
+            draft_failures.append(f"follow-up questions included forbidden term: {term}")
 
+    retrieval_failures: list[str] = []
     history_search_terms = [
         str(search_term)
         for search_term in review.get("historySearchTerms", [])
@@ -194,19 +216,50 @@ def score_review(case: ChartReviewBenchmarkCase, review: dict[str, Any]) -> list
     history_results = review.get("historyResults", [])
     if not case.expected.history_decision.should_retrieve:
         if history_search_terms:
-            failures.append("history retrieval was requested when no lookup was expected")
+            retrieval_failures.append("history retrieval was requested when no lookup was expected")
         if history_results:
-            failures.append("history retrieval returned blocks when no lookup was expected")
+            retrieval_failures.append(
+                "history retrieval returned blocks when no lookup was expected"
+            )
     elif not history_results:
-        failures.append("history retrieval did not return a required prior-context block")
+        retrieval_failures.append("history retrieval did not return a required prior-context block")
+    for source_role in case.expected.history_decision.expected_returned_source_roles:
+        if not _returned_history_matches_source_role(case, source_role, history_results):
+            retrieval_failures.append(
+                f"history retrieval did not return expected source role: {source_role}"
+            )
     for term in case.expected.history_decision.forbidden_search_terms:
         if any(
             _preserves_expected_terms(_normalized_terms(term), _normalized_terms(search_term))
             for search_term in history_search_terms
         ):
-            failures.append(f"history retrieval included forbidden search term: {term}")
+            retrieval_failures.append(f"history retrieval included forbidden search term: {term}")
 
-    return failures
+    return [
+        EvaluationAxisResult(name="validation", passed=True, failures=[]),
+        EvaluationAxisResult(name="draft", passed=not draft_failures, failures=draft_failures),
+        EvaluationAxisResult(
+            name="retrieval", passed=not retrieval_failures, failures=retrieval_failures
+        ),
+    ]
+
+
+def _returned_history_matches_source_role(
+    case: ChartReviewBenchmarkCase, source_role: str, history_results: object
+) -> bool:
+    """Match public history metadata to the fixture source expected by one case."""
+    encounter_key, content_role = source_role.rsplit(".", maxsplit=1)
+    encounter = next(
+        encounter for encounter in case.fixture.encounters if encounter.key == encounter_key
+    )
+    expected_content = getattr(encounter, content_role)
+    return isinstance(history_results, list) and any(
+        isinstance(result, dict)
+        and result.get("displayLabel") == encounter.title
+        and result.get("contentRole") == content_role
+        and result.get("content") == expected_content
+        for result in history_results
+    )
 
 
 async def _authenticate(client: httpx.AsyncClient, settings: EvaluationSettings) -> None:
@@ -307,11 +360,11 @@ async def evaluate_case(
             response = await client.delete(f"/api/v1/patients/{patient_id}")
             response.raise_for_status()
 
-    failures = score_review(case, review)
+    axes = score_review_axes(case, review)
     return EvaluationResult(
         case_id=case.id,
-        passed=not failures,
-        failures=failures,
+        passed=all(axis.passed for axis in axes),
+        axes=axes,
         review_status=str(review["status"]),
         elapsed_seconds=round(monotonic() - started_at, 3),
         review=review,

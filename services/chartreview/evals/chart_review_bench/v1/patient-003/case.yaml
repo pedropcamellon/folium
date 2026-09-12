@@ -1,82 +1,63 @@
-id: soccer-related-right-foot-pain
+id: cad-missing-everywhere
+title: CAD follow-up with medication-allergy gap
 version: 1
-description: Office consultation documents right-foot pain after a soccer injury, with functional and imaging details still unavailable.
+description: CAD follow-up identifies a current allergy-status gap absent from the active context and bounded prior history.
+
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: missing-everywhere
 
 fixture:
   patient:
     key: patient-003
-    age_at_active_encounter: 32
-    date_of_birth: 1994-06-22
-    gender: male
+    age_at_active_encounter: 59
+    date_of_birth: 1967-06-22
+    gender: female
   encounters:
-    - key: annual-exam-2024
-      occurred_at: 2024-11-13T09:00:00Z
-      title: Annual exam
-      purpose: preventive
-      summary: >
-        Annual exam is normal. Patient plays recreational soccer weekly. No
-        daily prescription medication is documented.
-      description: >
-        Routine screening laboratory results are within reference ranges.
-        Seasonal nasal allergy symptoms are managed with cetirizine as needed.
-      note: >
-        Patient reports no current pain or activity limitation. Examination is
-        unremarkable. Preventive counseling is documented.
     - key: annual-exam-2025
       occurred_at: 2025-11-13T09:00:00Z
       title: Annual exam
       purpose: preventive
       summary: >
-        Annual exam is normal. Patient continues recreational soccer weekly.
-        No daily prescription medication is documented.
-      description: >
-        Routine screening laboratory results are within reference ranges.
-        Seasonal nasal allergy symptoms remain intermittent.
-      note: >
-        Patient reports no current pain or activity limitation. Examination is
-        unremarkable. Preventive counseling is documented.
-    - key: office-consultation-001
+        Routine preventive visit with no medication-allergy information
+        documented.
+    - key: cad-follow-up-001
       occurred_at: 2026-11-13T10:30:00Z
-      title: Office consultation
-      purpose: initial
+      title: CAD follow-up
+      purpose: follow_up
       note: >
-        Patient presents with right-foot pain and swelling after twisting the
-        foot during a soccer game yesterday. Distal sensation and toe movement
-        are present. Ability to bear weight and a right-foot radiograph result
-        are not available.
-  active_encounter_key: office-consultation-001
+        Patient returns for coronary artery disease follow-up. No chest pain or
+        shortness of breath is reported today. Medication-allergy status is not
+        available in the active encounter or prior record.
+  active_encounter_key: cad-follow-up-001
 
 expected:
   output:
     summary_facts:
-      - Right-foot pain is present.
-      - Right-foot swelling is present.
-      - Right-foot injury occurs during a soccer game.
-      - Distal sensation is present.
-      - Toe movement is present.
+      - Coronary artery disease follow-up is documented.
+      - Chest pain is not reported today.
+      - Shortness of breath is not reported today.
     missing_information:
-      - Ability to bear weight is not available.
-      - Right-foot radiograph result is not available.
+      - Medication-allergy status is not available.
     follow_up_questions:
-      - Can the patient bear weight on the right foot?
-      - Is a right-foot radiograph result available?
+      - What medication allergies are documented or reported?
     required_follow_up_terms:
-      - bear weight
-      - radiograph
+      - medication allergies
     forbidden_follow_up_terms:
       - diagnosis
       - treatment
     required_source_roles:
       - active.note
     forbidden_source_roles:
-      - annual-exam-2024.summary
       - annual-exam-2025.summary
     confidence: null
   history_decision:
     should_retrieve: false
     forbidden_search_terms:
-      - soccer
-      - foot pain
+      - allergy
+      - medication
     expected_returned_source_roles: []
   validation:
     expected_status: valid

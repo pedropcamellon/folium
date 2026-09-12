@@ -9,11 +9,10 @@ import httpx
 
 from app.e2e_eval_runner import (
     EvaluationSettings,
-    benchmark_case_paths,
     evaluate_case,
-    score_review,
+    score_review_axes,
 )
-from app.evals import load_benchmark_case
+from app.evals import ChartReviewBenchmarkCase
 
 os.environ.setdefault("AI_SERVICE_BASE_URL", "http://localhost:8002")
 os.environ.setdefault("CHARTREVIEW_BACKEND_URL", "http://localhost:8000")
@@ -21,44 +20,82 @@ os.environ.setdefault("CHARTREVIEW_INTERNAL_TOKEN", "test-token")
 
 from folium.core.chart_review import ChartReviewInput, ChartReviewSourceChunk, ChartReviewSourceType
 
-from app.graph import _format_active_context, _normalize_output
-
-CASE_PATH = (
-    Path(__file__).parents[1] / "evals" / "chart_review_bench" / "v1" / "patient-001" / "case.yaml"
-)
-BENCHMARK_PATH = CASE_PATH.parents[1]
+from app.graph import _format_active_context
 
 
-def test_benchmark_directory_resolves_committed_cases_in_order() -> None:
-    assert benchmark_case_paths(BENCHMARK_PATH) == [
-        BENCHMARK_PATH / "patient-001" / "case.yaml",
-        BENCHMARK_PATH / "patient-002" / "case.yaml",
-        BENCHMARK_PATH / "patient-003" / "case.yaml",
-    ]
+def _case(
+    *,
+    should_retrieve: bool = False,
+    forbidden_search_terms: list[str] | None = None,
+    follow_up_questions: list[str] | None = None,
+    required_follow_up_terms: list[str] | None = None,
+    forbidden_follow_up_terms: list[str] | None = None,
+) -> ChartReviewBenchmarkCase:
+    return ChartReviewBenchmarkCase.model_validate(
+        {
+            "id": "test-case",
+            "title": "Evaluator behavior test",
+            "version": 1,
+            "description": "Minimal synthetic evaluator contract.",
+            "metadata": {
+                "evaluation_pack": "test-pack",
+                "clinical_area": "test-area",
+                "condition": "test-condition",
+                "scenario": "test-scenario",
+            },
+            "fixture": {
+                "patient": {
+                    "key": "test-patient",
+                    "age_at_active_encounter": 50,
+                    "date_of_birth": "1976-01-01",
+                    "gender": "unspecified",
+                },
+                "encounters": [
+                    {
+                        "key": "active",
+                        "occurred_at": "2026-01-01T10:00:00Z",
+                        "title": "Synthetic active encounter",
+                        "note": "Required summary fact.",
+                    }
+                ],
+                "active_encounter_key": "active",
+            },
+            "expected": {
+                "output": {
+                    "summary_facts": ["Required summary fact."],
+                    "missing_information": [],
+                    "follow_up_questions": follow_up_questions or [],
+                    "required_follow_up_terms": required_follow_up_terms or [],
+                    "forbidden_follow_up_terms": forbidden_follow_up_terms or [],
+                    "required_source_roles": ["active.note"],
+                },
+                "history_decision": {
+                    "should_retrieve": should_retrieve,
+                    "forbidden_search_terms": forbidden_search_terms or [],
+                },
+                "validation": {"expected_status": "valid"},
+            },
+        }
+    )
 
 
 def test_refined_case_follow_up_terms_reject_irrelevant_questions() -> None:
-    case = load_benchmark_case(BENCHMARK_PATH / "patient-002" / "case.yaml")
+    case = _case(
+        follow_up_questions=["Expected follow-up question."],
+        forbidden_follow_up_terms=["change"],
+    )
 
-    failures = score_review(
+    axes = score_review_axes(
         case,
         {
             "status": "completed",
-            "summary": "Blood pressure is 168/96 mmHg. Glucose is elevated. Hypertension and diabetes are documented.",
-            "missingInfo": [
-                "Current blood-pressure medication record is not available.",
-                "Whether medication is taken as scheduled is not available.",
-            ],
-            "followUpQuestions": [
-                "Does the patient take the prescribed blood-pressure medication as scheduled?",
-                "Which blood-pressure medications are currently taken?",
-                "Should the medication change?",
-            ],
-            "historyResults": [{"content": "Historical medication record."}],
+            "summary": "Required summary fact.",
+            "followUpQuestions": ["Should the record change?"],
         },
     )
 
-    assert failures == ["follow-up questions included forbidden term: change"]
+    draft_axis = next(axis for axis in axes if axis.name == "draft")
+    assert draft_axis.failures == ["follow-up questions included forbidden term: change"]
 
 
 def test_active_context_prioritizes_the_final_narrative_without_omitting_encounter_fields() -> None:
@@ -90,34 +127,68 @@ def test_active_context_prioritizes_the_final_narrative_without_omitting_encount
     assert "Additional active encounter context" in context
 
 
-def test_normalize_output_defaults_missing_confidence_to_low() -> None:
-    normalized_output = _normalize_output({"summary": "Synthetic draft."})
-
-    assert normalized_output["confidence"] == "low"
-
-
 def test_score_review_rejects_unexpected_history_lookup() -> None:
-    case = load_benchmark_case(CASE_PATH)
+    case = _case(forbidden_search_terms=["unnecessary"])
 
-    failures = score_review(
+    axes = score_review_axes(
         case,
         {
             "status": "completed",
-            "summary": "Cough, nasal congestion, and fever are present for several days. Office temperature is 38.3 C.",
-            "missingInfo": ["Home temperature readings during these days are not available."],
-            "followUpQuestions": ["What home temperature readings are available from these days?"],
-            "historySearchTerms": ["home temperature readings"],
+            "summary": "Required summary fact.",
+            "missingInfo": [],
+            "followUpQuestions": [],
+            "historySearchTerms": ["unnecessary"],
             "historyResults": [],
         },
     )
 
-    assert failures == [
+    retrieval_axis = next(axis for axis in axes if axis.name == "retrieval")
+    assert retrieval_axis.failures == [
         "history retrieval was requested when no lookup was expected",
-        "history retrieval included forbidden search term: home temperature",
+        "history retrieval included forbidden search term: unnecessary",
     ]
 
 
+def test_score_review_reports_retrieval_as_an_independent_axis() -> None:
+    axes = score_review_axes(
+        _case(),
+        {
+            "status": "completed",
+            "summary": "Required summary fact.",
+            "missingInfo": [],
+            "followUpQuestions": [],
+            "historySearchTerms": ["unnecessary"],
+            "historyResults": [],
+        },
+    )
+
+    assert [(axis.name, axis.passed) for axis in axes] == [
+        ("validation", True),
+        ("draft", True),
+        ("retrieval", False),
+    ]
+
+
+def test_score_review_rejects_questions_for_complete_context() -> None:
+    axes = score_review_axes(
+        _case(),
+        {
+            "status": "completed",
+            "summary": "Required summary fact.",
+            "followUpQuestions": ["Can you provide another fact?"],
+        },
+    )
+
+    draft_axis = next(axis for axis in axes if axis.name == "draft")
+    assert draft_axis.failures == ["follow-up questions were returned when none were expected"]
+
+
 def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -> None:
+    case_path = tmp_path / "case.yaml"
+    case_path.write_text(
+        """id: test-lifecycle\ntitle: Evaluator lifecycle\nversion: 1\ndescription: Minimal synthetic lifecycle contract.\nmetadata:\n  evaluation_pack: test-pack\n  clinical_area: test-area\n  condition: test-condition\n  scenario: lifecycle\nfixture:\n  patient:\n    key: test-patient\n    age_at_active_encounter: 50\n    date_of_birth: 1976-01-01\n    gender: unspecified\n  encounters:\n    - key: active\n      occurred_at: 2026-01-01T10:00:00Z\n      title: Synthetic active encounter\n      note: Required summary fact.\n  active_encounter_key: active\nexpected:\n  output:\n    summary_facts: [Required summary fact.]\n    missing_information: []\n    follow_up_questions: []\n    required_source_roles: [active.note]\n  history_decision:\n    should_retrieve: false\n    expected_returned_source_roles: []\n  validation:\n    expected_status: valid\n""",
+        encoding="utf-8",
+    )
     environment_file = tmp_path / ".env"
     environment_file.write_text(
         "UNRELATED_SERVICE_VALUE=ignored\n"
@@ -144,8 +215,7 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
         if request.url.path == "/api/v1/patients/":
             return httpx.Response(201, json={"id": "patient-id"})
         if request.url.path == "/api/v1/encounters/":
-            encounter_id = "active-id" if len(requests) == 4 else "prior-id"
-            return httpx.Response(201, json={"id": encounter_id})
+            return httpx.Response(201, json={"id": "active-id"})
         if request.url.path == "/api/v1/encounters/active-id/narratives":
             return httpx.Response(201, json={"id": "narrative-id"})
         if (
@@ -158,14 +228,10 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
                 200,
                 json={
                     "status": "completed",
-                    "summary": "Cough, nasal congestion, and fever are present for several days. Office temperature is 38.3 C.",
-                    "reasoning": "Home temperature readings during these days are not available.",
-                    "missingInfo": [
-                        "Home temperature readings during these days are not available.",
-                    ],
-                    "followUpQuestions": [
-                        "What home temperature readings are available from these days?",
-                    ],
+                    "summary": "Required summary fact.",
+                    "reasoning": "The active note supplies the required fact.",
+                    "missingInfo": [],
+                    "followUpQuestions": [],
                 },
             )
         if request.url.path == "/api/v1/patients/patient-id" and request.method == "DELETE":
@@ -174,7 +240,7 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
 
     result = asyncio.run(
         evaluate_case(
-            CASE_PATH,
+            case_path,
             EvaluationSettings(
                 "http://testserver", None, settings.user_email, settings.user_password, 0, 1
             ),
@@ -183,8 +249,12 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
     )
 
     assert result.passed is True
+    assert [(axis.name, axis.passed) for axis in result.axes] == [
+        ("validation", True),
+        ("draft", True),
+        ("retrieval", True),
+    ]
     assert [request.method for request in requests] == [
-        "POST",
         "POST",
         "POST",
         "POST",
@@ -198,4 +268,4 @@ def test_patient_001_exercises_the_public_evaluation_lifecycle(tmp_path: Path) -
         for request in requests
         if request.url.path == "/api/v1/encounters/"
     ]
-    assert [payload["purpose"] for payload in encounter_payloads] == ["preventive", "initial"]
+    assert [payload["purpose"] for payload in encounter_payloads] == ["follow_up"]

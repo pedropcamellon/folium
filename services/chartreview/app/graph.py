@@ -9,7 +9,6 @@ from pathlib import Path
 import httpx
 from folium.ai import load_prompt, parse_chat_completion, system_message, user_message
 from folium.core.chart_review import (
-    ChartReviewConfidence,
     ChartReviewHistoryRequest,
     ChartReviewHistoryResponse,
     ChartReviewInput,
@@ -159,13 +158,12 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
     logger.info("MediPhi raw chart-review completion: %s", content)
     try:
         raw_output = json.loads(content)
-        normalized_output = _normalize_output(raw_output)
-        normalized_output["provider_name"] = settings.ai_provider_name
-        normalized_output["history_search_terms"] = state.get("history_search_terms", [])
-        normalized_output["history_source_chunks"] = [
+        raw_output["provider_name"] = settings.ai_provider_name
+        raw_output["history_search_terms"] = state.get("history_search_terms", [])
+        raw_output["history_source_chunks"] = [
             source.model_dump(mode="json") for source in historical_source_chunks
         ]
-        review_output = ChartReviewOutput.model_validate(normalized_output)
+        review_output = ChartReviewOutput.model_validate(raw_output)
     except (json.JSONDecodeError, ValueError) as exc:
         logger.error("MediPhi invalid chart-review completion: raw=%s error=%s", content, exc)
         raise
@@ -208,40 +206,6 @@ def _format_active_context(review_input: ChartReviewInput) -> str:
         )
         sections.append(f"Additional active encounter context:\n{formatted_sources}")
     return "\n\n".join(sections)
-
-
-def _normalize_output(output: dict) -> dict:
-    """Normalize bounded local-model JSON variations before strict contract validation."""
-    source_refs = output.get("source_refs")
-    if isinstance(source_refs, list):
-        output["source_refs"] = [_normalize_source_ref(source_ref) for source_ref in source_refs]
-
-    confidence = output.get("confidence")
-    if confidence is None:
-        logger.warning("Confidence not provided, defaulting to LOW.")
-        output["confidence"] = ChartReviewConfidence.LOW.value
-    if isinstance(confidence, str):
-        confidence_level, separator, confidence_explanation = confidence.partition("-")
-        normalized_confidence = confidence_level.strip().lower()
-        if normalized_confidence in {level.value for level in ChartReviewConfidence}:
-            output["confidence"] = normalized_confidence
-            if separator and confidence_explanation.strip() and not output.get("reasoning"):
-                output["reasoning"] = confidence_explanation.strip()
-
-    return output
-
-
-def _normalize_source_ref(source_ref: object) -> object:
-    """Accept known local-provider citation variants before strict validation."""
-    if isinstance(source_ref, str):
-        return {"source_id": source_ref}
-    if (
-        isinstance(source_ref, dict)
-        and len(source_ref) == 1
-        and next(iter(source_ref.values())) is True
-    ):
-        return {"source_id": next(iter(source_ref))}
-    return source_ref
 
 
 def build_chartreview_graph() -> StateGraph:

@@ -1,57 +1,51 @@
-id: cough-and-fever-home-temperature
+id: cad-current-only
+title: CAD follow-up with complete active context
 version: 1
-description: Office consultation records a measured temperature while home readings during several days of cough and fever remain unknown.
+description: CAD follow-up supplies the active facts needed for a grounded draft and requires no history lookup or follow-up question.
+
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: current-only
 
 fixture:
   patient:
     key: patient-001
-    age_at_active_encounter: 14
-    date_of_birth: 2012-03-12
-    gender: male
+    age_at_active_encounter: 68
+    date_of_birth: 1958-03-12
+    gender: female
   encounters:
-    - key: annual-exam-001
-      occurred_at: 2026-10-12T10:00:00Z
-      title: Annual exam
-      purpose: preventive
-      summary: Annual exam is normal.
-    - key: office-consultation-001
+    - key: cad-follow-up-001
       occurred_at: 2026-11-12T10:00:00Z
-      title: Office consultation
-      purpose: initial
+      title: CAD follow-up
+      purpose: follow_up
       note: >
-        Patient presents to the office with cough and fever for several days.
-        Nasal congestion is present. Office temperature is 38.3 C. Home
-        temperature readings during these days are not available.
-  active_encounter_key: office-consultation-001
+        Patient returns for coronary artery disease follow-up. No chest pain or
+        shortness of breath is reported today. The active medication list
+        documents aspirin and atorvastatin. Blood pressure is 128/76 mmHg.
+  active_encounter_key: cad-follow-up-001
 
 expected:
   output:
     summary_facts:
-      - Cough is present.
-      - Nasal congestion is present.
-      - Fever is present.
-      - Cough and fever are present for several days.
-      - Office temperature is 38.3 C.
-    missing_information:
-      - Home temperature readings during these days are not available.
-    follow_up_questions:
-      - What home temperature readings are available from these days?
-    required_follow_up_terms:
-      - home temperature
+      - Coronary artery disease follow-up is documented.
+      - Chest pain is not reported today.
+      - Shortness of breath is not reported today.
+      - Aspirin and atorvastatin are documented in the active medication list.
+      - Blood pressure is 128/76 mmHg.
+    missing_information: []
+    follow_up_questions: []
+    required_follow_up_terms: []
     forbidden_follow_up_terms:
-      - medication
       - treatment
+      - symptoms
     required_source_roles:
       - active.note
-    forbidden_source_roles:
-      - annual-exam-001.summary
+    forbidden_source_roles: []
     confidence: null
   history_decision:
     should_retrieve: false
-    forbidden_search_terms:
-      - cough
-      - fever
-      - home temperature
     expected_returned_source_roles: []
   validation:
     expected_status: valid
