@@ -62,6 +62,7 @@ class Settings(BaseSettings):
     TEMPORAL_NAMESPACE: str = "default"
     VOICENOTES_WORKFLOW_EXECUTION_TIMEOUT_MINUTES: int = 30
     CHARTREVIEW_INTERNAL_TOKEN: str = ""
+    CHARTREVIEW_EVALUATION_TOKEN: str = ""
 
     # Legacy settings (deprecated)
 

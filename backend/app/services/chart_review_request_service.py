@@ -17,6 +17,7 @@ from folium.core.chart_review import (
 
 from app.models.chart_review import (
     ChartReviewCitationResponse,
+    ChartReviewEvaluationEvidenceResponse,
     ChartReviewHistoryResultResponse,
     ChartReviewResponse,
 )
@@ -26,6 +27,7 @@ from app.services.chart_review_workflow_service import ChartReviewWorkflowServic
 from app.services.encounter_service import EncounterService
 
 logger = logging.getLogger(__name__)
+EVALUATION_CONTACT_INFO = "Evaluation-only record"
 
 
 class ChartReviewRequestService:
@@ -75,6 +77,22 @@ class ChartReviewRequestService:
             return None
         await self._refresh_workflow_result(review)
         return self._to_response(review)
+
+    async def get_evaluation_evidence(
+        self, review_id: str
+    ) -> ChartReviewEvaluationEvidenceResponse:
+        """Return canonical provenance only for terminal evaluator-created reviews."""
+        review = await self._repository.get_by_id(UUID(review_id))
+        if review is None or review.patient.contact_info != EVALUATION_CONTACT_INFO:
+            raise ValueError("chart-review evaluation evidence was not found")
+        if review.status not in {ChartReviewStatus.COMPLETED.value, ChartReviewStatus.FAILED.value}:
+            raise ValueError("chart-review evaluation evidence is not terminal")
+        return ChartReviewEvaluationEvidenceResponse(
+            reviewId=str(review.id),
+            status=ChartReviewStatus(review.status),
+            inputSourceIds=[source.source_id for source in review.input_source_refs],
+            citedSourceIds=[citation.source_id for citation in review.cited_source_refs],
+        )
 
     async def retrieve_prior_encounter_blocks(
         self, request: ChartReviewHistoryRequest

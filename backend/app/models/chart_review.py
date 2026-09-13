@@ -54,3 +54,14 @@ class ChartReviewResponse(BaseModel):
         default_factory=list, alias="historyResults"
     )
     failure_message: str | None = Field(None, alias="failureMessage")
+
+
+class ChartReviewEvaluationEvidenceResponse(BaseModel):
+    """Canonical provenance retained for an eligible terminal evaluation review."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    review_id: str = Field(..., alias="reviewId")
+    status: ChartReviewStatus
+    input_source_ids: list[str] = Field(default_factory=list, alias="inputSourceIds")
+    cited_source_ids: list[str] = Field(default_factory=list, alias="citedSourceIds")

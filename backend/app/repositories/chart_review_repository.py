@@ -45,6 +45,7 @@ class ChartReviewRepository:
             .options(
                 selectinload(ChartReview.input_source_refs),
                 selectinload(ChartReview.cited_source_refs),
+                selectinload(ChartReview.patient),
             )
         )
         return result.scalar_one_or_none()
