@@ -4,7 +4,6 @@ import json
 import logging
 import time
 from datetime import timedelta
-from pathlib import Path
 
 import httpx
 from folium.ai import load_prompt, parse_chat_completion, system_message, user_message
@@ -21,12 +20,9 @@ from temporalio.common import RetryPolicy
 
 from app.config import settings
 from app.models import ChartReviewGraphState
+from app.prompts import CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH, chart_review_prompt_path
 
 logger = logging.getLogger(__name__)
-
-PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-CHART_REVIEW_PROMPT_PATH = PROMPTS_DIR / "chart_review.md"
-CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH = PROMPTS_DIR / "chart_review_history_decision.md"
 
 
 class ChartReviewHistoryDecision(BaseModel):
@@ -108,7 +104,7 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
         *(source.source_id for source in historical_source_chunks),
     ]
     messages = [
-        system_message(load_prompt(CHART_REVIEW_PROMPT_PATH)),
+        system_message(load_prompt(chart_review_prompt_path(settings.chartreview_prompt_version))),
         user_message(
             f"Allowed source IDs: {json.dumps(allowed_source_ids)}\n\n"
             f"Active interaction context:\n{active_context}\n\n"

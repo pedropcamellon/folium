@@ -2,19 +2,33 @@
 
 import argparse
 import asyncio
+import csv
+import hashlib
 import json
 import os
 import re
 import uuid
+import warnings
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
+from statistics import median
 from time import monotonic
 from typing import Any
 
 import httpx
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+with warnings.catch_warnings():
+    warnings.filterwarnings(
+        "ignore",
+        message='Field "model_name" in PromptModelConfig has conflict with protected namespace',
+        category=UserWarning,
+    )
+    import mlflow
 
 from app.evals import ChartReviewBenchmarkCase, load_benchmark_case
+from app.prompts import chart_review_prompt_path
 
 STOP_WORDS = frozenset({"a", "an", "and", "are", "as", "has", "is", "of", "the", "to"})
 EVALUATION_TERM_EQUIVALENTS = {
@@ -31,6 +45,15 @@ EVALUATION_ENVIRONMENT_KEYS = frozenset(
         "FOLIUM_EVAL_API_BASE_URL",
         "FOLIUM_EVAL_POLL_INTERVAL_SECONDS",
         "FOLIUM_EVAL_POLL_TIMEOUT_SECONDS",
+        "FOLIUM_EVAL_INTERNAL_TOKEN",
+        "FOLIUM_EVAL_EVALUATION_TOKEN",
+        "FOLIUM_EVAL_ARTIFACTS_DIR",
+        "FOLIUM_EVAL_MLFLOW_EXPERIMENT_NAME",
+        "FOLIUM_EVAL_MODEL_NAME",
+        "FOLIUM_EVAL_PROMPT_VERSION",
+        "FOLIUM_EVAL_DATASET_VERSION",
+        "FOLIUM_EVAL_RUN_LABEL",
+        "MLFLOW_TRACKING_URI",
     }
 )
 
@@ -62,6 +85,15 @@ class EvaluationSettings:
     user_password: str | None
     poll_interval_seconds: float
     poll_timeout_seconds: float
+    artifacts_dir: Path
+    internal_token: str | None = None
+    evaluation_token: str | None = None
+    mlflow_tracking_uri: str = "http://localhost:5000"
+    mlflow_experiment_name: str = "chart-review-evaluations-v1"
+    model_name: str = "unknown"
+    prompt_version: str | None = None
+    dataset_version: str | None = None
+    run_label: str | None = None
 
     @classmethod
     def from_environment(cls, environment_file: Path | None = None) -> "EvaluationSettings":
@@ -85,7 +117,21 @@ class EvaluationSettings:
             user_email=user_email,
             user_password=user_password,
             poll_interval_seconds=float(value("FOLIUM_EVAL_POLL_INTERVAL_SECONDS") or "1"),
-            poll_timeout_seconds=float(value("FOLIUM_EVAL_POLL_TIMEOUT_SECONDS") or "120"),
+            poll_timeout_seconds=float(value("FOLIUM_EVAL_POLL_TIMEOUT_SECONDS") or "600"),
+            artifacts_dir=Path(
+                value("FOLIUM_EVAL_ARTIFACTS_DIR")
+                or Path(__file__).parents[3] / "artifacts/evaluations/chart-review"
+            ),
+            internal_token=value("FOLIUM_EVAL_INTERNAL_TOKEN"),
+            evaluation_token=value("FOLIUM_EVAL_EVALUATION_TOKEN"),
+            mlflow_tracking_uri=value("MLFLOW_TRACKING_URI") or "http://localhost:5000",
+            mlflow_experiment_name=value("FOLIUM_EVAL_MLFLOW_EXPERIMENT_NAME")
+            or "chart-review-evaluations-v1",
+            model_name=value("FOLIUM_EVAL_MODEL_NAME")
+            or os.environ.get("AI_MODEL_NAME", "unknown"),
+            prompt_version=value("FOLIUM_EVAL_PROMPT_VERSION"),
+            dataset_version=value("FOLIUM_EVAL_DATASET_VERSION"),
+            run_label=value("FOLIUM_EVAL_RUN_LABEL"),
         )
 
 
@@ -105,6 +151,7 @@ class EvaluationResult(BaseModel):
     axes: list[EvaluationAxisResult]
     review_status: str
     elapsed_seconds: float
+    stage_durations_seconds: dict[str, float] = Field(default_factory=dict)
     review: dict[str, Any]
 
 
@@ -113,6 +160,20 @@ class EvaluationSuiteResult(BaseModel):
 
     passed: bool
     results: list[EvaluationResult]
+    artifact_directory: str | None = None
+
+
+class EvaluationTrackingMetadata(BaseModel):
+    """Stable versions and identity tags for one comparable benchmark run."""
+
+    model_config = ConfigDict(protected_namespaces=())
+
+    dataset_version: str
+    prompt_version: str
+    model_name: str
+    rubric_version: str = "chart-review-axes-v1"
+    gate_policy_version: str = "all-axes-pass-v1"
+    run_label: str | None = None
 
 
 def benchmark_case_paths(target: Path) -> list[Path]:
@@ -162,18 +223,28 @@ def _preserves_expected_terms(expectation_terms: set[str], output_terms: set[str
 
 
 def score_review_axes(
-    case: ChartReviewBenchmarkCase, review: dict[str, Any]
+    case: ChartReviewBenchmarkCase,
+    review: dict[str, Any],
+    encounter_ids: dict[str, str],
+    cited_source_ids: list[str] | None,
 ) -> list[EvaluationAxisResult]:
     """Score independently actionable validation, draft, and retrieval evidence."""
     status = review.get("status")
-    if status != "completed":
+    expected_status = (
+        "completed" if case.expected.validation.expected_status == "valid" else "failed"
+    )
+    if status != expected_status:
         return [
             EvaluationAxisResult(
                 name="validation",
                 passed=False,
-                failures=[f"chart review finished with status: {status}"],
+                failures=[
+                    f"chart review finished with status: {status}; expected {expected_status}"
+                ],
             )
         ]
+    if status == "failed":
+        return [EvaluationAxisResult(name="validation", passed=True, failures=[])]
 
     draft_failures: list[str] = []
     output_text = "\n".join(
@@ -193,6 +264,9 @@ def score_review_axes(
             draft_failures.append(
                 f"missing-information item was not preserved: {missing_information}"
             )
+    for claim in case.expected.output.forbidden_claims:
+        if _preserves_expected_terms(_normalized_terms(claim), output_terms):
+            draft_failures.append(f"draft included forbidden claim: {claim}")
 
     follow_up_questions = review.get("followUpQuestions", [])
     if not case.expected.output.follow_up_questions and follow_up_questions:
@@ -221,8 +295,6 @@ def score_review_axes(
             retrieval_failures.append(
                 "history retrieval returned blocks when no lookup was expected"
             )
-    elif not history_results:
-        retrieval_failures.append("history retrieval did not return a required prior-context block")
     for source_role in case.expected.history_decision.expected_returned_source_roles:
         if not _returned_history_matches_source_role(case, source_role, history_results):
             retrieval_failures.append(
@@ -235,13 +307,51 @@ def score_review_axes(
         ):
             retrieval_failures.append(f"history retrieval included forbidden search term: {term}")
 
+    provenance_failures: list[str] = []
+    if cited_source_ids is None:
+        provenance_failures.append("canonical citation evidence was unavailable")
+    else:
+        required_source_ids = [
+            _canonical_source_id(case, source_role, encounter_ids)
+            for source_role in case.expected.output.required_source_roles
+        ]
+        forbidden_source_ids = [
+            _canonical_source_id(case, source_role, encounter_ids)
+            for source_role in case.expected.output.forbidden_source_roles
+        ]
+        for source_id in required_source_ids:
+            if source_id not in cited_source_ids:
+                provenance_failures.append(f"required source was not cited: {source_id}")
+        for source_id in forbidden_source_ids:
+            if source_id in cited_source_ids:
+                provenance_failures.append(f"forbidden source was cited: {source_id}")
+
     return [
         EvaluationAxisResult(name="validation", passed=True, failures=[]),
         EvaluationAxisResult(name="draft", passed=not draft_failures, failures=draft_failures),
         EvaluationAxisResult(
             name="retrieval", passed=not retrieval_failures, failures=retrieval_failures
         ),
+        EvaluationAxisResult(
+            name="provenance", passed=not provenance_failures, failures=provenance_failures
+        ),
     ]
+
+
+def _canonical_source_id(
+    case: ChartReviewBenchmarkCase, source_role: str, encounter_ids: dict[str, str]
+) -> str:
+    """Resolve a fixture source role to the canonical ID supplied to the provider."""
+    encounter_key, content_role = source_role.rsplit(".", maxsplit=1)
+    if encounter_key == "active":
+        encounter_key = case.fixture.active_encounter_key
+    encounter_id = encounter_ids[encounter_key]
+    if content_role == "note":
+        return f"encounter-note:{encounter_id}"
+    source_id = f"encounter-{content_role.replace(' ', '-')}:{encounter_id}"
+    return (
+        source_id if encounter_key == case.fixture.active_encounter_key else f"history-{source_id}"
+    )
 
 
 def _returned_history_matches_source_role(
@@ -253,10 +363,11 @@ def _returned_history_matches_source_role(
         encounter for encounter in case.fixture.encounters if encounter.key == encounter_key
     )
     expected_content = getattr(encounter, content_role)
+    expected_content_role = "voice-note transcript" if content_role == "note" else content_role
     return isinstance(history_results, list) and any(
         isinstance(result, dict)
         and result.get("displayLabel") == encounter.title
-        and result.get("contentRole") == content_role
+        and result.get("contentRole") == expected_content_role
         and result.get("content") == expected_content
         for result in history_results
     )
@@ -292,8 +403,9 @@ async def _create_patient(client: httpx.AsyncClient, case: ChartReviewBenchmarkC
 
 async def _create_encounters(
     client: httpx.AsyncClient, case: ChartReviewBenchmarkCase, patient_id: str
-) -> str:
+) -> tuple[str, dict[str, str]]:
     active_encounter_id = ""
+    encounter_ids: dict[str, str] = {}
     for encounter in case.fixture.encounters:
         response = await client.post(
             "/api/v1/encounters/",
@@ -311,6 +423,7 @@ async def _create_encounters(
         )
         response.raise_for_status()
         encounter_id = response.json()["id"]
+        encounter_ids[encounter.key] = encounter_id
         if encounter.note:
             response = await client.post(
                 f"/api/v1/encounters/{encounter_id}/narratives",
@@ -321,7 +434,24 @@ async def _create_encounters(
             active_encounter_id = encounter_id
     if not active_encounter_id:
         raise RuntimeError("fixture did not create an active encounter")
-    return active_encounter_id
+    return active_encounter_id, encounter_ids
+
+
+async def _get_evaluation_evidence(
+    client: httpx.AsyncClient, review_id: str, settings: EvaluationSettings
+) -> dict[str, Any] | None:
+    """Fetch canonical citations only when explicit evaluator credentials are configured."""
+    if not settings.internal_token or not settings.evaluation_token:
+        return None
+    response = await client.get(
+        f"/api/v1/encounters/internal/chart-review/{review_id}/evaluation-evidence",
+        headers={
+            "X-ChartReview-Internal-Token": settings.internal_token,
+            "X-ChartReview-Evaluation-Token": settings.evaluation_token,
+        },
+    )
+    response.raise_for_status()
+    return response.json()
 
 
 async def _poll_terminal_review(
@@ -344,29 +474,45 @@ async def evaluate_case(
     """Exercise authenticated public APIs, Temporal, worker, and local provider for one case."""
     case = load_benchmark_case(path)
     started_at = monotonic()
+    stage_started_at = started_at
+    stage_durations_seconds: dict[str, float] = {}
     async with httpx.AsyncClient(
         base_url=settings.api_base_url,
         timeout=settings.poll_timeout_seconds,
         transport=transport,
     ) as client:
         await _authenticate(client, settings)
+        stage_started_at = monotonic()
         patient_id = await _create_patient(client, case)
         try:
-            encounter_id = await _create_encounters(client, case, patient_id)
+            encounter_id, encounter_ids = await _create_encounters(client, case, patient_id)
+            stage_durations_seconds["seeding"] = round(monotonic() - stage_started_at, 3)
+            stage_started_at = monotonic()
             response = await client.post(f"/api/v1/encounters/{encounter_id}/chart-review")
             response.raise_for_status()
             review = await _poll_terminal_review(client, encounter_id, settings)
+            stage_durations_seconds["review"] = round(monotonic() - stage_started_at, 3)
+            stage_started_at = monotonic()
+            evidence = await _get_evaluation_evidence(client, str(review["id"]), settings)
+            stage_durations_seconds["evidence"] = round(monotonic() - stage_started_at, 3)
         finally:
             response = await client.delete(f"/api/v1/patients/{patient_id}")
             response.raise_for_status()
 
-    axes = score_review_axes(case, review)
+    axes = score_review_axes(
+        case,
+        review,
+        encounter_ids,
+        list(evidence.get("citedSourceIds", [])) if evidence is not None else None,
+    )
+    stage_durations_seconds["scoring"] = round(monotonic() - stage_started_at, 3)
     return EvaluationResult(
         case_id=case.id,
         passed=all(axis.passed for axis in axes),
         axes=axes,
         review_status=str(review["status"]),
         elapsed_seconds=round(monotonic() - started_at, 3),
+        stage_durations_seconds=stage_durations_seconds,
         review=review,
     )
 
@@ -381,11 +527,157 @@ async def evaluate_suite(
     return EvaluationSuiteResult(passed=all(result.passed for result in results), results=results)
 
 
+def write_evaluation_artifacts(
+    result: EvaluationSuiteResult, artifacts_dir: Path
+) -> EvaluationSuiteResult:
+    """Write ignored local evidence for manual review and future MLflow import."""
+    run_id = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + f"-{uuid.uuid4().hex[:8]}"
+    run_dir = artifacts_dir / run_id
+    run_dir.mkdir(parents=True)
+    completed_result = result.model_copy(update={"artifact_directory": str(run_dir)})
+    (run_dir / "suite.json").write_text(
+        json.dumps(completed_result.model_dump(mode="json"), indent=2) + "\n",
+        encoding="utf-8",
+    )
+    with (run_dir / "cases.jsonl").open("w", encoding="utf-8") as artifact_file:
+        for case_result in completed_result.results:
+            artifact_file.write(json.dumps(case_result.model_dump(mode="json")) + "\n")
+    with (run_dir / "review_queue.csv").open("w", encoding="utf-8", newline="") as queue_file:
+        writer = csv.DictWriter(
+            queue_file,
+            fieldnames=["case_id", "passed", "review_status", "elapsed_seconds", "failed_axes"],
+        )
+        writer.writeheader()
+        for case_result in completed_result.results:
+            writer.writerow(
+                {
+                    "case_id": case_result.case_id,
+                    "passed": case_result.passed,
+                    "review_status": case_result.review_status,
+                    "elapsed_seconds": case_result.elapsed_seconds,
+                    "failed_axes": ",".join(
+                        axis.name for axis in case_result.axes if not axis.passed
+                    ),
+                }
+            )
+    return completed_result
+
+
+def _prompt_fingerprint(prompt_version: str) -> str:
+    prompt_path = chart_review_prompt_path(prompt_version)
+    return f"{prompt_version}:sha256:{hashlib.sha256(prompt_path.read_bytes()).hexdigest()[:12]}"
+
+
+def tracking_metadata(target: Path, settings: EvaluationSettings) -> EvaluationTrackingMetadata:
+    """Derive comparable run tags from committed benchmark and prompt inputs."""
+    cases = [load_benchmark_case(path) for path in benchmark_case_paths(target)]
+    evaluation_packs = {case.metadata.evaluation_pack for case in cases}
+    if len(evaluation_packs) != 1:
+        raise ValueError("a tracked evaluation suite must contain one evaluation pack")
+    return EvaluationTrackingMetadata(
+        dataset_version=settings.dataset_version or evaluation_packs.pop(),
+        prompt_version=_prompt_fingerprint(settings.prompt_version or "v1"),
+        model_name=settings.model_name,
+        run_label=settings.run_label,
+    )
+
+
+def _percentile_95(values: list[float]) -> float:
+    return sorted(values)[max(0, (len(values) * 95 + 99) // 100 - 1)]
+
+
+def aggregate_metrics(result: EvaluationSuiteResult) -> dict[str, float]:
+    """Produce deterministic aggregate metrics without including review content."""
+    elapsed_seconds = [case_result.elapsed_seconds for case_result in result.results]
+    metrics = {
+        "case_count": float(len(result.results)),
+        "pass_rate": sum(case_result.passed for case_result in result.results)
+        / len(result.results),
+        "elapsed_seconds_min": min(elapsed_seconds),
+        "elapsed_seconds_median": median(elapsed_seconds),
+        "elapsed_seconds_p95": _percentile_95(elapsed_seconds),
+        "elapsed_seconds_max": max(elapsed_seconds),
+        "validation_failure_count": float(
+            sum(
+                not axis.passed
+                for case_result in result.results
+                for axis in case_result.axes
+                if axis.name == "validation"
+            )
+        ),
+    }
+    axis_names = {axis.name for case_result in result.results for axis in case_result.axes}
+    for axis_name in axis_names:
+        metrics[f"{axis_name}_pass_rate"] = sum(
+            axis.passed
+            for case_result in result.results
+            for axis in case_result.axes
+            if axis.name == axis_name
+        ) / len(result.results)
+    stage_names = {
+        stage_name
+        for case_result in result.results
+        for stage_name in case_result.stage_durations_seconds
+    }
+    for stage_name in stage_names:
+        durations = [
+            case_result.stage_durations_seconds[stage_name]
+            for case_result in result.results
+            if stage_name in case_result.stage_durations_seconds
+        ]
+        metrics[f"{stage_name}_seconds_median"] = median(durations)
+        metrics[f"{stage_name}_seconds_p95"] = _percentile_95(durations)
+    return metrics
+
+
+def track_evaluation_run(
+    result: EvaluationSuiteResult,
+    metadata: EvaluationTrackingMetadata,
+    settings: EvaluationSettings,
+    tracking_client: Any = mlflow,
+) -> None:
+    """Log aggregate evidence and a safe review queue to local MLflow."""
+    if not result.artifact_directory:
+        raise ValueError("write local evaluation artifacts before MLflow tracking")
+    artifact_directory = Path(result.artifact_directory)
+    safe_summary = {
+        "passed": result.passed,
+        "metrics": aggregate_metrics(result),
+        "cases": [
+            {
+                "case_id": case_result.case_id,
+                "passed": case_result.passed,
+                "review_status": case_result.review_status,
+                "elapsed_seconds": case_result.elapsed_seconds,
+                "failed_axes": [axis.name for axis in case_result.axes if not axis.passed],
+            }
+            for case_result in result.results
+        ],
+    }
+    tracking_client.set_tracking_uri(settings.mlflow_tracking_uri)
+    tracking_client.set_experiment(settings.mlflow_experiment_name)
+    with tracking_client.start_run(run_name=metadata.run_label):
+        tracking_client.set_tags(metadata.model_dump(exclude_none=True))
+        tracking_client.log_params(
+            {
+                "case_count": len(result.results),
+                "runner": "chartreview-eval",
+                "execution_path": "public-api-temporal",
+            }
+        )
+        tracking_client.log_metrics(aggregate_metrics(result))
+        tracking_client.log_artifact(str(artifact_directory / "review_queue.csv"))
+        tracking_client.log_text(json.dumps(safe_summary, indent=2) + "\n", "summary.json")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run chart-review benchmark cases end to end")
     parser.add_argument("target", type=Path, help="Path to case.yaml or a benchmark directory")
     args = parser.parse_args()
-    result = asyncio.run(evaluate_suite(args.target, EvaluationSettings.from_environment()))
+    settings = EvaluationSettings.from_environment()
+    result = asyncio.run(evaluate_suite(args.target, settings))
+    result = write_evaluation_artifacts(result, settings.artifacts_dir)
+    track_evaluation_run(result, tracking_metadata(args.target, settings), settings)
     print(json.dumps(result.model_dump(mode="json"), indent=2))
     if not result.passed:
         raise SystemExit(1)

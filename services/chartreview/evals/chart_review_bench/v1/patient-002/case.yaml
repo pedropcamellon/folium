@@ -1,7 +1,7 @@
 id: cad-history-needed
-title: CAD follow-up with prior stent and statin history
+title: Coronary artery disease (CAD) follow-up with prior stent and statin history
 version: 1
-description: CAD follow-up lacks a prior stent date and statin detail, which a bounded prior encounter lookup can supply.
+description: Evaluates whether the agent retrieves relevant prior stent and statin facts, preserves their historical timing, and does not treat a prior statin dose as the current dose.
 
 metadata:
   evaluation_pack: coronary-artery-disease-v1
@@ -23,14 +23,17 @@ fixture:
       summary: >
         Coronary artery disease history includes a drug-eluting coronary stent
         placed in 2024. Atorvastatin 40 mg is documented at this visit.
+      note: >
+        Coronary artery disease history includes a drug-eluting coronary stent
+        placed in 2024. Atorvastatin 40 mg is documented at this visit.
     - key: cad-follow-up-001
       occurred_at: 2026-11-13T10:30:00Z
-      title: CAD follow-up
+      title: Coronary artery disease follow-up
       purpose: follow_up
       note: >
-        Patient returns for coronary artery disease follow-up. No chest pain is
-        reported today. Prior coronary stent date and prior statin detail are
-        not available in the active encounter.
+        Patient returns for coronary artery disease follow-up after prior
+        coronary stenting. No chest pain is reported today. The active
+        medication list includes atorvastatin.
   active_encounter_key: cad-follow-up-001
 
 expected:
@@ -38,20 +41,26 @@ expected:
     summary_facts:
       - Coronary artery disease follow-up is documented.
       - Chest pain is not reported today.
+      - Prior coronary stenting is documented in the active encounter.
+      - Atorvastatin is documented in the active medication list.
+      - A drug-eluting coronary stent was placed in 2024.
+      - Atorvastatin 40 mg was documented at the 2025 cardiology visit.
     missing_information:
-      - Prior coronary stent date is not available in the active encounter.
-      - Prior statin detail is not available in the active encounter.
+      - Current atorvastatin dose is not documented.
     follow_up_questions:
-      - Can the prior coronary stent date be confirmed?
-      - Can the prior statin detail be confirmed?
+      - What is the patient's current atorvastatin dose?
+    forbidden_claims:
+      - Medication dose was increased.
+      - Urgent intervention is required.
     required_follow_up_terms:
-      - stent
-      - statin
+      - current
+      - atorvastatin
+      - dose
     forbidden_follow_up_terms:
       - treatment
-      - change
     required_source_roles:
       - active.note
+      - cardiology-follow-up-2025.summary
     forbidden_source_roles: []
     confidence: null
   history_decision:

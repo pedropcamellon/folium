@@ -100,6 +100,21 @@ JSON document containing ordered per-case results and exits nonzero when any
 case fails. Sequential execution preserves comparable elapsed-time evidence
 for the local provider.
 
+### Restricted Evaluation Credentials
+
+The worker uses `CHARTREVIEW_INTERNAL_TOKEN` to authenticate its bounded
+history-retrieval request to the backend. The evaluator uses that same value as
+`FOLIUM_EVAL_INTERNAL_TOKEN` when it requests restricted canonical provenance
+after a review is terminal.
+
+The evaluator also requires a separate `FOLIUM_EVAL_EVALUATION_TOKEN`, equal
+to the backend's `CHARTREVIEW_EVALUATION_TOKEN`. This second token authorizes
+only evaluator provenance evidence; it is not needed for ordinary chart-review
+execution. Keep both values in ignored local environment files or the process
+environment, never in fixtures or tracked documentation. Without both
+`FOLIUM_EVAL_*` tokens, the suite can run but the provenance axis fails because
+canonical citation evidence is unavailable.
+
 ## Persisted Review And Evaluation Result
 
 The backend persists a queued `ChartReview` before it dispatches Temporal. Its
@@ -121,18 +136,26 @@ missing information, follow-up questions, display-only source metadata,
 confidence, review flags, and terminal failure message. It intentionally omits
 canonical source IDs.
 
-The CLI prints a separate evaluation-result JSON object to stdout. It is not
-currently stored as a run artifact. Its shape is:
+The CLI prints a separate evaluation-result JSON object to stdout and stores
+the full local result in ignored `suite.json` and `cases.jsonl` artifacts. Its
+per-case shape is:
 
 ```json
 {
   "case_id": "cough-and-fever-redundant-history-request",
   "passed": false,
-  "failures": [
-    "summary did not preserve required fact: Nasal congestion is present."
+  "axes": [
+    {
+      "name": "draft",
+      "passed": false,
+      "failures": [
+        "summary did not preserve required fact: Nasal congestion is present."
+      ]
+    }
   ],
   "review_status": "completed",
   "elapsed_seconds": 39.678,
+  "stage_durations_seconds": { "review": 38.911 },
   "review": { "status": "completed" }
 }
 ```
@@ -144,19 +167,25 @@ is distinct from a workflow or infrastructure error.
 
 ## Implemented And Deferred Evidence
 
-Implemented public-result scoring detects:
+Implemented scoring detects:
 
-- terminal review status;
-- missing required active-context facts;
-- missing declared information gaps;
-- total client-observed case elapsed time.
+- expected terminal review status;
+- required facts, preserved declared gaps, focused follow-up terms, and
+  fixture-owned forbidden claims;
+- retrieval request and bounded returned-block behavior;
+- exact required and forbidden canonical citation roles through restricted
+  terminal evaluation evidence;
+- total and evaluator lifecycle durations.
 
-The public response's `contentRole` is display metadata, not an evaluator
-provenance contract. The E2E runner does not translate fixture roles such as
-`active.note` into display strings such as `voice-note transcript`, and does
-not make a pass/fail decision from that mapping. Exact required and forbidden
-source-role scoring is deferred to restricted evaluation evidence, where fixture
-roles can be resolved against canonical persisted source IDs.
+The public response's `contentRole` is display metadata, not the canonical
+provenance contract. The restricted endpoint
+`GET /api/v1/encounters/internal/chart-review/{review_id}/evaluation-evidence`
+returns terminal review status plus canonical input and cited source IDs only
+after both internal headers authenticate and the review belongs to the local
+evaluator's synthetic marker. The evaluator resolves fixture roles such as
+`active.note` against those canonical IDs for the `provenance` axis. Canonical
+IDs are never present in the user-facing chart-review response or sent to
+MLflow.
 
 The first live `patient-001` run identified a native-context defect: the backend
 read the obsolete `encounter.note` field instead of `encounter.narratives`, so
@@ -166,14 +195,9 @@ Intermittent title-for-narrative citation remains observed provenance behavior
 for the future restricted-evidence benchmark, not a public-result failure
 category.
 
-The following restricted evidence capability is planned, not implemented:
-
-The public response intentionally hides canonical source IDs. A non-production
-endpoint, `GET /api/v1/internal/evaluation/chart-reviews/{review_id}`, therefore
-returns only for anonymized evaluation-eligible reviews and the evaluation
-identity. It assembles the immutable snapshot, canonical persisted output and
-citations, ordered stage trace, and terminal status/failure after the public
-lifecycle is terminal.
+Issue #62 owns replacement of the temporary user-controlled synthetic marker
+with a server-owned non-production evaluation-eligibility marker. It also owns
+any future graph-level trace beyond the current terminal citation evidence.
 
 ### Retrieval Evaluation Boundary
 
@@ -217,12 +241,11 @@ lexical-equivalence set for
 approved wording variants such as `onset`/`duration` and
 `trigger`/`exacerbate`; it does not infer clinical facts.
 
-Exact source references, unsupported-claim analysis, expected follow-up-question
-quality beyond those narrow term checks, output-validation stage failures,
-history-decision terms, returned history blocks, stage durations, and
-retrieval-term quality require the planned restricted evidence endpoint or
-physician rubric. A no-match retrieval will be valid when it preserves a
-declared factual gap for human review.
+Unsupported-claim checks use fixture-owned forbidden patterns; they do not
+infer clinical safety policy. Follow-up usefulness beyond narrow term checks,
+retrieval-term quality, and provider-internal graph stage timings still require
+physician review or future restricted trace evidence. A no-match retrieval is
+valid when it preserves a declared factual gap for human review.
 
 The next dataset revision uses the follow-up term checks as a deterministic
 floor: it requires questions about declared decision-relevant observations and

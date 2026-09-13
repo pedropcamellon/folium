@@ -1,5 +1,8 @@
 from folium.core.chart_review import CHARTREVIEW_TASK_QUEUE, CHARTREVIEW_WORKFLOW_NAME
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from app.prompts import chart_review_prompt_path
 
 
 class Settings(BaseSettings):
@@ -12,6 +15,7 @@ class Settings(BaseSettings):
     ai_service_base_url: str
     ai_provider_name: str = "local"
     ai_model_name: str = "mediphi-clinical"
+    chartreview_prompt_version: str = "v1"
     chartreview_backend_url: str
     chartreview_internal_token: str
     log_level: str = "INFO"
@@ -20,6 +24,12 @@ class Settings(BaseSettings):
     activity_max_attempts: int = 2
     history_decision_max_tokens: int = 64
     review_max_tokens: int = 512
+
+    @field_validator("chartreview_prompt_version")
+    @classmethod
+    def validate_chartreview_prompt_version(cls, value: str) -> str:
+        chart_review_prompt_path(value)
+        return value
 
 
 settings = Settings()

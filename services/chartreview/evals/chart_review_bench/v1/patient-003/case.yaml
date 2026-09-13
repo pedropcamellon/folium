@@ -1,13 +1,13 @@
-id: cad-missing-everywhere
-title: CAD follow-up with medication-allergy gap
+id: cad-history-partial
+title: Coronary artery disease (CAD) follow-up with exertional fatigue and prior functional baseline
 version: 1
-description: CAD follow-up identifies a current allergy-status gap absent from the active context and bounded prior history.
+description: Evaluates whether the agent retrieves a prior similar exertional-fatigue episode, synthesizes the longitudinal pattern, and preserves unresolved current symptom gaps without assigning a diagnosis or cause.
 
 metadata:
   evaluation_pack: coronary-artery-disease-v1
   clinical_area: cardiovascular
   condition: coronary-artery-disease
-  scenario: missing-everywhere
+  scenario: history-partial
 
 fixture:
   patient:
@@ -21,43 +21,80 @@ fixture:
       title: Annual exam
       purpose: preventive
       summary: >
-        Routine preventive visit with no medication-allergy information
+        During the annual examination, the patient reported occasional fatigue
+        while climbing stairs. The fatigue resolved after several minutes of
+        rest, and no chest discomfort was reported. The symptom was attributed
+        to deconditioning at that visit, with no further characterization
+        documented.
+      note: >
+        During the annual examination, the patient reported occasional fatigue
+        while climbing stairs. The fatigue resolved after several minutes of
+        rest, and no chest discomfort was reported. The symptom was attributed
+        to deconditioning at that visit, with no further characterization
         documented.
     - key: cad-follow-up-001
       occurred_at: 2026-11-13T10:30:00Z
-      title: CAD follow-up
+      title: Coronary artery disease follow-up
       purpose: follow_up
       note: >
         Patient returns for coronary artery disease follow-up. No chest pain or
-        shortness of breath is reported today. Medication-allergy status is not
-        available in the active encounter or prior record.
+        shortness of breath at rest is reported today. The patient reports intermittent fatigue while walking uphill.
   active_encounter_key: cad-follow-up-001
 
 expected:
   output:
     summary_facts:
       - Coronary artery disease follow-up is documented.
-      - Chest pain is not reported today.
-      - Shortness of breath is not reported today.
+      - Chest pain at rest is not reported today.
+      - Shortness of breath at rest is not reported today.
+      - Intermittent fatigue while walking uphill is documented.
+      - Similar exertional fatigue while climbing stairs was documented at the 2025 annual exam.
+      - The prior fatigue resolved after several minutes of rest.
+      - Chest discomfort was not reported with the prior fatigue.
+      - The prior fatigue was attributed to deconditioning at the 2025 annual exam.
     missing_information:
-      - Medication-allergy status is not available.
+      - Onset of exertional fatigue is not documented.
+      - Duration of exertional fatigue episodes is not documented.
+      - Frequency of exertional fatigue is not documented.
+      - Progression of exertional fatigue is not documented.
+      - Symptoms associated with exertional fatigue are not documented.
+      - Whether the current exertional fatigue improves with rest is not documented.
     follow_up_questions:
-      - What medication allergies are documented or reported?
+      - When did the current exertional fatigue begin, how long does each episode last, and does it improve with rest?
+      - How often does the exertional fatigue occur, and has it become more frequent or limiting?
+      - What symptoms are associated with the fatigue, such as chest discomfort, shortness of breath, palpitations, dizziness, or sweating?
+    forbidden_claims:
+      - Current exertional fatigue is caused by deconditioning.
+      - Exertional fatigue is caused by coronary artery disease.
+      - Coronary artery disease is worsening.
+      - The patient has angina.
+      - Urgent intervention is required.
     required_follow_up_terms:
-      - medication allergies
+      - onset
+      - duration
+      - frequency
+      - associated symptoms
+      - rest
     forbidden_follow_up_terms:
-      - diagnosis
-      - treatment
+      - stress test
+      - prescribe
+      - start
+      - stop
+      - increase
+      - decrease
     required_source_roles:
       - active.note
-    forbidden_source_roles:
       - annual-exam-2025.summary
+    forbidden_source_roles:
+      - annual-exam-2025.note
     confidence: null
   history_decision:
-    should_retrieve: false
+    should_retrieve: true
     forbidden_search_terms:
-      - allergy
-      - medication
-    expected_returned_source_roles: []
+      - treatment
+      - chest pain
+      - coronary artery disease
+    expected_returned_source_roles:
+      - annual-exam-2025.summary
   validation:
     expected_status: valid

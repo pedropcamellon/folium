@@ -10,11 +10,73 @@ This document records durable, non-identifying setup and outcome summaries.
 Complete local responses and evaluator details belong in ignored local run
 artifacts, not this document.
 
+### Provenance Evidence Authorization - 2026-09-13
+
+**Status:** resolved; provider findings remain separate
+
+#### Observation
+
+- The five-case MLflow run `7fdde6363d9d498096e9599599da05e3` completed all
+  workflows but recorded `provenance_pass_rate` of `0.0`. The evaluator's
+  restricted evidence request received `403 Forbidden` for the terminal
+  `patient-002` review.
+- This is an evaluator-to-backend authorization failure, not evidence that the
+  provider omitted or mis-cited a canonical source. The endpoint returns `403`
+  when its internal or evaluation token is missing or mismatched. A valid-token
+  request for a record outside the temporary evaluation boundary instead
+  returns `404`.
+
+#### Resolution
+
+- The backend Compose service now injects both
+  `CHARTREVIEW_INTERNAL_TOKEN` and `CHARTREVIEW_EVALUATION_TOKEN`; the backend
+  and chart-review worker were recreated from the root Compose project.
+- A one-case `patient-002` retest confirmed both evaluator tokens match the
+  backend configuration and completed the restricted evidence read in `0.029s`.
+  The provenance axis passed in MLflow run `a5cb8ffbf67e4c36ba7ef7fee4dc76b3`.
+  The independent draft and retrieval axes still failed and remain provider or
+  rubric/fixture triage findings, not authorization failures.
+
+### Full Suite Diagnostic Findings - 2026-09-13
+
+**Status:** follow-up required; not a frozen baseline
+
+#### Observations
+
+- The five-case run completed all workflows and structured-output validation
+  passed, but only one case passed each of the deterministic draft and
+  retrieval axes (`0.2` pass rate each).
+- Observed draft failures were unsupported follow-up questions where none were
+  expected, omitted required active-context facts, and omitted required
+  follow-up terms. Observed retrieval failures were unnecessary history lookups,
+  forbidden search terms, and a missing expected prior source block.
+- `cad-history-no-match` completed at `500.037s`, the suite maximum and p95.
+  The other four cases completed in `194.929s` to `236.851s`; determine whether
+  the outlier reflects the configured polling boundary, a worker retry, or
+  provider latency before using duration data as a baseline.
+
+#### Required Follow-Up
+
+- After the provenance one-case retest succeeds, inspect the local artifacts
+  for each draft and retrieval failure and classify it as provider behavior,
+  deterministic-rubric mismatch, or a fixture/expected-contract defect. Do not
+  alter prompt text, retrieval matching, or fixture expectations until that
+  classification is recorded.
+- Capture bounded worker and provider logs for a repeat of
+  `cad-history-no-match`; correlate the terminal persistence time with the
+  evaluator poll duration and activity retries. Keep this as diagnostic timing
+  evidence until the source of the 500-second outlier is known.
+
 ### 5d2w42
+
+**Status:** Completed
+**Date:** 2026-09-10
 
 #### Setup
 
 - **Dataset:** `ChartReviewBench-v1`
+- **Local environment:** Windows 11; Intel Core i7 CPU; 32 GB RAM; Docker
+  runtime; no NVIDIA GPU.
 - **System path:** Local public API evaluator creates temporary native patient and encounter records, triggers the ordinary chart-review endpoint, polls terminal status, scores the public response, and deletes the records. The path exercises the backend, Temporal workflow, chart-review worker, and local provider.
 - **Generation prompt:** `services/chartreview/prompts/chart_review.md`. It treats the active encounter as the current-state source, preserves stated facts and factual gaps, prohibits diagnosis, treatment recommendation, and autonomous action, and requires exact copying of an allowed source ID.
 - **Provider:** local provider; model `mediphi-clinical`; temperature `0`; JSON-object response format; generation maximum `512` tokens.
@@ -61,6 +123,8 @@ artifacts, not this document.
 #### Setup
 
 - **Dataset:** current in-place `ChartReviewBench-v1`, containing three public API cases: home-temperature history, hypertension medication reconciliation, and soccer-related right-foot pain.
+- **Local environment:** Windows 11; Intel Core i7 CPU; 32 GB RAM; Docker
+  runtime; no NVIDIA GPU.
 - **System path and provider:** unchanged from `5d2w42`; local public API evaluator, backend, Temporal workflow, chart-review worker, and local `mediphi-clinical` provider.
 - **Command:** `uv run --package chartreview chartreview-eval services/chartreview/evals/chart_review_bench/v1`.
 - **Evidence boundary:** this run supplies public terminal responses only. Retrieval decisions, returned blocks, and canonical citations remain inconclusive without the restricted trace reader.
@@ -125,12 +189,14 @@ history`. The focused backend test and the subsequent case-2 trace confirm this 
 
 ### 3f8b2c - Retrieval And Known-Facts Discipline
 
-**Status:** superseded by the CAD evaluation pack below
+**Status:** Completed
 **Date:** 2026-09-10
 
 #### Setup
 
 - **Initial runs:** the right-foot preflight (`60.123s`) preserved most facts but asked invented pain and swelling questions and searched copied `inhaler`/`prescription` terms. The cough preflight (`48.927s`) omitted stated duration, asked unrelated questions, and unnecessarily searched `home temperature readings`. A later retry failed validation after the provider omitted `confidence`.
+- **Local environment:** Windows 11; Intel Core i7 CPU; 32 GB RAM; Docker
+  runtime; no NVIDIA GPU.
 - **Resulting controls:** retain the simple lexical scorer and manual review for semantic residue; preserve explicit active facts and require questions to name declared gaps; limit history retrieval to gaps that prior records can answer; and replace concrete history-query examples with a non-parrotable placeholder.
 - **Retrieval evidence:** public results now expose `historySearchTerms` and `historyResults`, allowing the evaluator to judge retrieval necessity, query grounding, and returned blocks separately from final drafting.
 
@@ -152,47 +218,109 @@ history`. The focused backend test and the subsequent case-2 trace confirm this 
 
 ### 8a2e7c - Coronary Artery Disease Evaluation Pack
 
-**Status:** Complete
+**Status:** baseline recorded; quality gate did not pass
 **Date:** 2026-09-12
 
 #### Setup
 
-- **Dataset:** first narrow, synthetic pack, `coronary-artery-disease-v1`, with flat metadata-filterable case files. Its three scenarios cover complete current-only context, a prior stent/statin-history gap, and a medication-allergy gap absent everywhere.
-- **Scope:** grounded draft support only; no diagnosis, treatment, or autonomous action. Runtime, provider, and evaluator remain unchanged from `6e5a1f`, except for CAD metadata and empty gap/question expectations in the current-only case.
-- **Complete-context prompt:** the initial current-only preflight completed in `65.821s` but invented gaps and questions. The generation prompt therefore explicitly permits empty `missing_info` and `follow_up_questions` for complete active context; prohibits invented monitoring, functional-status, symptom-progression, and test-result gaps; requires exact copying of supplied measurement values and units; requires each follow-up question to be a plain JSON string; and requires complete, exact source IDs with their content-role prefix.
-- **Retrieval-decision prompt:** that same preflight requested `medication history` and `previous chest pain episodes` without a historical-information gap. Retrieval is now opt-in only for a named gap that prior documentation could supply, never solely for a chronic condition, active medication, or an absent current symptom.
-- **Strict provider boundary:** preflight responses exposed missing and malformed contract fields. Worker-owned metadata is added after the provider response, then raw JSON is validated directly by `ChartReviewOutput`; the harness does not supply missing confidence, split compound confidence text, or repair question or citation variations.
+- **Dataset:** AI-assisted physician-reviewed
+  `coronary-artery-disease-v1`: five synthetic CAD cases covering current-only,
+  relevant-history, longitudinal-history, valid no-match, and uncertain-current
+  response scenarios.
+- **Local environment:** Windows 11; Intel Core i7 CPU; 32 GB RAM; Docker
+  runtime; no NVIDIA GPU.
+- **Preflight:** prior focused runs showed invented current-context gaps,
+  unnecessary history requests, malformed output, source-ID mistakes, and
+  overly literal scoring residue. They led to the committed `v1` prompt's
+  complete-context and retrieval-decision constraints, direct output validation,
+  restricted canonical-evidence read, and narrow approved lexical equivalents.
+- **Frozen experiment:** the public API, Temporal workflow, chart-review worker,
+  and local provider execute registered prompt `v1`. The evaluator creates and
+  removes temporary native records, reads restricted terminal evidence, and
+  requires validation, draft, retrieval, and provenance to pass without
+  repairing model output or broadening the exact bounded retrieval matcher.
+- **Boundary:** draft support may organize supplied evidence, retain factual
+  gaps, and ask focused questions. Diagnosis, treatment, testing, urgency
+  guidance, and autonomous action are outside the benchmark.
+- Prompt and context changes made the active encounter the
+  primary source; required preservation and citation of material active facts;
+  prohibited title, summary, or description substitution; and prohibited
+  questions for known active facts. `review_flags` were removed from the model
+  response template because review messaging belongs to platform and onboarding
+  policy, not the draft generator.
 
-#### Case 1: Current-Only
+#### Case Evaluation
 
-- **Execution:** completed in `60.061s`; deterministic evaluation failed.
-- **Axes:** validation passed; draft failed on lexical summary checks and unsupported questions; retrieval failed.
-- **Summary:** manual inspection passes. All active facts and the exact `128/76 mmHg` measurement are preserved; reported summary failures are lexical residue.
-- **Draft:** `missingInfo` is correctly empty, but two unsupported questions introduce adherence and heart-failure concerns. The reasoning makes the same unsupported claims.
-- **Retrieval:** invalid. `medication adherence` and `previous chest pain episodes` are requested without a historical-information gap; no blocks return.
+All evaluations below are from the registered-`v1` baseline run. No fixture or
+expected-contract defect was identified; retain the clinician-approved labels
+until review resolves the scorer-equivalence candidates.
 
-#### Case 2: History Needed
+#### Case 1: `cad-current-only`
 
-- **Execution:** completed in `57.032s`; deterministic evaluation failed.
-- **Axes:** validation passed; draft failed only on lexical summary checks; retrieval failed.
-- **Summary:** manual inspection preserves the active CAD follow-up and absent chest pain; reported summary failures are lexical residue.
-- **Retrieval:** necessary, but ineffective. The terms `coronary stent date` and `prior statin detail` do not retrieve the expected prior summary under the intentionally strict substring matcher. The model therefore leaves retrievable facts as gaps and asks the clinician instead.
-- **Draft:** it correctly names the active-context gaps, but cannot use the historical facts because retrieval did not return them.
+- **Result:** `271.065s`; validation and provenance passed; draft and retrieval
+  failed.
+- **Evidence:** the summary contains the CAD follow-up, absent rest symptoms,
+  aspirin, and atorvastatin. It omits all four declared gaps; its reasoning says
+  the condition is stable; its questions ask about angina/infarction and blood
+  pressure. It requested `medication adherence` and `previous chest pain
+episodes`; the bounded lookup returned no blocks.
+- **Evaluation:** the required-fact failures need narrow scorer-equivalence
+  review. The missing gaps, stability claim, unsupported questions, and
+  unnecessary retrieval are agent-behavior failures.
 
-#### Case 3: Missing Everywhere
+#### Case 2: `cad-history-needed`
 
-- **Execution:** completed in `55.928s`; deterministic evaluation failed.
-- **Axes:** validation and draft passed; retrieval failed.
-- **Draft:** the medication-allergy gap is preserved. The follow-up should ask for clinician clarification, not seek another historical record.
-- **Retrieval:** invalid. The model searches for `medication-allergy status` even though the case states the fact is absent from prior records; the evaluator correctly flags its `allergy` and `medication` terms. No blocks return.
+- **Result:** `220.956s`; validation passed; draft, retrieval, and provenance
+  failed.
+- **Evidence:** the summary includes CAD follow-up, prior stenting, absent chest
+  pain, and atorvastatin, but omits the historical stent/date and dose evidence
+  plus the current-dose gap. Questions ask about side effects and vital signs.
+  `medication history` and `stenting procedure details` returned no blocks.
+- **Evaluation:** the active-fact wording is a scorer-equivalence candidate.
+  Retrieval did not obtain the required cardiology summary, so its required
+  historical facts and citation could not appear; this is agent retrieval behavior, not a provenance-endpoint failure.
 
-#### Rubric Direction
+#### Case 3: `cad-history-partial`
 
-- **Rubric decision:** report `validation`, `draft`, and `retrieval` as independent axes; cases pass only when every axis passes. `validation` covers terminal workflow completion and strict `ChartReviewOutput` acceptance, not clinical usefulness. `draft` covers factual preservation, declared gaps, and follow-up behavior. `retrieval` is a first-class gate because it controls the evidence the drafting step may use; it scores lookup necessity, forbidden terms, and the expected returned prior source block.
-- **Duration:** this local laptop run took `173.021s` sequentially; the per-case median was `57.032s`. Three observations are diagnostic timing evidence, not a local-model latency baseline.
+- **Result:** `241.672s`; validation passed; draft, retrieval, and provenance
+  failed.
+- **Evidence:** the summary includes the current fatigue and absent rest
+  symptoms but not the expected historical comparison. It lists broad
+  duration/frequency gaps and asks two broad questions. `fatigue symptoms` and
+  `walking uphill` returned no blocks.
+- **Evaluation:** active-fact wording needs scorer-equivalence review. The
+  absent annual-exam source, longitudinal facts, and citation follow directly
+  from the agent's ineffective retrieval decision.
 
-#### Next Improvements
+#### Case 4: `cad-history-no-match`
 
-- Add a history-decision-only benchmark command that runs the bounded retrieval decision and backend lookup without final drafting. It should gate lookup necessity for current-only and missing-everywhere controls, and exact prior-block return for the history-needed case.
-- Run one final, isolated MediPhi prompt experiment that requires literal retrieval anchors from the supplied record and a zero-question result for complete context. Compare its retrieval axis before another end-to-end suite.
-- If that focused MediPhi run still fails Case 1 or Case 3 lookup necessity, or Case 2 expected-block return, run the same frozen CAD pack against one local comparison model. Do not change fixture labels, lexical scoring, or the strict substring matcher during the comparison.
+- **Result:** `237.849s`; validation, retrieval, and provenance passed; draft
+  failed.
+- **Evidence:** the summary includes CAD follow-up, prior stenting, and absent
+  chest pain. It replaces the stent timing/type gaps with broad symptom and
+  functional-status gaps; its questions are similarly broad. `stenting
+outcomes` and `post-procedure symptoms` produced the expected no-match.
+- **Evaluation:** the required-fact wording is a scorer-equivalence candidate.
+  Gap preservation and question focus are agent-behavior failures. This control proves
+  that a valid no-match and active-source citation can pass.
+
+#### Case 5: `cad-longitudinal-nitroglycerin-response`
+
+- **Result:** `265.620s`; validation passed; draft, retrieval, and provenance
+  failed.
+- **Evidence:** the summary includes the active chest-pressure event,
+  nitroglycerin use, and absent associated symptoms, but omits the historical
+  comparison and current response-to-nitroglycerin gap. Questions concern
+  generic duration/frequency. `nitroglycerin episode` and `chest pressure
+symptoms` returned no blocks.
+- **Evaluation:** active-fact wording needs scorer-equivalence review. The
+  missing history and citation result from the agent's retrieval decision;
+  the unpreserved current gap and generic questions are agent-behavior failures.
+
+#### Results Summary
+
+- **Baseline run:** MLflow `c0116c657c0e4440b980db09a3cc5743` on 2026-09-13.
+  All five workflows completed and passed structural validation; the strict
+  quality gate failed. End-to-end durations ranged from `220.956s` to
+  `271.065s`. This is baseline evidence for this frozen setup, not a capacity
+  claim; timing diagnosis is tracked in GitHub issue #63.

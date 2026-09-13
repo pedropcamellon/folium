@@ -71,6 +71,7 @@ class OutputExpectation(BaseModel):
     follow_up_questions: list[str] = Field(default_factory=list)
     required_follow_up_terms: list[str] = Field(default_factory=list)
     forbidden_follow_up_terms: list[str] = Field(default_factory=list)
+    forbidden_claims: list[str] = Field(default_factory=list)
     required_source_roles: list[str] = Field(min_length=1)
     forbidden_source_roles: list[str] = Field(default_factory=list)
     confidence: Literal["low", "medium", "high"] | None = None
