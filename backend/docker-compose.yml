@@ -31,6 +31,7 @@ services:
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
       CHARTREVIEW_INTERNAL_TOKEN: ${CHARTREVIEW_INTERNAL_TOKEN:?Set CHARTREVIEW_INTERNAL_TOKEN in root .env}
+      CHARTREVIEW_EVALUATION_TOKEN: ${CHARTREVIEW_EVALUATION_TOKEN:?Set CHARTREVIEW_EVALUATION_TOKEN in root .env}
     volumes:
       - backend_cache:/root/.cache
     working_dir: /workspace/backend

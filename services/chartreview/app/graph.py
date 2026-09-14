@@ -4,12 +4,10 @@ import json
 import logging
 import time
 from datetime import timedelta
-from pathlib import Path
 
 import httpx
 from folium.ai import load_prompt, parse_chat_completion, system_message, user_message
 from folium.core.chart_review import (
-    ChartReviewConfidence,
     ChartReviewHistoryRequest,
     ChartReviewHistoryResponse,
     ChartReviewInput,
@@ -22,12 +20,9 @@ from temporalio.common import RetryPolicy
 
 from app.config import settings
 from app.models import ChartReviewGraphState
+from app.prompts import CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH, chart_review_prompt_path
 
 logger = logging.getLogger(__name__)
-
-PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
-CHART_REVIEW_PROMPT_PATH = PROMPTS_DIR / "chart_review.md"
-CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH = PROMPTS_DIR / "chart_review_history_decision.md"
 
 
 class ChartReviewHistoryDecision(BaseModel):
@@ -43,10 +38,7 @@ async def decide_history(
 ) -> dict[str, list[str]]:
     """Temporal Activity that calls the provider to decide whether history is needed."""
     review_input = ChartReviewInput.model_validate(state["review_input"])
-    active_context = "\n\n".join(
-        f"[{source.source_id}] {source.source_type.value}: {source.content}"
-        for source in review_input.source_chunks
-    )
+    active_context = _format_active_context(review_input)
     messages = [
         system_message(load_prompt(CHART_REVIEW_HISTORY_DECISION_PROMPT_PATH)),
         user_message(f"Active interaction context:\n{active_context}"),
@@ -98,10 +90,7 @@ async def retrieve_history(state: ChartReviewGraphState) -> dict[str, list[Chart
 async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReviewOutput]:
     """Temporal Activity that calls the provider with approved chart-review context."""
     review_input = ChartReviewInput.model_validate(state["review_input"])
-    active_context = "\n\n".join(
-        f"[{source.source_id}] {source.source_type.value}: {source.content}"
-        for source in review_input.source_chunks
-    )
+    active_context = _format_active_context(review_input)
     historical_source_chunks = [
         ChartReviewSourceChunk.model_validate(source)
         for source in state.get("historical_source_chunks", [])
@@ -115,7 +104,7 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
         *(source.source_id for source in historical_source_chunks),
     ]
     messages = [
-        system_message(load_prompt(CHART_REVIEW_PROMPT_PATH)),
+        system_message(load_prompt(chart_review_prompt_path(settings.chartreview_prompt_version))),
         user_message(
             f"Allowed source IDs: {json.dumps(allowed_source_ids)}\n\n"
             f"Active interaction context:\n{active_context}\n\n"
@@ -165,9 +154,12 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
     logger.info("MediPhi raw chart-review completion: %s", content)
     try:
         raw_output = json.loads(content)
-        normalized_output = _normalize_output(raw_output)
-        normalized_output["provider_name"] = settings.ai_provider_name
-        review_output = ChartReviewOutput.model_validate(normalized_output)
+        raw_output["provider_name"] = settings.ai_provider_name
+        raw_output["history_search_terms"] = state.get("history_search_terms", [])
+        raw_output["history_source_chunks"] = [
+            source.model_dump(mode="json") for source in historical_source_chunks
+        ]
+        review_output = ChartReviewOutput.model_validate(raw_output)
     except (json.JSONDecodeError, ValueError) as exc:
         logger.error("MediPhi invalid chart-review completion: raw=%s error=%s", content, exc)
         raise
@@ -188,35 +180,28 @@ async def generate_review(state: ChartReviewGraphState) -> dict[str, ChartReview
     return {"review_output": review_output}
 
 
-def _normalize_output(output: dict) -> dict:
-    """Normalize bounded local-model JSON variations before strict contract validation."""
-    source_refs = output.get("source_refs")
-    if isinstance(source_refs, list):
-        output["source_refs"] = [_normalize_source_ref(source_ref) for source_ref in source_refs]
-
-    confidence = output.get("confidence")
-    if isinstance(confidence, str):
-        confidence_level, separator, confidence_explanation = confidence.partition("-")
-        normalized_confidence = confidence_level.strip().lower()
-        if normalized_confidence in {level.value for level in ChartReviewConfidence}:
-            output["confidence"] = normalized_confidence
-            if separator and confidence_explanation.strip() and not output.get("reasoning"):
-                output["reasoning"] = confidence_explanation.strip()
-
-    return output
-
-
-def _normalize_source_ref(source_ref: object) -> object:
-    """Accept known local-provider citation variants before strict validation."""
-    if isinstance(source_ref, str):
-        return {"source_id": source_ref}
-    if (
-        isinstance(source_ref, dict)
-        and len(source_ref) == 1
-        and next(iter(source_ref.values())) is True
-    ):
-        return {"source_id": next(iter(source_ref))}
-    return source_ref
+def _format_active_context(review_input: ChartReviewInput) -> str:
+    """Present the final active narrative first without excluding native encounter context."""
+    primary_narrative = [review_input.transcript] if review_input.transcript else []
+    supporting_context = [
+        source for source in review_input.source_chunks if source != review_input.transcript
+    ]
+    sections: list[str] = []
+    if primary_narrative:
+        source = primary_narrative[0]
+        sections.append(
+            "Current active encounter narrative (primary current-state source; cite this source "
+            f"for facts it establishes):\n[{source.source_id}] {source.source_type.value}: "
+            f"{source.content}"
+        )
+    if supporting_context:
+        formatted_sources = "\n\n".join(
+            f"[{source.source_id}] {source.source_type.value} ({source.content_role}): "
+            f"{source.content}"
+            for source in supporting_context
+        )
+        sections.append(f"Additional active encounter context:\n{formatted_sources}")
+    return "\n\n".join(sections)
 
 
 def build_chartreview_graph() -> StateGraph:

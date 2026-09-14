@@ -24,6 +24,7 @@ SERVICES = (
     ("folium-summarize", "Local inference"),
     ("folium-chartreview-worker", "Chart review worker"),
     ("folium-voicenotes-worker", "Voice notes worker"),
+    ("folium-mlflow", "MLflow evaluations"),
     ("folium-prometheus", "Prometheus"),
     ("folium-grafana", "Grafana"),
     ("folium-loki", "Loki"),

@@ -30,6 +30,7 @@ LOCAL_ENDPOINTS = (
     ("Summarization health", "http://localhost:8002/health"),
     ("Temporal UI", "http://localhost:8233"),
     ("MinIO console", "http://localhost:9001"),
+    ("MLflow", "http://localhost:5000"),
     ("Grafana", "http://localhost:3002"),
 )
 DEVELOPMENT_LOG_SERVICES = frozenset(

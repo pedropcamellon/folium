@@ -1,0 +1,76 @@
+id: cad-history-needed
+title: Coronary artery disease (CAD) follow-up with prior stent and statin history
+version: 1
+description: Evaluates whether the agent retrieves relevant prior stent and statin facts, preserves their historical timing, and does not treat a prior statin dose as the current dose.
+
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: history-needed
+
+fixture:
+  patient:
+    key: patient-002
+    age_at_active_encounter: 73
+    date_of_birth: 1953-05-08
+    gender: male
+  encounters:
+    - key: cardiology-follow-up-2025
+      occurred_at: 2025-11-13T09:00:00Z
+      title: Cardiology follow-up
+      purpose: follow_up
+      summary: >
+        Coronary artery disease history includes a drug-eluting coronary stent
+        placed in 2024. Atorvastatin 40 mg is documented at this visit.
+      note: >
+        Coronary artery disease history includes a drug-eluting coronary stent
+        placed in 2024. Atorvastatin 40 mg is documented at this visit.
+    - key: cad-follow-up-001
+      occurred_at: 2026-11-13T10:30:00Z
+      title: Coronary artery disease follow-up
+      purpose: follow_up
+      note: >
+        Patient returns for coronary artery disease follow-up after prior
+        coronary stenting. No chest pain is reported today. The active
+        medication list includes atorvastatin.
+  active_encounter_key: cad-follow-up-001
+
+expected:
+  output:
+    summary_facts:
+      - coronary artery disease follow-up
+      - no chest pain
+      - prior coronary stenting
+      - atorvastatin
+      - drug-eluting coronary stent
+      - "2024"
+      - atorvastatin 40 mg
+      - 2025 cardiology visit
+    missing_information:
+      - Current atorvastatin dose is not documented.
+    follow_up_questions:
+      - What is the patient's current atorvastatin dose?
+    forbidden_claims:
+      - Medication dose was increased.
+      - Urgent intervention is required.
+    required_follow_up_terms:
+      - current
+      - atorvastatin
+      - dose
+    forbidden_follow_up_terms:
+      - treatment
+    required_source_roles:
+      - active.note
+      - cardiology-follow-up-2025.summary
+    forbidden_source_roles: []
+    confidence: null
+  history_decision:
+    should_retrieve: true
+    forbidden_search_terms:
+      - treatment
+      - chest pain
+    expected_returned_source_roles:
+      - cardiology-follow-up-2025.summary
+  validation:
+    expected_status: valid

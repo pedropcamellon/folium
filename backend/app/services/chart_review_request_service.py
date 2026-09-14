@@ -1,26 +1,33 @@
 """On-demand chart-review request orchestration for the encounter API."""
 
+import json
 import logging
 from uuid import UUID
 
 from folium.core.chart_review import (
-    ChartReviewConfidence,
     ChartReviewHistoryRequest,
     ChartReviewHistoryResponse,
     ChartReviewInput,
+    ChartReviewOutput,
     ChartReviewSourceChunk,
     ChartReviewSourceType,
     ChartReviewStatus,
     ChartReviewWorkflowInput,
 )
 
-from app.models.chart_review import ChartReviewCitationResponse, ChartReviewResponse
+from app.models.chart_review import (
+    ChartReviewCitationResponse,
+    ChartReviewEvaluationEvidenceResponse,
+    ChartReviewHistoryResultResponse,
+    ChartReviewResponse,
+)
 from app.models.db.chart_review import ChartReview
 from app.repositories.chart_review_repository import ChartReviewRepository
 from app.services.chart_review_workflow_service import ChartReviewWorkflowService
 from app.services.encounter_service import EncounterService
 
 logger = logging.getLogger(__name__)
+EVALUATION_CONTACT_INFO = "Evaluation-only record"
 
 
 class ChartReviewRequestService:
@@ -70,6 +77,22 @@ class ChartReviewRequestService:
             return None
         await self._refresh_workflow_result(review)
         return self._to_response(review)
+
+    async def get_evaluation_evidence(
+        self, review_id: str
+    ) -> ChartReviewEvaluationEvidenceResponse:
+        """Return canonical provenance only for terminal evaluator-created reviews."""
+        review = await self._repository.get_by_id(UUID(review_id))
+        if review is None or review.patient.contact_info != EVALUATION_CONTACT_INFO:
+            raise ValueError("chart-review evaluation evidence was not found")
+        if review.status not in {ChartReviewStatus.COMPLETED.value, ChartReviewStatus.FAILED.value}:
+            raise ValueError("chart-review evaluation evidence is not terminal")
+        return ChartReviewEvaluationEvidenceResponse(
+            reviewId=str(review.id),
+            status=ChartReviewStatus(review.status),
+            inputSourceIds=[source.source_id for source in review.input_source_refs],
+            citedSourceIds=[citation.source_id for citation in review.cited_source_refs],
+        )
 
     async def retrieve_prior_encounter_blocks(
         self, request: ChartReviewHistoryRequest
@@ -159,53 +182,46 @@ class ChartReviewRequestService:
 
     @staticmethod
     def _selected_encounter_chunks(encounter) -> list[ChartReviewSourceChunk]:
-        chunks: list[ChartReviewSourceChunk] = []
-        if encounter.summary:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter-summary:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.summary,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="summary",
-                    occurred_at=encounter.started_at,
-                )
+        source_values = (
+            ("title", encounter.title),
+            ("summary", encounter.summary),
+            ("description", encounter.description),
+            ("chief complaint", encounter.chief_complaint),
+            ("clinical assessment", encounter.clinical_assessment),
+            ("treatment plan", encounter.treatment_plan),
+            (
+                "structured summary",
+                json.dumps(encounter.structured_summary, sort_keys=True)
+                if encounter.structured_summary
+                else None,
+            ),
+        )
+        return [
+            ChartReviewSourceChunk(
+                source_id=f"encounter-{content_role.replace(' ', '-')}:{encounter.id}",
+                source_type=ChartReviewSourceType.ENCOUNTER,
+                content=content,
+                resource_id=str(encounter.id),
+                display_label=encounter.title,
+                content_role=content_role,
+                occurred_at=encounter.started_at,
             )
-        if encounter.description:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter-description:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.description,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="description",
-                    occurred_at=encounter.started_at,
-                )
-            )
-        if not chunks:
-            chunks.append(
-                ChartReviewSourceChunk(
-                    source_id=f"encounter:{encounter.id}",
-                    source_type=ChartReviewSourceType.ENCOUNTER,
-                    content=encounter.title,
-                    resource_id=str(encounter.id),
-                    display_label=encounter.title,
-                    content_role="title",
-                    occurred_at=encounter.started_at,
-                )
-            )
-        return chunks
+            for content_role, content in source_values
+            if content
+        ]
 
     @staticmethod
     def _transcript_chunk(encounter) -> ChartReviewSourceChunk | None:
-        if not encounter.note:
+        final_narratives = [
+            narrative for narrative in encounter.narratives if narrative.status == "final"
+        ]
+        if not final_narratives:
             return None
+        narrative = max(final_narratives, key=lambda item: item.created_at)
         return ChartReviewSourceChunk(
             source_id=f"encounter-note:{encounter.id}",
             source_type=ChartReviewSourceType.TRANSCRIPT,
-            content=encounter.note,
+            content=narrative.content,
             resource_id=str(encounter.id),
             display_label=encounter.title,
             content_role="voice-note transcript",
@@ -214,22 +230,35 @@ class ChartReviewRequestService:
 
     @staticmethod
     def _to_response(chart_review: ChartReview) -> ChartReviewResponse:
-        output = chart_review.output_json or {}
+        output = (
+            ChartReviewOutput.model_validate(chart_review.output_json)
+            if chart_review.output_json is not None
+            else None
+        )
         status = ChartReviewStatus(chart_review.status)
         source_refs = ChartReviewRequestService._public_source_refs(chart_review)
         return ChartReviewResponse(
             id=str(chart_review.id),
             encounterId=str(chart_review.encounter_id),
             status=status,
-            summary=output.get("summary"),
-            reasoning=output.get("reasoning"),
-            missingInfo=output.get("missing_info", []),
-            followUpQuestions=output.get("follow_up_questions", []),
+            summary=output.summary if output else None,
+            reasoning=output.reasoning if output else None,
+            missingInfo=output.missing_info if output else [],
+            followUpQuestions=output.follow_up_questions if output else [],
             sourceRefs=source_refs,
-            confidence=ChartReviewConfidence(chart_review.confidence)
-            if chart_review.confidence
-            else None,
-            reviewFlags=chart_review.review_flags or [],
+            confidence=output.confidence if output else None,
+            reviewFlags=output.review_flags if output else [],
+            historySearchTerms=output.history_search_terms if output else [],
+            historyResults=[
+                ChartReviewHistoryResultResponse(
+                    sourceType=chunk.source_type,
+                    displayLabel=chunk.display_label,
+                    contentRole=chunk.content_role,
+                    content=chunk.content,
+                    occurredAt=chunk.occurred_at,
+                )
+                for chunk in (output.history_source_chunks if output else [])
+            ],
             failureMessage=chart_review.failure_message,
         )
 

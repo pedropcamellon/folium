@@ -15,7 +15,7 @@ from app.dependencies import (
     get_encounter_service,
     get_voice_note_service,
 )
-from app.models.chart_review import ChartReviewResponse
+from app.models.chart_review import ChartReviewEvaluationEvidenceResponse, ChartReviewResponse
 from app.models.clinical import (
     EncounterCreate,
     EncounterNarrativeCreate,
@@ -217,3 +217,27 @@ async def retrieve_chart_review_history(
         return await service.retrieve_prior_encounter_blocks(request)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
+@router.get(
+    "/internal/chart-review/{review_id}/evaluation-evidence",
+    response_model=ChartReviewEvaluationEvidenceResponse,
+)
+async def get_chart_review_evaluation_evidence(
+    review_id: UUID,
+    internal_token: str = Header(..., alias="X-ChartReview-Internal-Token"),
+    evaluation_token: str = Header(..., alias="X-ChartReview-Evaluation-Token"),
+    service: ChartReviewRequestService = Depends(get_chart_review_request_service),
+) -> ChartReviewEvaluationEvidenceResponse:
+    if (
+        not settings.CHARTREVIEW_EVALUATION_TOKEN.strip()
+        or not compare_digest(internal_token, settings.CHARTREVIEW_INTERNAL_TOKEN)
+        or not compare_digest(evaluation_token, settings.CHARTREVIEW_EVALUATION_TOKEN)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid evaluation token"
+        )
+    try:
+        return await service.get_evaluation_evidence(str(review_id))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc

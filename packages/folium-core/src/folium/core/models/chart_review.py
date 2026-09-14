@@ -98,6 +98,8 @@ class ChartReviewOutput(BaseModel):
     source_refs: list[ChartReviewSourceRef] = Field(default_factory=list)
     confidence: ChartReviewConfidence
     review_flags: list[str] = Field(default_factory=list)
+    history_search_terms: list[str] = Field(default_factory=list)
+    history_source_chunks: list[ChartReviewSourceChunk] = Field(default_factory=list)
 
 
 class ChartReviewWorkflowInput(BaseModel):

@@ -1,0 +1,77 @@
+id: cad-history-no-match
+title: Coronary artery disease (CAD) follow-up with prior stent details unavailable
+version: 1
+description: Evaluates whether the agent performs a focused lookup for implicit prior-stent details, accepts that no relevant history matches, preserves the gap, and asks for clarification without inventing procedural facts.
+
+metadata:
+  evaluation_pack: coronary-artery-disease-v1
+  clinical_area: cardiovascular
+  condition: coronary-artery-disease
+  scenario: history-no-match
+
+fixture:
+  patient:
+    key: patient-004
+    age_at_active_encounter: 71
+    date_of_birth: 1955-09-19
+    gender: male
+  encounters:
+    - key: cardiology-follow-up-2025
+      occurred_at: 2025-11-14T09:00:00Z
+      title: Cardiology follow-up
+      purpose: follow_up
+      summary: >
+        Cardiology follow-up documents continued aspirin use and blood pressure
+        of 132/78 mmHg.
+      note: >
+        Cardiology follow-up documents continued aspirin use and blood pressure
+        of 132/78 mmHg.
+    - key: cad-follow-up-001
+      occurred_at: 2026-11-14T10:30:00Z
+      title: Coronary artery disease follow-up
+      purpose: follow_up
+      note: >
+        Patient returns for coronary artery disease follow-up after prior
+        coronary stenting. No chest pain is reported today.
+  active_encounter_key: cad-follow-up-001
+
+expected:
+  output:
+    summary_facts:
+      - coronary artery disease follow-up
+      - no chest pain
+      - prior coronary stenting
+    missing_information:
+      - Timing of prior coronary stent placement is not documented.
+      - Type of prior coronary stent is not documented.
+    follow_up_questions:
+      - When was the prior coronary stent placed, and what type of stent was used?
+    forbidden_claims:
+      - The prior coronary stent was placed in 2024.
+      - The prior coronary stent was drug-eluting.
+      - The prior coronary stent was bare-metal.
+      - Urgent intervention is required.
+    required_follow_up_terms:
+      - when
+      - stent
+      - type
+    forbidden_follow_up_terms:
+      - prescribe
+      - start
+      - stop
+      - increase
+      - decrease
+    required_source_roles:
+      - active.note
+    forbidden_source_roles:
+      - cardiology-follow-up-2025.summary
+    confidence: null
+  history_decision:
+    should_retrieve: true
+    forbidden_search_terms:
+      - treatment
+      - chest pain
+      - aspirin
+    expected_returned_source_roles: []
+  validation:
+    expected_status: valid
