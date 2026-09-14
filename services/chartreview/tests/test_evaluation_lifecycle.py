@@ -76,7 +76,10 @@ expected:
                     "followUpQuestions": [],
                 },
             )
-        if request.url.path == "/api/v1/encounters/internal/chart-review/review-id/evaluation-evidence":
+        if (
+            request.url.path
+            == "/api/v1/encounters/internal/chart-review/review-id/evaluation-evidence"
+        ):
             assert request.headers["X-ChartReview-Internal-Token"] == "internal-token"
             assert request.headers["X-ChartReview-Evaluation-Token"] == "evaluation-token"
             return httpx.Response(
@@ -96,15 +99,15 @@ expected:
         evaluate_case(
             case_path,
             EvaluationSettings(
-                    "http://testserver",
-                    None,
-                    "eval@example.test",
-                    "test",
-                    0,
-                    1,
-                    tmp_path / "artifacts",
-                    internal_token="internal-token",
-                    evaluation_token="evaluation-token",
+                "http://testserver",
+                None,
+                "eval@example.test",
+                "test",
+                0,
+                1,
+                tmp_path / "artifacts",
+                internal_token="internal-token",
+                evaluation_token="evaluation-token",
             ),
             transport=httpx.MockTransport(respond),
         )

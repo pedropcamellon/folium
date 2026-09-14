@@ -39,12 +39,14 @@ fixture:
 expected:
   output:
     summary_facts:
-      - Coronary artery disease follow-up is documented.
-      - Chest pain is not reported today.
-      - Prior coronary stenting is documented in the active encounter.
-      - Atorvastatin is documented in the active medication list.
-      - A drug-eluting coronary stent was placed in 2024.
-      - Atorvastatin 40 mg was documented at the 2025 cardiology visit.
+      - coronary artery disease follow-up
+      - no chest pain
+      - prior coronary stenting
+      - atorvastatin
+      - drug-eluting coronary stent
+      - "2024"
+      - atorvastatin 40 mg
+      - 2025 cardiology visit
     missing_information:
       - Current atorvastatin dose is not documented.
     follow_up_questions:

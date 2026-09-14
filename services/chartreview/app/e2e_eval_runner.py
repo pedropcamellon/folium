@@ -192,7 +192,7 @@ def benchmark_case_paths(target: Path) -> list[Path]:
 
 def _normalized_terms(text: str) -> set[str]:
     """Return stable lexical terms for deterministic paraphrase-tolerant scoring."""
-    terms = set(re.findall(r"[a-z]+", text.casefold())) - STOP_WORDS
+    terms = set(re.findall(r"[a-z]+|\d+(?:\.\d+)?(?:/\d+)?", text.casefold())) - STOP_WORDS
     normalized_terms: set[str] = set()
     for term in terms:
         if term.endswith("ement"):

@@ -44,14 +44,15 @@ fixture:
 expected:
   output:
     summary_facts:
-      - Coronary artery disease follow-up is documented.
-      - Chest pain at rest is not reported today.
-      - Shortness of breath at rest is not reported today.
-      - Intermittent fatigue while walking uphill is documented.
-      - Similar exertional fatigue while climbing stairs was documented at the 2025 annual exam.
-      - The prior fatigue resolved after several minutes of rest.
-      - Chest discomfort was not reported with the prior fatigue.
-      - The prior fatigue was attributed to deconditioning at the 2025 annual exam.
+      - coronary artery disease follow-up
+      - no chest pain
+      - no shortness of breath
+      - intermittent fatigue
+      - walking uphill
+      - fatigue climbing stairs
+      - fatigue resolved rest
+      - no chest discomfort
+      - deconditioning
     missing_information:
       - Onset of exertional fatigue is not documented.
       - Duration of exertional fatigue episodes is not documented.

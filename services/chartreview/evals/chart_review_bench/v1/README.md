@@ -102,7 +102,9 @@ compatible need.
 `expected.output` uses atomic assertions instead of a complete expected output
 sentence-for-sentence:
 
-- `summary_facts`: facts the summary must communicate.
+- `summary_facts`: concise case-owned clinical evidence anchors the summary
+  must communicate, such as `aspirin`, `no chest pain`, or `0.4 mg
+nitroglycerin`; they are not prose sentences the model must reproduce.
 - `missing_information`: factual gaps that must remain visible and must not be
   invented away.
 - `forbidden_claims`: fixture-approved claim patterns that must not appear in

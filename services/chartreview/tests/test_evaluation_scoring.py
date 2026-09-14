@@ -1,7 +1,9 @@
 """Deterministic chart-review evaluation scoring coverage."""
 
-from app.e2e_eval_runner import score_review_axes
-from app.evals import ChartReviewBenchmarkCase
+from pathlib import Path
+
+from app.e2e_eval_runner import _normalized_terms, score_review_axes
+from app.evals import ChartReviewBenchmarkCase, load_benchmark_case
 
 
 def _case(
@@ -41,7 +43,7 @@ def _case(
                         "occurred_at": "2026-01-01T10:00:00Z",
                         "title": "Synthetic active encounter",
                         "note": "Required summary fact.",
-                    }
+                    },
                 ],
                 "active_encounter_key": "active",
             },
@@ -103,6 +105,83 @@ def test_score_review_reports_retrieval_as_an_independent_axis() -> None:
         ("retrieval", False),
         ("provenance", True),
     ]
+
+
+def test_case_one_summary_uses_clinical_evidence_anchors() -> None:
+    case = load_benchmark_case(
+        Path(__file__).parents[1] / "evals/chart_review_bench/v1/patient-001/case.yaml"
+    )
+
+    axes = score_review_axes(
+        case,
+        {
+            "status": "completed",
+            "summary": (
+                "Patient returns for coronary artery disease follow-up, reports no chest pain "
+                "or shortness of breath at rest today. Active medication list includes aspirin "
+                "and atorvastatin; blood pressure recorded as 128/76 mmHg."
+            ),
+            "missingInfo": ["No additional symptoms reported"],
+            "followUpQuestions": [
+                "Is there a history of angina or myocardial infarction?",
+                "Has blood pressure been stable on aspirin and atorvastatin therapy?",
+            ],
+            "historySearchTerms": ["medication adherence"],
+            "historyResults": [],
+        },
+        {"cad-follow-up-001": "active-id"},
+        ["encounter-note:active-id"],
+    )
+
+    draft_axis = next(axis for axis in axes if axis.name == "draft")
+    assert not any(
+        failure.startswith("summary did not preserve") for failure in draft_axis.failures
+    )
+
+
+def test_case_two_summary_uses_clinical_evidence_anchors() -> None:
+    case = load_benchmark_case(
+        Path(__file__).parents[1] / "evals/chart_review_bench/v1/patient-002/case.yaml"
+    )
+
+    axes = score_review_axes(
+        case,
+        {
+            "status": "completed",
+            "summary": (
+                "Patient returns for coronary artery disease follow-up after prior coronary "
+                "stenting, with no reported chest pain today and on atorvastatin."
+            ),
+            "historySearchTerms": ["medication history"],
+            "historyResults": [],
+        },
+        {
+            "cad-follow-up-001": "active-id",
+            "cardiology-follow-up-2025": "history-id",
+        },
+        ["encounter-note:active-id"],
+    )
+
+    draft_axis = next(axis for axis in axes if axis.name == "draft")
+    assert draft_axis.failures == [
+        "summary did not preserve required fact: drug-eluting coronary stent",
+        "summary did not preserve required fact: 2024",
+        "summary did not preserve required fact: atorvastatin 40 mg",
+        "summary did not preserve required fact: 2025 cardiology visit",
+        "missing-information item was not preserved: Current atorvastatin dose is not documented.",
+        "follow-up questions omitted required term: current",
+        "follow-up questions omitted required term: atorvastatin",
+        "follow-up questions omitted required term: dose",
+    ]
+
+
+def test_normalized_terms_preserve_clinically_relevant_measurements() -> None:
+    assert _normalized_terms("Blood pressure is 128/76 mmHg; take 0.4 mg.") >= {
+        "128/76",
+        "mmhg",
+        "0.4",
+        "mg",
+    }
 
 
 def test_score_review_allows_a_history_lookup_with_no_expected_match() -> None:
@@ -196,6 +275,4 @@ def test_score_review_rejects_an_unexpected_terminal_status() -> None:
         [],
     )
 
-    assert axes[0].failures == [
-        "chart review finished with status: failed; expected completed"
-    ]
+    assert axes[0].failures == ["chart review finished with status: failed; expected completed"]

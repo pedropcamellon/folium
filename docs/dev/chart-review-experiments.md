@@ -264,9 +264,15 @@ until review resolves the scorer-equivalence candidates.
   the condition is stable; its questions ask about angina/infarction and blood
   pressure. It requested `medication adherence` and `previous chest pain
 episodes`; the bounded lookup returned no blocks.
-- **Evaluation:** the required-fact failures need narrow scorer-equivalence
-  review. The missing gaps, stability claim, unsupported questions, and
-  unnecessary retrieval are agent-behavior failures.
+- **Evaluation:** the summary preserves the clinically relevant active-note
+  evidence: CAD follow-up, absent rest symptoms, aspirin, atorvastatin, and
+  the blood-pressure value. It does not retain the declared exertional,
+  exercise-tolerance, adherence, or medication-tolerance gaps. The unsupported
+  stability claim, unsupported questions, and unnecessary retrieval remain
+  agent-behavior failures. The generic question about chest-pain frequency or
+  severity is ambiguous: it could seek the unresolved exertional symptom
+  domain, but does not state that scope clearly enough for a deterministic
+  failure.
 
 #### Case 2: `cad-history-needed`
 
@@ -276,9 +282,12 @@ episodes`; the bounded lookup returned no blocks.
   pain, and atorvastatin, but omits the historical stent/date and dose evidence
   plus the current-dose gap. Questions ask about side effects and vital signs.
   `medication history` and `stenting procedure details` returned no blocks.
-- **Evaluation:** the active-fact wording is a scorer-equivalence candidate.
-  Retrieval did not obtain the required cardiology summary, so its required
-  historical facts and citation could not appear; this is agent retrieval behavior, not a provenance-endpoint failure.
+- **Evaluation:** the summary preserves the active CAD follow-up, prior
+  stenting, absence of chest pain, and atorvastatin. Retrieval did not obtain
+  the required cardiology summary, so its historical facts and citation could
+  not appear; this is agent retrieval behavior, not a provenance-endpoint
+  failure. The unsupported stability inference and broad vital-sign question
+  remain agent-behavior concerns.
 
 #### Case 3: `cad-history-partial`
 
@@ -288,9 +297,19 @@ episodes`; the bounded lookup returned no blocks.
   symptoms but not the expected historical comparison. It lists broad
   duration/frequency gaps and asks two broad questions. `fatigue symptoms` and
   `walking uphill` returned no blocks.
-- **Evaluation:** active-fact wording needs scorer-equivalence review. The
-  absent annual-exam source, longitudinal facts, and citation follow directly
-  from the agent's ineffective retrieval decision.
+- **Evaluation:** the summary preserves the active CAD follow-up, intermittent
+  fatigue while walking uphill, and absence of chest pain or shortness of
+  breath at rest. The annual-exam source, its longitudinal facts, and its
+  citation are absent because the agent's retrieval terms returned no block.
+  The response surfaces duration and frequency as unresolved, but does not
+  cover the current response-to-rest or associated-symptom gaps. Whether its
+  activity question usefully clarifies an unknown trigger or redundantly
+  reopens the documented walking-uphill relationship requires specialist
+  review. If the prior annual-exam context is retrieved, a more focused
+  question could ask whether the uphill fatigue has changed in intensity,
+  frequency, duration, or recovery time since that visit, rather than repeat
+  the known trigger. The fixture does not decide that clinical preference; it
+  is a physician-review candidate.
 
 #### Case 4: `cad-history-no-match`
 
@@ -300,9 +319,13 @@ episodes`; the bounded lookup returned no blocks.
   chest pain. It replaces the stent timing/type gaps with broad symptom and
   functional-status gaps; its questions are similarly broad. `stenting
 outcomes` and `post-procedure symptoms` produced the expected no-match.
-- **Evaluation:** the required-fact wording is a scorer-equivalence candidate.
-  Gap preservation and question focus are agent-behavior failures. This control proves
-  that a valid no-match and active-source citation can pass.
+- **Evaluation:** the summary preserves the active CAD follow-up, prior
+  coronary stenting, and absence of chest pain. The bounded no-match and
+  active-source citation passed. The draft does not retain the specific unknown
+  stent timing and type; instead, it adds broader symptom and
+  functional-status questions and a stability inference. Whether those
+  questions are clinically useful is for specialist review, but they do not
+  demonstrate the fixture's narrow stent-detail follow-up goal.
 
 #### Case 5: `cad-longitudinal-nitroglycerin-response`
 
@@ -313,14 +336,26 @@ outcomes` and `post-procedure symptoms` produced the expected no-match.
   comparison and current response-to-nitroglycerin gap. Questions concern
   generic duration/frequency. `nitroglycerin episode` and `chest pressure
 symptoms` returned no blocks.
-- **Evaluation:** active-fact wording needs scorer-equivalence review. The
-  missing history and citation result from the agent's retrieval decision;
-  the unpreserved current gap and generic questions are agent-behavior failures.
+- **Evaluation:** the summary preserves the active CAD follow-up, chest
+  pressure while climbing stairs, the brief episode, prescribed sublingual
+  nitroglycerin use, and the absence of associated shortness of breath,
+  palpitations, and dizziness. It does not state the documented five-minute
+  duration. The missing historical comparison and citation result from the
+  agent's retrieval terms returning no block. The current note already supplies
+  one five-minute episode, so the generic duration/frequency questions reopen
+  known facts rather than clarify the unresolved response to nitroglycerin.
+  That missed response-to-nitroglycerin gap is an agent-behavior failure.
 
 #### Results Summary
 
 - **Baseline run:** MLflow `c0116c657c0e4440b980db09a3cc5743` on 2026-09-13.
-  All five workflows completed and passed structural validation; the strict
-  quality gate failed. End-to-end durations ranged from `220.956s` to
-  `271.065s`. This is baseline evidence for this frozen setup, not a capacity
-  claim; timing diagnosis is tracked in GitHub issue #63.
+  All five workflows completed and passed structural validation. Across the
+  pack, the agent preserved the material active-encounter summary evidence and
+  cited its active source; it also demonstrated the valid bounded no-match
+  behavior in Case 4. It did not reliably preserve the fixture's declared
+  current gaps, produce sufficiently focused follow-up questions, select search
+  terms that returned the expected historical source, or synthesize and cite
+  historical evidence after an unsuccessful lookup. The strict all-axes gate
+  therefore failed. End-to-end durations ranged from `220.956s` to `271.065s`.
+  This is diagnostic evidence for this frozen setup, not a clinical-quality,
+  throughput, or capacity claim.

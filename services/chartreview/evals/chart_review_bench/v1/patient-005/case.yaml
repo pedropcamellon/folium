@@ -53,13 +53,17 @@ fixture:
 expected:
   output:
     summary_facts:
-      - Coronary artery disease follow-up is documented.
-      - One five-minute episode of chest pressure occurred while climbing stairs since the last visit.
-      - One prescribed 0.4 mg dose of sublingual nitroglycerin was used for the episode.
-      - Shortness of breath, palpitations, and dizziness were not reported with the episode.
-      - Chest pain is not reported today.
-      - A prior episode of chest pressure also occurred while climbing stairs and resolved after rest and one prescribed 0.4 mg dose of sublingual nitroglycerin.
-      - A prior exercise stress test reproduced chest pressure and documented ischemic ECG changes.
+      - coronary artery disease follow-up
+      - chest pressure climbing stairs
+      - five-minute episode
+      - 0.4 mg nitroglycerin
+      - no shortness of breath
+      - no palpitations
+      - no dizziness
+      - no chest pain
+      - chest pressure resolved rest
+      - exercise stress test
+      - ischemic ECG changes
     missing_information:
       - Response of the current symptoms to nitroglycerin is not documented.
     follow_up_questions:
