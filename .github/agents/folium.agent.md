@@ -34,7 +34,7 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 - Relevant `.github/instructions/*.instructions.md`
 - `tasks/README.md`, `tasks/_TEMPLATE.md`, `tasks/PROJECT-BOARD.md`
 - Matching `tasks/<state>/` file
-- Nearby `SPEC.md`, README, and owning code when needed
+- Nearby `docs/dev/`, README, and owning code when needed
 
 ## Work Flow
 
