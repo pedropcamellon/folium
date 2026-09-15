@@ -26,5 +26,6 @@ members = [
 
 [dependency-groups]
 dev = [
+    "mkdocs-literate-nav==0.6.3",
     "mkdocs-shadcn>=0.12.1",
 ]
