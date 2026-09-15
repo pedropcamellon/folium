@@ -23,3 +23,8 @@ members = [
     "tools/favicon_generator",
     "tools/folium_runtime",
 ]
+
+[dependency-groups]
+dev = [
+    "mkdocs-shadcn>=0.12.1",
+]
