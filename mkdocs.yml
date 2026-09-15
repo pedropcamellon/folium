@@ -1,6 +1,6 @@
 site_name: Folium Documentation
 site_description: Local-first documentation for Folium's synthetic, reviewable chart-support workflows.
-site_url: https://pedropcamellon.github.io/folium/
+site_url: https://pedropcamellon.github.io/folium/docs/
 repo_url: https://github.com/pedropcamellon/folium
 repo_name: pedropcamellon/folium
 edit_uri: edit/main/docs/
