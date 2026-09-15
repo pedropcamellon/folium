@@ -21,7 +21,6 @@ take autonomous action.
 ## Developer topics
 
 - [Local Docker runtime](local-development.md)
-- [Service and contract boundaries](architecture-and-contracts.md)
 - [Bounded chart-review agent](chart-review-agent.md)
 - [Validation and offline evaluation](validation-and-evals.md)
 - [MLflow evidence and Temporal audit](mlflow-and-temporal.md)
