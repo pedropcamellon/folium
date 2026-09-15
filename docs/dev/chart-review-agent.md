@@ -1,4 +1,4 @@
-# Chart Review Agent Lessons
+# Chart Review Agent
 
 ## Local Operations
 
@@ -13,6 +13,10 @@ docker compose exec -T folium-backend python -m app.seed_db
 
 Use `folium-postgres` for direct database inspection. Direct host commands are
 development fallbacks, not the standard operational path.
+
+The chart-review worker calls the summarization service and uses the shared
+local model configuration. See the [local model artifact](services/summarize/local-model.md)
+for the verified local runtime baseline.
 
 ## Bounded History Retrieval
 
