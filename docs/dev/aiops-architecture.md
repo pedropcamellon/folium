@@ -1,4 +1,4 @@
-# Folium AIOps Architecture
+# AIOps Architecture
 
 ## Purpose
 

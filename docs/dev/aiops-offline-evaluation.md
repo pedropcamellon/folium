@@ -1,4 +1,4 @@
-# Folium Offline Evaluation
+# Offline Evaluation
 
 ## Purpose
 

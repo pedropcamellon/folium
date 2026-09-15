@@ -1,4 +1,4 @@
-# Folium Online Evaluation
+# Online Evaluation
 
 ## Purpose
 
