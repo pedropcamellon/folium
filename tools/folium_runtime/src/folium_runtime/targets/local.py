@@ -217,16 +217,18 @@ def service_states() -> dict[str, str]:
     }
 
 
-def tail_development_logs(selected_services: list[str]) -> int:
-    services = [
+def log_services(selected_services: list[str]) -> list[str]:
+    if not selected_services:
+        return sorted(DEVELOPMENT_LOG_SERVICES)
+    development_services = [
         service for service in selected_services if service in DEVELOPMENT_LOG_SERVICES
     ]
-    if not selected_services:
-        services = sorted(DEVELOPMENT_LOG_SERVICES)
-    if not services:
-        ui.notice("No selected development services have logs to follow.")
-        return 0
-    ui.notice("Following development container logs. Press Ctrl-C to stop tailing.")
+    return development_services or selected_services
+
+
+def tail_development_logs(selected_services: list[str]) -> int:
+    services = log_services(selected_services)
+    ui.notice("Following selected container logs. Press Ctrl-C to stop tailing.")
     try:
         return run(
             [*COMPOSE_COMMAND, "logs", "--follow", "--tail", "100", *services],
@@ -287,11 +289,23 @@ def start(
             )
     selected_services = services or []
     if watch:
+        attached_services = log_services(selected_services)
         ui.notice(
             "Starting selected services in Compose watch mode. Press Ctrl-C to stop."
         )
         return run(
-            [*COMPOSE_COMMAND, "up", "--watch", "--build", *selected_services],
+            [
+                *COMPOSE_COMMAND,
+                "up",
+                "--watch",
+                "--build",
+                *(
+                    attachment
+                    for service in attached_services
+                    for attachment in ("--attach", service)
+                ),
+                *selected_services,
+            ],
             stream=True,
         ).returncode
     build_targets = selected_services if rebuild else build_services or []
