@@ -4,7 +4,7 @@ Folium is an on-prem-first engineering sandbox for synthetic, reviewable
 clinical chart-support workflows. It is not a complete EHR or a generic
 clinical-document SaaS product.
 
-[Read the documentation](https://pedropcamellon.github.io/folium/docs/)
+[Read the documentation](https://pedropcamellon.github.io/folium/)
 
 ## Product boundary
 
@@ -58,6 +58,6 @@ against real patient data or a production database.
 - `tools/folium_runtime/`: local runtime command
 - `docs/`: published user and developer documentation
 
-Start with the [developer guide](https://pedropcamellon.github.io/folium/docs/dev/)
-for local operations and extension boundaries. Start with the [user guide](https://pedropcamellon.github.io/folium/docs/user-guide/)
+Start with the [developer guide](https://pedropcamellon.github.io/folium/dev/)
+for local operations and extension boundaries. Start with the [user guide](https://pedropcamellon.github.io/folium/user-guide/)
 for supported synthetic workflows.
