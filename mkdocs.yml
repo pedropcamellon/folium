@@ -43,7 +43,7 @@ strict: true
 
 nav:
   - folium: README.md
-  - Workflows: user-guide/
+  - Help Center: user-guide/
   - Developers: dev/
 
 extra:
