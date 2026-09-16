@@ -1,4 +1,4 @@
-# Workflows
+# Help Center
 
 These guides are for people using folium day to day. Whether you are catching up
 on a patient's recent encounter notes, checking a voice-note transcript, or
