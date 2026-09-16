@@ -2,14 +2,13 @@
 
 ![folium](frontend/public/banner.png)
 
-Folium is a modern clinical workflow platform built to reduce administrative
-burden and help care teams focus on individualized, clinician-led care. It
-combines clear workflow design, reviewable operations, and an on-prem-first
-deployment model so teams retain control over their environment and data
-boundaries.
+Folium is an in-progress personal engineering sandbox. It explores how clearer,
+reviewable clinical-record workflows might reduce administrative burden so care
+teams can spend more time on thoughtful, individualized, clinician-led care.
 
-Folium is not a complete EHR. It focuses on practical clinical-record workflows
-that are easier to operate, validate, and extend responsibly.
+It is not a complete EHR or a production clinical system. The current work
+focuses on practical workflow experiments that are easier to operate, validate,
+and extend responsibly.
 
 ## Explore Folium
 

@@ -1,25 +1,14 @@
 ![Folium](assets/banner.png){ .folium-banner }
 
-# Modern clinical workflows, built for control
+# Modern clinical workflows
 
-Folium helps teams run clear, reviewable clinical-record workflows without
-turning day-to-day operations into a sprawling system project. Its on-prem-first
-architecture keeps security, data boundaries, and operational control in view
-from the start.
+Folium is an in-progress personal engineering sandbox. It explores how clearer,
+reviewable clinical-record workflows might reduce administrative burden so care
+teams can spend more time on thoughtful, individualized, clinician-led care.
 
-Folium is not a complete EHR. It focuses on practical clinical workflows that
-are easier to operate, validate, and extend responsibly.
-
-## Mission
-
-Reduce administrative burden so care teams can devote more time to thoughtful,
-individualized, clinician-led care.
-
-## Vision
-
-Make modern clinical operations easier to run: secure by design, flexible in
-where they are deployed, and clear enough that every workflow remains
-reviewable as the platform grows.
+It is not a complete EHR or a production clinical system. The current work
+focuses on practical workflow experiments that are easier to operate, validate,
+and extend responsibly.
 
 ## Designed for how teams operate
 
