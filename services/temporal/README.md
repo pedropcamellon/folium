@@ -1,21 +1,17 @@
-# Temporal Infrastructure
+# Temporal infrastructure
 
 Shared Temporal server infrastructure for local development and testing.
 
-## Quick Start
+## Run locally
 
-```powershell
-# Start shared PostgreSQL first
-cd ../..
-docker compose -f docker-compose.database.yml up -d
+Start the supported local stack from the repository root:
 
-# Start Temporal infrastructure
-cd services/temporal
-docker compose up
-
-# Access Temporal UI
-Start http://localhost:8233
+```bash
+uv run folium
 ```
+
+See the [local runtime guide](../../docs/dev/local-development.md) for
+prerequisites and service controls.
 
 ## Architecture
 
@@ -30,15 +26,14 @@ Temporal uses a dedicated PostgreSQL database (`folium-temporal-postgres`) separ
 
 ## Usage Patterns
 
-### Starting Temporal Infrastructure
+### Manual fallback
 
 ```bash
-# From project root
 docker compose up temporal temporal-ui -d
-
-# Or rebuild if config changed
-docker compose up temporal temporal-ui --build -d
 ```
+
+Use this only to troubleshoot Temporal infrastructure outside the normal local
+runner flow.
 
 ### Checking Temporal Health
 
@@ -92,7 +87,7 @@ Copy `.env.example` to `.env` and customize:
 cp .env.example .env
 ```
 
-Default configuration assumes the shared Folium PostgreSQL container is running on the `south-drift-network` Docker network.
+Default configuration assumes the shared Folium PostgreSQL container is running on the `folium-network` Docker network.
 
 ### Connecting Workers
 

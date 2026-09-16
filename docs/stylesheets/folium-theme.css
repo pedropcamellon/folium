@@ -71,3 +71,14 @@ a {
 .dark a {
   color: oklch(0.809 0.105 251.813);
 }
+
+.folium-banner {
+  display: block;
+  width: min(22rem, 100%);
+  height: auto;
+  margin: 0 0 2rem;
+}
+
+header a[href$="/folium/"] span.size-8 {
+  display: none;
+}

@@ -1,59 +1,48 @@
-# Folium Documentation
+![Folium](assets/banner.png){ .folium-banner }
 
-Folium is an on-prem-first engineering sandbox for synthetic, reviewable
-clinical chart-support workflows. It is not a complete EHR or a generic
-document-processing SaaS.
+# Modern clinical workflows
 
-This documentation has two lanes:
+Folium is an in-progress personal engineering sandbox. It explores how clearer,
+reviewable clinical-record workflows might reduce administrative burden so care
+teams can spend more time on thoughtful, individualized, clinician-led care.
 
-- **[User guide](user-guide/index.md)**: supported, task-focused workflows for
-  synthetic patients, interactions, voice-note processing, and clinician-reviewed
-  chart-review drafts.
-- **[Developer guide](dev/index.md)**: local runtime, service contracts,
-  validation, offline evaluation, MLflow evidence, Temporal audit, observability,
-  and safe extension practices.
+It is not a complete EHR or a production clinical system. The current work
+focuses on practical workflow experiments that are easier to operate, validate,
+and extend responsibly.
 
-## Implemented agentic lane
+## Designed for how teams operate
 
-```text
-synthetic context -> bounded draft agent -> structured validation
-  -> offline evaluation -> MLflow evidence -> Temporal audit -> human review
-```
+**Control the data boundary**
 
-The output is draft support only. Folium does not support real patient data,
-diagnosis, treatment recommendations, or autonomous action.
+Run Folium in your own environment when sovereignty, network constraints, or
+operational control matter most.
 
-## Planned work
+**Keep work reviewable**
 
-Broader retrieval, confidence calibration, dedicated local serving performance,
-Azure/AWS providers, and cloud deployment are planned until implementation and
-validation evidence exists. They are not supported user workflows.
+Validation, evaluation evidence, and workflow audit context support clear
+human review rather than opaque automation.
 
-## Local entry point
+**Evolve without platform sprawl**
 
-From the repository root:
+Focused services can scale for their own workload while stable shared contracts
+keep the platform coherent.
 
-- [AIOps Architecture](dev/aiops-architecture.md) - Shared AIOps ownership
-  boundaries and package direction
-- [Offline Evaluation](dev/aiops-offline-evaluation.md) - Pre-release staging
-  qualification, evidence, gates, and performance baselines
-- [Online Evaluation](dev/aiops-online-evaluation.md) - Asynchronous served
-  model observation, delayed labels, shadow, and canary policy
-- [Chart-Review Evaluation](dev/chart-review-evaluation.md) - Synthetic
-  encounter benchmark, workflow protocol, trace, and deterministic rubric
-- [Chart-Review Experiments](dev/chart-review-experiments.md) - Immutable
-  evaluation setups and durable outcome summaries
-- [Chart Review Agent Lessons](dev/chart-review-agent.md) - Local operations and bounded retrieval constraints
-- [Local LLM Build Compatibility](dev/local-llm-builds.md) - A Linux ARM build
-  lesson and the portable local-summarizer default
-- [Clinical Data Model](dev/clinical-data-model.md) - Typed clinical-record
-  relationships, migration conventions, and deferred scope
-- [Clinical Data Migration](dev/clinical-data-migration.md) - Retired-record
-  mapping and synthetic development-data reset procedure
+## Start here
+
+- [Explore supported workflows](user-guide/index.md)
+- [Understand the platform architecture](dev/architecture/overview.md)
+- [Choose a deployment model](dev/architecture/deployment-modes.md)
+
+## For builders
+
+Folium provides a supported local path for development and evaluation. Start
+with the [developer guide](dev/index.md), then run the local runtime from the
+repository root:
 
 ```bash
 uv run folium
 ```
 
-The local runtime documentation covers prerequisites, Compose services, and
-synthetic-data safeguards.
+Use only synthetic data in local development and evaluation. Hosted Azure and
+AWS deployments are planned configuration targets, not current product
+capabilities.

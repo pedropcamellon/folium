@@ -1,63 +1,53 @@
-# Folium
+# folium
 
-Folium is an on-prem-first engineering sandbox for synthetic, reviewable
-clinical chart-support workflows. It is not a complete EHR or a generic
-clinical-document SaaS product.
+![folium](frontend/public/banner.png)
 
-[Read the documentation](https://pedropcamellon.github.io/folium/)
+Folium is an in-progress personal engineering sandbox. It explores how clearer,
+reviewable clinical-record workflows might reduce administrative burden so care
+teams can spend more time on thoughtful, individualized, clinician-led care.
 
-## Product boundary
+It is not a complete EHR or a production clinical system. The current work
+focuses on practical workflow experiments that are easier to operate, validate,
+and extend responsibly.
 
-The implemented lane is:
+## Explore Folium
 
-```text
-synthetic context -> bounded draft agent -> structured validation
-  -> offline evaluation -> MLflow evidence -> Temporal audit -> human review
-```
+- [Live documentation](https://pedropcamellon.github.io/folium/)
+- [Supported workflows](https://pedropcamellon.github.io/folium/user-guide/)
+- [Platform architecture](https://pedropcamellon.github.io/folium/dev/architecture/overview/)
+- [Deployment models](https://pedropcamellon.github.io/folium/dev/architecture/deployment-modes/)
+- [Developer guide](https://pedropcamellon.github.io/folium/dev/)
 
-Folium provides draft support only. It does not support real patient data,
-diagnosis, treatment recommendations, or autonomous action. Broader retrieval,
-confidence calibration, dedicated local serving performance, Azure/AWS providers,
-and cloud deployment are planned work, not current capabilities.
+## Platform areas
 
-## Local runtime
+- **Clinical workflows:** patient records, interactions, voice notes, and
+  review surfaces designed for focused day-to-day work.
+- **Secure operations:** on-prem-first deployment, explicit data boundaries,
+  typed validation, and auditable workflow execution.
+- **Focused services:** transcription and summarization workloads can evolve
+  and scale independently from interactive application workflows.
+- **Evidence and review:** evaluation, MLflow evidence, and Temporal audit
+  context support informed human review.
 
-The supported development path uses Docker Compose and the root runtime package.
-It validates Docker and rendered Compose configuration before starting services.
+## Planned capabilities
+
+- A free, fixture-only static frontend demonstration.
+- Hosted full-stack deployment, beginning with Azure and followed by AWS.
+- Broader retrieval, confidence calibration, and dedicated local-serving
+  performance work.
+
+Planned capabilities are not current product features. Folium does not support
+clinical diagnosis, treatment recommendations, autonomous action, or real
+patient data in its local development and evaluation workflow.
+
+## Local development
+
+Folium's supported development path uses Docker Compose and the root runtime
+command:
 
 ```bash
 uv run folium
-uv run folium status
-uv run folium start --rebuild --recreate
-uv run folium down
 ```
 
-The default target is local. Model download is opt-in and requires a verified
-GGUF artifact configured in `tools/folium_runtime/src/folium_runtime/model-artifact.toml`.
-
-## Development checks
-
-Run backend maintenance commands through the running backend container so the
-configured network and environment are preserved:
-
-```bash
-docker compose exec -T folium-backend python -m app.clear_data
-docker compose exec -T folium-backend python -m app.seed_db
-docker compose exec -T folium-backend pytest tests
-```
-
-These reset and seed commands are for synthetic local data only. Do not run them
-against real patient data or a production database.
-
-## Repository shape
-
-- `backend/`: FastAPI API, typed contracts, persistence, and workflow orchestration
-- `frontend/`: Next.js application and user-facing review surfaces
-- `packages/folium-core/`: stable shared contracts and pure primitives
-- `services/`: focused transcription, voice-note, summarization, and chart-review services
-- `tools/folium_runtime/`: local runtime command
-- `docs/`: published user and developer documentation
-
-Start with the [developer guide](https://pedropcamellon.github.io/folium/dev/)
-for local operations and extension boundaries. Start with the [user guide](https://pedropcamellon.github.io/folium/user-guide/)
-for supported synthetic workflows.
+See the [local runtime guide](https://pedropcamellon.github.io/folium/dev/local-development/)
+for prerequisites, service controls, and synthetic-data safeguards.

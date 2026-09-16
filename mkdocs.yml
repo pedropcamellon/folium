@@ -1,5 +1,5 @@
-site_name: Folium Documentation
-site_description: Local-first documentation for Folium's synthetic, reviewable chart-support workflows.
+site_name: folium
+site_description: A modern clinical workflow platform that reduces administrative burden and helps care teams focus on individualized, clinician-led care.
 site_url: https://pedropcamellon.github.io/folium/
 repo_url: https://github.com/pedropcamellon/folium
 repo_name: pedropcamellon/folium
@@ -8,6 +8,8 @@ edit_uri: edit/main/docs/
 theme:
   name: shadcn
   language: en
+  # logo: assets/logo-icon.png
+  favicon: assets/favicon-32x32.png
   accent: "oklch(0.488 0.243 264.376)"
   show_stargazers: false
   features:
@@ -35,34 +37,14 @@ markdown_extensions:
 
 plugins:
   - search
+  - literate-nav
 
 strict: true
 
 nav:
-  - Home: README.md
-  - User guide:
-      - Overview: user-guide/index.md
-      - Synthetic patients and interactions: user-guide/patients-and-interactions.md
-      - Voice-note processing: user-guide/voice-notes.md
-      - Chart-review drafts: user-guide/chart-review.md
-      - Lifecycle, citations, and review flags: user-guide/lifecycle-citations-and-flags.md
-  - Developer guide:
-      - Overview: dev/index.md
-      - AIOps architecture: dev/aiops-architecture.md
-      - Offline evaluation: dev/aiops-offline-evaluation.md
-      - Online evaluation: dev/aiops-online-evaluation.md
-      - Local Docker runtime: dev/local-development.md
-      - Service and contract boundaries: dev/architecture-and-contracts.md
-      - Bounded chart-review agent: dev/chart-review-agent.md
-      - Chart-review evaluation: dev/chart-review-evaluation.md
-      - Chart-review experiments: dev/chart-review-experiments.md
-      - Validation and offline evaluation: dev/validation-and-evals.md
-      - MLflow evidence and Temporal audit: dev/mlflow-and-temporal.md
-      - Observability: dev/observability.md
-      - Safe extension: dev/safe-extension.md
-      - Clinical data model: dev/clinical-data-model.md
-      - Clinical data migration: dev/clinical-data-migration.md
-      - Local LLM build compatibility: dev/local-llm-builds.md
+  - folium: README.md
+  - Help Center: user-guide/
+  - Developers: dev/
 
 extra:
   generator: false
