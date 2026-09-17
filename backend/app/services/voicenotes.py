@@ -108,10 +108,9 @@ class VoiceNotesService:
         except RPCError as exc:
             if exc.status != RPCStatusCode.NOT_FOUND:
                 raise
-            logger.warning(
+            logger.exception(
                 "Could not cancel previous voice note workflow; it may already be finished",
                 extra={"workflow_id": workflow_id, "run_id": run_id},
-                exc_info=True,
             )
 
     async def get_voicenotes_state(
