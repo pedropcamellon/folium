@@ -33,7 +33,15 @@ Run options:
 - List scenarios: `uv run ./main.py --list`
 - Run one scenario: `uv run ./main.py --scenario provider-voice-note`
 - Run summary only: `uv run ./main.py --scenario provider-summary`
+- Run real voice-note re-upload storage verification:
+  `FOLIUM_MINIO_ACCESS_KEY=... FOLIUM_MINIO_SECRET_KEY=... uv run ./main.py --scenario provider-voice-note-reupload`
 - Run multiple scenarios: `uv run ./main.py --scenario provider-patient-crud --scenario patient-portal`
 - Use env selection instead of flags: set `FOLIUM_E2E_SCENARIOS=provider-voice-note`
 
 Expected outcome: a quick pass/fail signal that role routing, session boundaries, and core provider CRUD interactions still work end to end.
+
+The `provider-voice-note-reupload` scenario uses the live backend and MinIO. It
+uploads two synthetic audio payloads to one encounter, verifies the replacement
+object exists, and asserts the prior object is absent. Set
+`FOLIUM_API_BASE_URL`, `FOLIUM_MINIO_ENDPOINT`, and `FOLIUM_MINIO_BUCKET` only
+when local defaults do not apply.

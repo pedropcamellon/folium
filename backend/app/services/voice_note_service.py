@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
@@ -20,6 +21,8 @@ from app.models.clinical import (
 from app.services.encounter_service import EncounterService
 from app.services.storage.base import ObjectStorageProvider
 from app.services.voicenotes import VoiceNotesService
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -49,6 +52,34 @@ class VoiceNoteService:
         content_type: str | None,
         audio_content: bytes,
     ) -> VoiceNoteUploadResponse:
+        encounter = await self.encounter_service.get_by_id(UUID(encounter_id))
+        existing_audio = encounter.audio_metadata or EncounterAudioMetadata()
+        existing_workflow = existing_audio.workflow or VoiceNoteWorkflowMetadata()
+
+        if existing_workflow.workflow_id:
+            logger.info(
+                "Cancelling previous voice note workflow before re-upload",
+                extra={
+                    "encounter_id": encounter_id,
+                    "workflow_id": existing_workflow.workflow_id,
+                    "run_id": existing_workflow.run_id,
+                },
+            )
+            await self.workflow_service.cancel_workflow(
+                existing_workflow.workflow_id,
+                existing_workflow.run_id,
+            )
+
+        if existing_audio.storage_key:
+            logger.info(
+                "Deleting previous voice note audio before re-upload",
+                extra={
+                    "encounter_id": encounter_id,
+                    "storage_key": existing_audio.storage_key,
+                },
+            )
+            await self.storage_provider.delete(existing_audio.storage_key)
+
         storage_key = f"audio/{encounter_id}/{uuid4()}_{filename}"
         storage_url = await self.storage_provider.upload(
             key=storage_key,
@@ -162,13 +193,18 @@ class VoiceNoteService:
         if temporal_status == "completed":
             result = workflow_state.get("result") or {}
             status_value = VoiceNoteWorkflowStatus(result.get("status", "completed"))
-            encounter = await self._apply_workflow_result(encounter_id, workflow_state)
+            encounter = await self._apply_workflow_result(
+                encounter_id,
+                workflow_state,
+                workflow_id,
+                run_id,
+            )
         elif temporal_status in {"failed", "canceled", "terminated", "timed_out"}:
             status_value = VoiceNoteWorkflowStatus.FAILED
-            encounter = await self._mark_workflow_failed(
+            encounter = await self._mark_workflow_failed_if_current(
                 encounter_id,
-                audio_data,
-                workflow_metadata,
+                workflow_id,
+                run_id,
                 error_message,
             )
 
@@ -183,12 +219,22 @@ class VoiceNoteService:
             encounter=encounter,
         )
 
-    async def _apply_workflow_result(self, encounter_id: str, workflow_state: dict):
+    async def _apply_workflow_result(
+        self,
+        encounter_id: str,
+        workflow_state: dict,
+        expected_workflow_id: str,
+        expected_run_id: str | None,
+    ):
         encounter = await self.encounter_service.get_by_id(UUID(encounter_id))
         audio_data = encounter.audio_metadata or EncounterAudioMetadata()
         workflow_metadata = audio_data.workflow or VoiceNoteWorkflowMetadata()
 
-        if workflow_metadata.transcript_applied_at:
+        if (
+            workflow_metadata.workflow_id != expected_workflow_id
+            or workflow_metadata.run_id != expected_run_id
+            or workflow_metadata.transcript_applied_at
+        ):
             return encounter
 
         result = workflow_state.get("result") or {}
@@ -222,13 +268,23 @@ class VoiceNoteService:
 
         return encounter
 
-    async def _mark_workflow_failed(
+    async def _mark_workflow_failed_if_current(
         self,
         encounter_id: str,
-        audio_data: EncounterAudioMetadata,
-        workflow_metadata: VoiceNoteWorkflowMetadata,
+        expected_workflow_id: str,
+        expected_run_id: str | None,
         error_message: str | None,
     ):
+        encounter = await self.encounter_service.get_by_id(UUID(encounter_id))
+        audio_data = encounter.audio_metadata or EncounterAudioMetadata()
+        workflow_metadata = audio_data.workflow or VoiceNoteWorkflowMetadata()
+
+        if (
+            workflow_metadata.workflow_id != expected_workflow_id
+            or workflow_metadata.run_id != expected_run_id
+        ):
+            return encounter
+
         updated_audio_data = audio_data.model_copy(
             update={
                 "transcription_status": TranscriptionStatus.FAILED,

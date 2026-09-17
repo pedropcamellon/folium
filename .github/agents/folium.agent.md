@@ -27,6 +27,7 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 - Use typed approved blocks and versioned policies. Never arbitrary user code.
 - Do not claim HIPAA compliance.
 - Update user docs with approved work. Claims in docs require implemented, validated behavior.
+- For every modified Python file, run focused `ruff` and `ty` checks before completion. Report any errors or warnings and ask the user whether to fix them before making additional changes outside the approved slice.
 
 ## Read First
 

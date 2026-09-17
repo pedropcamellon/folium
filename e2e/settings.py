@@ -4,6 +4,13 @@ import os
 from urllib.parse import urlparse
 
 BASE_URL = os.getenv("FOLIUM_BASE_URL", "http://localhost:3000")
+API_BASE_URL = os.getenv("FOLIUM_API_BASE_URL", "http://localhost:8000").rstrip("/")
+MINIO_ENDPOINT = os.getenv("FOLIUM_MINIO_ENDPOINT", "http://localhost:9000")
+MINIO_BUCKET = os.getenv(
+    "FOLIUM_MINIO_BUCKET", os.getenv("STORAGE_BUCKET", "folium-dev")
+)
+MINIO_ACCESS_KEY = os.getenv("FOLIUM_MINIO_ACCESS_KEY", "")
+MINIO_SECRET_KEY = os.getenv("FOLIUM_MINIO_SECRET_KEY", "")
 HEADLESS = os.getenv("PLAYWRIGHT_HEADLESS", "false").lower() == "true"
 SLOW_MO_MS = int(os.getenv("PLAYWRIGHT_SLOW_MO_MS", "250"))
 PROVIDER_WAIT_MS = int(os.getenv("FOLIUM_PROVIDER_WAIT_MS", "3000"))

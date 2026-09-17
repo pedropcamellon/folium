@@ -10,6 +10,7 @@ from flows.provider_chart_review import run_provider_chart_review_flow
 from flows.provider_patient_crud import run_provider_patient_crud
 from flows.provider_summary import run_provider_summary_flow
 from flows.provider_voice_note import run_provider_voice_note_flow
+from flows.provider_voice_note_reupload import run_provider_voice_note_reupload_flow
 from playwright.sync_api import Page
 from settings import FAKE_TRANSCRIPT, PROVIDER_WAIT_MS
 
@@ -52,6 +53,11 @@ SCENARIOS: tuple[Scenario, ...] = (
         runner=lambda page, base_url, flow: run_provider_voice_note_flow(
             page, base_url, flow, FAKE_TRANSCRIPT
         ),
+    ),
+    Scenario(
+        name="provider-voice-note-reupload",
+        flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
+        runner=run_provider_voice_note_reupload_flow,
     ),
     Scenario(
         name="provider-summary",
