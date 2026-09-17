@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from io import BytesIO
 from typing import Any
+import wave
 
 import boto3
 from botocore.exceptions import ClientError
@@ -35,12 +37,12 @@ def run_provider_voice_note_reupload_flow(
     try:
         open_patient_history(page, flow, patient)
         encounter_id = create_encounter(page, flow, encounter_title)
-        first_upload = _upload_audio(page, encounter_id, b"first synthetic audio")
+        first_upload = _upload_audio(page, encounter_id, _silent_wav())
         first_storage_key = _storage_key(page, encounter_id)
         assert first_storage_key == first_upload["storageKey"]
         storage_client.head_object(Bucket=MINIO_BUCKET, Key=first_storage_key)
 
-        second_upload = _upload_audio(page, encounter_id, b"second synthetic audio")
+        second_upload = _upload_audio(page, encounter_id, _silent_wav())
         second_storage_key = _storage_key(page, encounter_id)
         assert second_storage_key == second_upload["storageKey"]
         assert second_storage_key != first_storage_key
@@ -62,8 +64,8 @@ def _upload_audio(page: Page, encounter_id: str, content: bytes) -> dict[str, st
         headers=_api_headers(page),
         multipart={
             "audio": {
-                "name": "voice-note.webm",
-                "mimeType": "audio/webm",
+                "name": "voice-note.wav",
+                "mimeType": "audio/wav",
                 "buffer": content,
             }
         },
@@ -107,6 +109,16 @@ def _api_headers(page: Page) -> dict[str, str]:
     if not isinstance(token, str):
         raise AssertionError("Provider login did not create an authentication token")
     return {"Authorization": f"Bearer {token}"}
+
+
+def _silent_wav() -> bytes:
+    with BytesIO() as audio_buffer:
+        with wave.open(audio_buffer, "wb") as wav_file:
+            wav_file.setnchannels(1)
+            wav_file.setsampwidth(2)
+            wav_file.setframerate(16_000)
+            wav_file.writeframes(b"\x00\x00" * 16_000)
+        return audio_buffer.getvalue()
 
 
 def _storage_client() -> Any:
