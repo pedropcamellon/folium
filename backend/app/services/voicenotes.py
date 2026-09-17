@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 from dataclasses import asdict, is_dataclass
 from datetime import timedelta
 from typing import Protocol, cast
@@ -14,9 +15,17 @@ from folium.core.voicenotes import (
     AudioReference,
     VoiceNotesInput,
 )
-from temporalio.client import Client, WorkflowExecutionStatus, WorkflowFailureError
+from temporalio.client import (
+    Client,
+    RPCError,
+    RPCStatusCode,
+    WorkflowExecutionStatus,
+    WorkflowFailureError,
+)
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class VoiceNoteSettings(Protocol):
@@ -86,6 +95,24 @@ class VoiceNotesService:
             "workflowId": handle.id,
             "runId": handle.result_run_id or handle.first_execution_run_id or handle.run_id or "",
         }
+
+    async def cancel_workflow(self, workflow_id: str, run_id: str | None = None) -> None:
+        try:
+            client = await self._get_client()
+            handle = client.get_workflow_handle(workflow_id, run_id=run_id or None)
+            await handle.cancel()
+            logger.info(
+                "Cancelled previous voice note workflow",
+                extra={"workflow_id": workflow_id, "run_id": run_id},
+            )
+        except RPCError as exc:
+            if exc.status != RPCStatusCode.NOT_FOUND:
+                raise
+            logger.warning(
+                "Could not cancel previous voice note workflow; it may already be finished",
+                extra={"workflow_id": workflow_id, "run_id": run_id},
+                exc_info=True,
+            )
 
     async def get_voicenotes_state(
         self,

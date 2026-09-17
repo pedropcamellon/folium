@@ -86,9 +86,13 @@ class EncounterRepository:
         if encounter is None:
             return None
 
-        for field, value in encounter_input.model_dump(exclude_unset=True).items():
+        update_data = encounter_input.model_dump(exclude_unset=True)
+        json_update_data = encounter_input.model_dump(exclude_unset=True, mode="json")
+        for field, value in update_data.items():
             if field in {"encounter_type", "purpose", "status"} and value is not None:
                 value = value.value
+            elif field in {"audio_metadata", "structured_summary"}:
+                value = json_update_data[field]
             setattr(encounter, field, value)
         await self.session.flush()
         return encounter
