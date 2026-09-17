@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import wave
 from io import BytesIO
 from typing import Any
-import wave
 
 import boto3
 from botocore.exceptions import ClientError
@@ -76,10 +76,10 @@ def _upload_audio(page: Page, encounter_id: str, content: bytes) -> dict[str, st
         )
     payload = response.json()
     if not isinstance(payload, dict):
-        raise AssertionError("Audio upload did not return an object")
+        raise TypeError("Audio upload did not return an object")
     storage_key = payload.get("storageKey")
     if not isinstance(storage_key, str):
-        raise AssertionError("Audio upload response did not include storageKey")
+        raise TypeError("Audio upload response did not include storageKey")
     return {"storageKey": storage_key}
 
 
@@ -94,20 +94,20 @@ def _storage_key(page: Page, encounter_id: str) -> str:
         )
     payload = response.json()
     if not isinstance(payload, dict):
-        raise AssertionError("Encounter fetch did not return an object")
+        raise TypeError("Encounter fetch did not return an object")
     audio_metadata = payload.get("audioMetadata")
     if not isinstance(audio_metadata, dict):
-        raise AssertionError("Encounter did not include audio metadata")
+        raise TypeError("Encounter did not include audio metadata")
     storage_key = audio_metadata.get("storageKey")
     if not isinstance(storage_key, str):
-        raise AssertionError("Encounter audio metadata did not include storageKey")
+        raise TypeError("Encounter audio metadata did not include storageKey")
     return storage_key
 
 
 def _api_headers(page: Page) -> dict[str, str]:
     token = page.evaluate("localStorage.getItem('auth_token')")
     if not isinstance(token, str):
-        raise AssertionError("Provider login did not create an authentication token")
+        raise TypeError("Provider login did not create an authentication token")
     return {"Authorization": f"Bearer {token}"}
 
 
