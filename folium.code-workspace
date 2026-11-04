@@ -1,13 +1,19 @@
 {
   "folders": [
     {
-      "name": "folium",
+      "name": "Folium EHR",
       "path": ".",
     },
     {
+      "name": "Folium Agents",
+      "path": "../folium-agents",
+    },
+    {
+      "name": "My Blog",
       "path": "../pedropcamellon.github.io",
     },
     {
+      "name": "Tasks",
       "path": "../tasks",
     },
   ],
