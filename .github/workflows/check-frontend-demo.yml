@@ -28,7 +28,11 @@ jobs:
         id: start-container
         run: docker run --detach --rm --publish 3000:3000 --name folium-frontend-demo-check folium-frontend-demo:check
       - name: Smoke-test production container
-        run: curl --fail --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:3000/
+        id: smoke-test
+        run: curl --fail --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
+      - name: Show container logs after smoke-test failure
+        if: failure() && steps.start-container.outcome == 'success' && steps.smoke-test.outcome == 'failure'
+        run: docker logs folium-frontend-demo-check
       - name: Stop production container
         if: always() && steps.start-container.outcome == 'success'
         run: docker stop folium-frontend-demo-check
