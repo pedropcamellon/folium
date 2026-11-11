@@ -51,3 +51,37 @@ uv run folium
 
 See the [local runtime guide](https://pedropcamellon.github.io/folium/dev/local-development/)
 for prerequisites, service controls, and synthetic-data safeguards.
+
+## Frontend Demo
+
+The frontend can run in mock mode for a hosted showcase without a backend, database, or external API. Mock mode returns synthetic data in the browser and does not send requests to the Folium backend.
+
+## Build
+
+Set `NEXT_PUBLIC_API_MODE=mock` in the frontend build environment. The setting is embedded at build time. Then build and run the Next.js app:
+
+```bash
+cd frontend
+NEXT_PUBLIC_API_MODE=mock pnpm exec next build --no-lint
+pnpm start
+```
+
+The no-lint flag is required while existing ESLint violations elsewhere in the frontend are being addressed. Next.js still performs TypeScript validation during this build.
+
+In mock mode, the demo provider is signed in automatically. The patient and clinical records are synthetic, in-memory examples; changes made during a session are not persisted.
+
+## Real Backend Mode
+
+Omit `NEXT_PUBLIC_API_MODE` or set it to `real`, and set `NEXT_PUBLIC_API_URL` to the FastAPI backend URL. Real mode continues to use the configured backend services.
+
+## Azure demo deployment
+
+See the [deployment guide](docs/deployment.md) for the isolated Azure Static
+Web Apps demo target, Terraform provisioning, GitHub Actions, and teardown.
+
+## Scope and Safety
+
+The mock showcase is for product demonstration and development only. It is
+not a clinical system and must not be used with real patient information. Mock
+data is synthetic, and mock mode does not provide production authentication,
+persistence, or clinical decision support.

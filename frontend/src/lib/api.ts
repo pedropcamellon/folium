@@ -2,9 +2,13 @@
  * Central API configuration for FastAPI backend
  * Direct calls to FastAPI (no BFF middleware)
  */
-import { getAuthToken } from "./auth-api";
+import { clearAuthToken, getAuthToken } from "./auth-token";
+import { IS_MOCK_API } from "./api-mode";
+import { mockApiRequest } from "./mock-api";
 
-export const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+export const FASTAPI_BASE_URL = IS_MOCK_API
+    ? ""
+    : process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * API endpoints configuration
@@ -86,9 +90,14 @@ export const fetcher = async <T = unknown>(url: string): Promise<T> => {
  */
 export async function apiRequest(
     url: string,
-    init: RequestInit = {}
+    init: RequestInit = {},
+    options: { authenticated?: boolean } = {}
 ): Promise<Response> {
-    const token = getAuthToken();
+    if (IS_MOCK_API) {
+        return mockApiRequest(url, init);
+    }
+
+    const token = options.authenticated === false ? null : getAuthToken();
     const headers = new Headers(init.headers);
 
     if (token) {
@@ -100,9 +109,66 @@ export async function apiRequest(
         headers,
     });
 
-    await handleUnauthorized(res);
+    if (options.authenticated !== false) {
+        handleUnauthorized(res);
+    }
 
     return res;
+}
+
+export async function apiUpload<T>(
+    url: string,
+    formData: FormData,
+    onProgress?: (progress: number) => void
+): Promise<T> {
+    if (IS_MOCK_API) {
+        const response = await apiRequest(url, {
+            method: "POST",
+            body: formData,
+        });
+        if (!response.ok) {
+            throw new Error(`Upload failed with status ${response.status}`);
+        }
+        onProgress?.(100);
+        return response.json();
+    }
+
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        const token = getAuthToken();
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable && onProgress) {
+                onProgress(Math.round((event.loaded / event.total) * 100));
+            }
+        };
+
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    resolve(JSON.parse(xhr.responseText) as T);
+                } catch {
+                    reject(new Error("Failed to parse response"));
+                }
+                return;
+            }
+
+            if (xhr.status === 401 && typeof window !== "undefined") {
+                clearAuthToken();
+                window.location.href = "/login";
+            }
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+        };
+
+        xhr.onerror = () => reject(new Error("Network error during upload"));
+        xhr.onabort = () => reject(new Error("Upload aborted"));
+
+        xhr.open("POST", url);
+        if (token) {
+            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+        }
+        xhr.send(formData);
+    });
 }
 
 /**
@@ -122,9 +188,8 @@ export async function apiJson<T = unknown>(
     return res.json();
 }
 
-async function handleUnauthorized(response: Response): Promise<void> {
+function handleUnauthorized(response: Response): void {
     if (response.status === 401 && typeof window !== "undefined") {
-        const { clearAuthToken } = await import("./auth-api");
         clearAuthToken();
         window.location.href = "/login";
     }
