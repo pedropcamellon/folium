@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths-ignore:
-      - DEPLOYMENT.md
+      - docs/deployment.md
   pull_request:
     types:
       - opened
@@ -48,7 +48,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("node:fs");
-          const file = "DEPLOYMENT.md";
+          const file = "docs/deployment.md";
           const url = process.env.DEMO_URL;
           if (!url || !/^https:\/\/[a-z0-9-]+\.azurestaticapps\.net\/?$/i.test(url)) {
             throw new Error("Azure Static Web Apps did not return a valid production URL.");
@@ -59,7 +59,7 @@ jobs:
             `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`
           );
           if (updated === content) {
-            throw new Error("Could not find the demo URL markers in DEPLOYMENT.md.");
+            throw new Error("Could not find the demo URL markers in docs/deployment.md.");
           }
           fs.writeFileSync(file, updated);
           NODE
@@ -67,13 +67,13 @@ jobs:
       - name: Commit demo URL update
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          if git diff --quiet -- DEPLOYMENT.md; then
+          if git diff --quiet -- docs/deployment.md; then
             echo "Demo URL is already current."
             exit 0
           fi
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add DEPLOYMENT.md
+          git add docs/deployment.md
           git commit -m "docs: update deployed demo URL"
           git push
 
