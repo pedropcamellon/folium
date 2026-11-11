@@ -3,8 +3,7 @@ import {
     ClinicalDocumentCategory,
 } from "@/types/clinicalDocument";
 
-import { API_ENDPOINTS, apiJson, apiRequest } from "@/lib/api";
-import { getAuthToken } from "@/lib/auth-api";
+import { API_ENDPOINTS, apiJson, apiRequest, apiUpload } from "@/lib/api";
 
 export async function listClinicalDocuments(
     patientId: string
@@ -45,41 +44,9 @@ export async function uploadDocument(
     formData.append("category", category);
     formData.append("title", title);
 
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const token = getAuthToken();
-
-        // Track upload progress
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && onProgress) {
-                const progress = Math.round((e.loaded / e.total) * 100);
-                onProgress(progress);
-            }
-        };
-
-        // Handle successful response
-        xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                    const response = JSON.parse(xhr.responseText);
-                    resolve(response);
-                } catch (error) {
-                    reject(new Error("Failed to parse response"));
-                }
-            } else {
-                reject(new Error(`Upload failed with status ${xhr.status}`));
-            }
-        };
-
-        // Handle errors
-        xhr.onerror = () => reject(new Error("Network error during upload"));
-        xhr.onabort = () => reject(new Error("Upload aborted"));
-
-        // Send request
-        xhr.open("POST", API_ENDPOINTS.documentUpload);
-        if (token) {
-            xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-        }
-        xhr.send(formData);
-    });
+    return apiUpload<ClinicalDocument>(
+        API_ENDPOINTS.documentUpload,
+        formData,
+        onProgress
+    );
 }
