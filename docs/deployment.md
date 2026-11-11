@@ -24,6 +24,11 @@ Static Web Apps modules. It creates only a dedicated resource group and a
 Free-tier Static Web App. Do not apply `infrastructure/azure/`, which
 provisions the full-stack application and paid services.
 
+The demo state uses the existing `southdrifttfstate` storage account and the
+separate `folium-demo-static-web-app.tfstate` key in the `tfstate` container.
+Azure CLI authentication is used for state access. The signed-in identity
+needs the **Storage Blob Data Contributor** role on the state container.
+
 Authenticate with Azure CLI, then provision the isolated demo target:
 
 ```bash
