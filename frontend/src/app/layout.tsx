@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { AuthProvider } from "@/contexts/AuthContext";
-import { Analytics } from "@vercel/analytics/next";
+import { IS_MOCK_API } from "@/lib/api-mode";
 
 import "./globals.css";
 
@@ -37,9 +37,12 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
+                {IS_MOCK_API && (
+                    <div className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-950">
+                        Demo mode: synthetic data only; no backend connected.
+                    </div>
+                )}
                 <AuthProvider>{children}</AuthProvider>
-
-                <Analytics />
             </body>
         </html>
     );

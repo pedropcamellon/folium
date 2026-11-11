@@ -100,8 +100,7 @@ Write-Host "terraform-state" -ForegroundColor Gray
 Write-Host "`nNext Steps:" -ForegroundColor Cyan
 Write-Host "1. Add the above secrets to your GitHub repository settings" -ForegroundColor Yellow
 Write-Host "2. Update the Terraform backend configuration in infra/backend.tf" -ForegroundColor Yellow
-Write-Host "3. Set up Vercel project and add Vercel secrets to GitHub" -ForegroundColor Yellow
-Write-Host "4. Push your code to trigger the deployment workflows" -ForegroundColor Yellow
+Write-Host "3. Push your code to trigger the deployment workflows" -ForegroundColor Yellow
 
 Write-Host "`nTerraform Backend Configuration:" -ForegroundColor Cyan
 Write-Host "Update infra/backend.tf with:" -ForegroundColor Yellow
