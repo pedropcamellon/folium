@@ -22,6 +22,8 @@ class LocalInferenceEngine:
         temperature: float | None = None,
         max_tokens: int | None = None,
         response_format: dict[str, str] | None = None,
+        top_p: float = 0.9,
+        repeat_penalty: float = 1.1,
     ) -> dict[str, Any]:
         model = self._get_model()
         return model.create_chat_completion(
@@ -30,8 +32,8 @@ class LocalInferenceEngine:
             if temperature is not None
             else settings.local_temperature,
             max_tokens=max_tokens or settings.local_max_tokens,
-            top_p=0.9,
-            repeat_penalty=1.1,
+            top_p=top_p,
+            repeat_penalty=repeat_penalty,
             response_format=response_format,
         )
 
