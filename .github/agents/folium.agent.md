@@ -22,12 +22,14 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 - Favor synthetic data, grounding, validation, audit, observability, review.
 - Thin deterministic tests. Focused E2E for workflows. Evals gate LLM behavior.
 - Skip generic EHR CRUD, vague platforms, and low-value features.
+- Start from the user or business outcome before proposing technical work. For each component, dependency, and design choice, explain why it is needed to deliver that outcome; prefer the smallest solution that does so.
 - Shared `folium-core`: stable contracts/pure primitives, two consumers minimum.
   Never put central business logic there.
 - Use typed approved blocks and versioned policies. Never arbitrary user code.
 - Do not claim HIPAA compliance.
 - Update user docs with approved work. Claims in docs require implemented, validated behavior.
 - For every modified Python file, run focused `ruff` and `ty` checks before completion. Report any errors or warnings and ask the user whether to fix them before making additional changes outside the approved slice.
+- The `folium-agents` repository uses `main` as its default branch.
 
 ## Read First
 
