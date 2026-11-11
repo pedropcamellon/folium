@@ -58,7 +58,7 @@ Configure these Environment variables in GitHub:
 
 - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` for an
   Azure identity with a federated credential for
-  `repo:pedropcamellon/folium:environment:azure-demo`.
+  `repo:pedropcamellon@83567517/folium@1174567174:environment:azure-demo`.
 - `AZURE_DEMO_STATIC_WEB_APP_NAME` for the globally unique app name.
 
 Grant that identity **Storage Blob Data Contributor** on the
@@ -83,6 +83,8 @@ In the `azure-demo` Environment settings, require reviewer approval for
 deployments. Configure the Azure app registration's federated credential with
 issuer `https://token.actions.githubusercontent.com` and audience
 `api://AzureADTokenExchange`; no client secret is needed.
+The repository is opted into GitHub's immutable OIDC subjects, so the owner
+and repository numeric IDs in the subject are required.
 
 Set the GitHub Actions deployment token without printing its value:
 
