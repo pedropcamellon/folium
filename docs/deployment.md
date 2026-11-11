@@ -43,6 +43,43 @@ The default resource group is `rg-folium-demo` in `East US 2`. The app name
 must be globally unique. Terraform tags resources with the application,
 environment, synthetic-data, and management metadata.
 
+## GitHub Actions Terraform plan and apply
+
+`.github/workflows/terraform-azure-demo.yml` validates Terraform on pull
+requests. Plan and apply run only through manual dispatch on `main`; apply
+requires `confirm_apply=true` and approval in the protected `azure-demo`
+GitHub Environment.
+
+Configure these Environment variables in GitHub:
+
+- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID` for an
+  Azure identity with a federated credential for
+  `repo:pedropcamellon/folium:environment:azure-demo`.
+- `AZURE_DEMO_STATIC_WEB_APP_NAME` for the globally unique app name.
+
+Grant that identity **Storage Blob Data Contributor** on the
+`foliumdemotfstate/tfstate` container and **Contributor** only on
+`rg-folium-demo`. For the first run, create the resource group with an
+authorized operator identity and import it into the demo state before using
+the GitHub workflow; do not grant the workflow subscription-wide Contributor
+just to create the group.
+
+```bash
+az group create --name rg-folium-demo --location "East US 2"
+cd infrastructure/azure/demo
+terraform init
+terraform import \
+  -var="subscription_id=$(az account show --query id --output tsv)" \
+  -var="static_web_app_name=<globally-unique-name>" \
+  module.resource_group.azurerm_resource_group.this \
+  "/subscriptions/$(az account show --query id --output tsv)/resourceGroups/rg-folium-demo"
+```
+
+In the `azure-demo` Environment settings, require reviewer approval for
+deployments. Configure the Azure app registration's federated credential with
+issuer `https://token.actions.githubusercontent.com` and audience
+`api://AzureADTokenExchange`; no client secret is needed.
+
 Set the GitHub Actions deployment token without printing its value:
 
 ```bash
