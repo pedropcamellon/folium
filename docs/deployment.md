@@ -14,8 +14,11 @@ Pending first successful deployment.
 <!-- demo-url:end -->
 
 The GitHub Actions workflow deploys pushes to `main` and creates pull-request
-preview deployments. It sets `NEXT_PUBLIC_API_MODE=mock`. URL-only commits to
-this guide do not retrigger deployment.
+preview deployments when `AZURE_STATIC_WEB_APPS_API_TOKEN` is configured. A
+pull-request deployment is skipped with a notice when the token is unavailable;
+production deployments still fail rather than silently skipping. It sets
+`NEXT_PUBLIC_API_MODE=mock`. URL-only commits to this guide do not retrigger
+deployment.
 
 ## Provisioning
 
