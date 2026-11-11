@@ -33,8 +33,10 @@ FROM dependencies AS builder
 COPY . .
 
 # Build Next.js app
+ARG NEXT_PUBLIC_API_MODE=mock
+ENV NEXT_PUBLIC_API_MODE=${NEXT_PUBLIC_API_MODE}
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build
+RUN pnpm build --no-lint
 
 # Production stage
 FROM base AS production

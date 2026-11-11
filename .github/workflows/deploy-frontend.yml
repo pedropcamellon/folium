@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.event_name == 'push' || github.event.action != 'closed'
+    if: vars.AZURE_DEMO_APPSERVICE_ENABLED != 'true' && (github.event_name == 'push' || github.event.action != 'closed')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

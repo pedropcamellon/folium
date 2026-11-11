@@ -20,6 +20,11 @@ on:
         type: boolean
         default: false
         required: true
+      enable_app_service_demo:
+        description: Include the paid Linux B1 container environment in the plan
+        type: boolean
+        default: false
+        required: true
 
 permissions:
   contents: read
@@ -63,6 +68,7 @@ jobs:
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       TF_VAR_static_web_app_name: ${{ vars.AZURE_DEMO_STATIC_WEB_APP_NAME }}
+      TF_VAR_enable_app_service_demo: ${{ inputs.enable_app_service_demo }}
       TF_IN_AUTOMATION: "true"
     steps:
       - name: Checkout

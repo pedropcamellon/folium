@@ -25,3 +25,45 @@ module "static_web_app" {
   sku_size            = "Free"
   tags                = local.tags
 }
+
+resource "azurerm_service_plan" "container_demo" {
+  count = var.enable_app_service_demo ? 1 : 0
+
+  name                = var.app_service_plan_name
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  os_type             = "Linux"
+  sku_name            = "B1"
+  tags                = local.tags
+}
+
+resource "azurerm_linux_web_app" "container_demo" {
+  count = var.enable_app_service_demo ? 1 : 0
+
+  name                = var.app_service_name
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  service_plan_id     = azurerm_service_plan.container_demo[0].id
+  https_only          = true
+  tags                = local.tags
+
+  site_config {
+    always_on = true
+
+    application_stack {
+      docker_image_name   = var.container_image
+      docker_registry_url = "https://ghcr.io"
+    }
+  }
+
+  app_settings = {
+    WEBSITES_ENABLE_APP_SERVICE_STORAGE = "false"
+    WEBSITES_PORT                       = "3000"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      site_config[0].application_stack[0].docker_image_name
+    ]
+  }
+}

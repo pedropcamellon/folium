@@ -1,31 +1,40 @@
 # Deployment Guide
 
-## Azure Static Web Apps demo
+## Azure mock frontend demo
 
 The public frontend demo is deployed independently from the full-stack Azure
 environment. It uses synthetic data in mock mode and does not require a
 backend, database, or model-serving resources.
 
 Production demo URL (updated by GitHub Actions after each successful `main`
-deployment):
+deployment and HTTP smoke test):
 
 <!-- demo-url:start -->
 Pending first successful deployment.
 <!-- demo-url:end -->
 
-The GitHub Actions workflow deploys pushes to `main` and creates pull-request
-preview deployments when `AZURE_STATIC_WEB_APPS_API_TOKEN` is configured. A
-pull-request deployment is skipped with a notice when the token is unavailable;
-production deployments still fail rather than silently skipping. It sets
-`NEXT_PUBLIC_API_MODE=mock`. URL-only commits to this guide do not retrigger
-deployment.
+The current deployment remains on Azure Static Web Apps until the App Service
+container migration is provisioned and enabled. The container workflow builds
+and smoke-tests the production image on frontend changes, publishes the tested
+image to GHCR on `main`, and deploys its immutable digest only when
+`AZURE_DEMO_APPSERVICE_ENABLED=true` is configured in the `azure-demo`
+Environment. It updates this URL only after the deployed endpoint passes an
+HTTP smoke test. URL-only commits to this guide do not retrigger deployment.
+
+Before enabling App Service deployment, set the `folium-demo` GHCR package
+visibility to public so the Web App can pull the image without credentials.
+Configure the `azure-demo` Environment with its Azure OIDC variables and
+reviewer protection.
 
 ## Provisioning
 
 Terraform in `infrastructure/azure/demo/` reuses the Azure resource-group and
-Static Web Apps modules. It creates only a dedicated resource group and a
-Free-tier Static Web App. Do not apply `infrastructure/azure/`, which
-provisions the full-stack application and paid services.
+Static Web Apps modules. By default, it creates only a dedicated resource
+group and a Free-tier Static Web App. The optional App Service container
+resources use a Linux B1 plan and incur recurring charges. Enable them only
+after reviewing current pricing and authorizing the cost. Do not apply
+`infrastructure/azure/`, which provisions the full-stack application and
+other paid services.
 
 The demo state uses the dedicated `foliumdemotfstate` storage account and the
 separate `folium-demo-static-web-app.tfstate` key in the `tfstate` container.
@@ -44,7 +53,9 @@ terraform apply \
 
 The default resource group is `rg-folium-demo` in `East US 2`. The app name
 must be globally unique. Terraform tags resources with the application,
-environment, synthetic-data, and management metadata.
+environment, synthetic-data, and management metadata. To include the paid
+container resources, explicitly set `-var="enable_app_service_demo=true"` and
+review the Terraform plan before applying.
 
 ## GitHub Actions Terraform plan and apply
 
@@ -60,6 +71,9 @@ Configure these Environment variables in GitHub:
   Azure identity with a federated credential for
   `repo:pedropcamellon@83567517/folium@1174567174:environment:azure-demo`.
 - `AZURE_DEMO_STATIC_WEB_APP_NAME` for the globally unique app name.
+- `AZURE_DEMO_APPSERVICE_ENABLED=true` only after the App Service is provisioned
+  and deployment is approved; also set `AZURE_DEMO_APPSERVICE_NAME` and
+  `AZURE_DEMO_RESOURCE_GROUP`.
 
 Grant that identity **Storage Blob Data Contributor** on the
 `foliumdemotfstate/tfstate` container and **Contributor** only on
@@ -95,8 +109,9 @@ az staticwebapp secrets list --name <app-name> --resource-group rg-folium-demo \
 ```
 
 The Free tier has service limits; exceeding them may require a plan change.
-No backend, database, registry, monitoring, secrets vault, or model service is
-part of this target.
+No backend, database, Azure Container Registry, monitoring, secrets vault, or
+model service is part of this target. The optional container uses public GHCR;
+ensure the image contains only the public synthetic-data demo.
 
 ## Teardown
 
@@ -106,7 +121,8 @@ Remove only the dedicated demo target:
 cd infrastructure/azure/demo
 terraform destroy \
   -var="subscription_id=$(az account show --query id --output tsv)" \
-  -var="static_web_app_name=<globally-unique-name>"
+  -var="static_web_app_name=<globally-unique-name>" \
+  -var="enable_app_service_demo=true"
 ```
 
 ## Safety and limitations

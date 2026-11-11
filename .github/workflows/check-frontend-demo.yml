@@ -1,0 +1,170 @@
+name: Check frontend demo
+
+on:
+  push:
+    paths:
+      - frontend/**
+      - .github/workflows/check-frontend-demo.yml
+  pull_request:
+    paths:
+      - frontend/**
+      - .github/workflows/check-frontend-demo.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build production container
+        run: docker build --build-arg NEXT_PUBLIC_API_MODE=mock --tag folium-frontend-demo:check .
+      - name: Start production container
+        id: start-container
+        run: docker run --detach --rm --publish 3000:3000 --name folium-frontend-demo-check folium-frontend-demo:check
+      - name: Smoke-test production container
+        run: curl --fail --retry 10 --retry-connrefused --retry-delay 2 http://127.0.0.1:3000/
+      - name: Stop production container
+        if: always() && steps.start-container.outcome == 'success'
+        run: docker stop folium-frontend-demo-check
+      - name: Save tested image for publishing
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: docker save folium-frontend-demo:check | gzip -1 > /tmp/folium-frontend-demo.tar.gz
+      - name: Upload tested image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: folium-frontend-demo-image
+          path: /tmp/folium-frontend-demo.tar.gz
+          retention-days: 1
+      - name: Report build failure
+        if: failure()
+        run: |
+          echo "::error::Mock frontend container validation failed. Inspect the Docker build and HTTP smoke-test logs before deploying."
+          echo "Mock frontend container validation failed; no Azure deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_ref: ${{ steps.push.outputs.image_ref }}
+    steps:
+      - name: Download tested image
+        uses: actions/download-artifact@v4
+        with:
+          name: folium-frontend-demo-image
+          path: /tmp
+      - name: Load tested image
+        run: gzip -dc /tmp/folium-frontend-demo.tar.gz | docker load
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish tested image
+        id: push
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/folium-demo
+          IMAGE_TAG: sha-${{ github.sha }}
+        run: |
+          docker tag folium-frontend-demo:check "$IMAGE:$IMAGE_TAG"
+          docker push "$IMAGE:$IMAGE_TAG" | tee /tmp/docker-push.log
+          digest="$(sed -n 's/.*digest: \(sha256:[0-9a-f]*\).*/\1/p' /tmp/docker-push.log | tail -n 1)"
+          if [ -z "$digest" ]; then
+            echo "::error::Could not determine the published image digest."
+            exit 1
+          fi
+          docker tag "$IMAGE:$IMAGE_TAG" "$IMAGE:latest"
+          docker push "$IMAGE:latest"
+          echo "image_ref=$IMAGE@$digest" >> "$GITHUB_OUTPUT"
+      - name: Report image publish failure
+        if: failure()
+        run: |
+          echo "::error::Publishing the tested frontend image failed. Inspect registry permissions and the publish logs."
+          echo "Frontend image publishing failed; App Service deployment did not run." >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: azure-demo
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_DEMO_RESOURCE_GROUP }}
+      AZURE_APP_NAME: ${{ vars.AZURE_DEMO_APPSERVICE_NAME }}
+      TF_IMAGE_REF: ${{ needs.publish.outputs.image_ref }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Log in to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Configure App Service with the tested image
+        run: |
+          az webapp config container set \
+            --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_APP_NAME" \
+            --docker-custom-image-name "$TF_IMAGE_REF" \
+            --docker-registry-server-url https://ghcr.io
+          az webapp restart --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME"
+      - name: Smoke-test deployed demo
+        id: smoke-test
+        run: |
+          hostname="$(az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME" --query defaultHostName --output tsv)"
+          if [ -z "$hostname" ]; then
+            echo "::error::App Service did not return a default hostname."
+            exit 1
+          fi
+          url="https://$hostname"
+          curl --fail --retry 30 --retry-all-errors --retry-delay 10 --max-time 20 "$url/"
+          echo "demo_url=$url" >> "$GITHUB_OUTPUT"
+      - name: Update documented production demo URL
+        env:
+          DEMO_URL: ${{ steps.smoke-test.outputs.demo_url }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const file = "docs/deployment.md";
+          const url = process.env.DEMO_URL;
+          if (!url || !/^https:\/\/[a-z0-9-]+\.azurewebsites\.net\/?$/i.test(url)) {
+            throw new Error("App Service did not return a valid production URL.");
+          }
+          const content = fs.readFileSync(file, "utf8");
+          const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
+          if (!marker.test(content)) {
+            throw new Error("Could not find the demo URL markers in docs/deployment.md.");
+          }
+          const updated = content.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`);
+          fs.writeFileSync(file, updated);
+          NODE
+      - name: Commit demo URL update
+        run: |
+          if git diff --quiet -- docs/deployment.md; then
+            echo "Demo URL is already current."
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/deployment.md
+          git commit -m "docs: update deployed demo URL"
+          git push
+      - name: Report deployment failure
+        if: failure()
+        run: |
+          echo "::error::App Service deployment or its HTTP smoke test failed. Inspect Azure and container logs before retrying."
+          echo "App Service deployment failed or did not pass its HTTP smoke test; the documented production URL was not updated." >> "$GITHUB_STEP_SUMMARY"
