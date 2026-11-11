@@ -2,59 +2,34 @@
  * Authentication API client
  * Handles all auth-related API calls to FastAPI backend
  */
-import { AuthTokens, LoginCredentials, RegisterData, User } from "@/types/user";
+import type {
+    AuthTokens,
+    LoginCredentials,
+    RegisterData,
+    User,
+} from "@/types/user";
+import { API_ENDPOINTS, apiRequest } from "./api";
+import {
+    clearAuthToken,
+    getAuthToken,
+    setAuthToken,
+} from "./auth-token";
 
-const FASTAPI_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
-
-const AUTH_ENDPOINTS = {
-    register: `${FASTAPI_BASE_URL}/auth/register`,
-    login: `${FASTAPI_BASE_URL}/auth/jwt/login`,
-    logout: `${FASTAPI_BASE_URL}/auth/jwt/logout`,
-    me: `${FASTAPI_BASE_URL}/users/me`,
-} as const;
-
-// Token storage keys
-const TOKEN_KEY = "auth_token";
-
-/**
- * Store authentication token in localStorage
- */
-export function setAuthToken(token: string): void {
-    if (typeof window !== "undefined") {
-        localStorage.setItem(TOKEN_KEY, token);
-    }
-}
-
-/**
- * Retrieve authentication token from localStorage
- */
-export function getAuthToken(): string | null {
-    if (typeof window !== "undefined") {
-        return localStorage.getItem(TOKEN_KEY);
-    }
-    return null;
-}
-
-/**
- * Remove authentication token from localStorage
- */
-export function clearAuthToken(): void {
-    if (typeof window !== "undefined") {
-        localStorage.removeItem(TOKEN_KEY);
-    }
-}
+export { clearAuthToken, getAuthToken, setAuthToken } from "./auth-token";
 
 /**
  * Register new user
  */
 export async function register(data: RegisterData): Promise<User> {
-    const response = await fetch(AUTH_ENDPOINTS.register, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
+    const response = await apiRequest(
+        API_ENDPOINTS.authRegister,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-    });
+        { authenticated: false }
+    );
 
     if (!response.ok) {
         const error = await response.json();
@@ -75,13 +50,15 @@ export async function login(
     formData.append("username", credentials.username);
     formData.append("password", credentials.password);
 
-    const response = await fetch(AUTH_ENDPOINTS.login, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+    const response = await apiRequest(
+        API_ENDPOINTS.authLogin,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData,
         },
-        body: formData,
-    });
+        { authenticated: false }
+    );
 
     if (!response.ok) {
         const error = await response.json();
@@ -101,12 +78,7 @@ export async function logout(): Promise<void> {
 
     if (token) {
         try {
-            await fetch(AUTH_ENDPOINTS.logout, {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            await apiRequest(API_ENDPOINTS.authLogout, { method: "POST" });
         } catch (error) {
             console.error("Logout request failed:", error);
         }
@@ -125,12 +97,7 @@ export async function getCurrentUser(): Promise<User> {
         throw new Error("No authentication token found");
     }
 
-    const response = await fetch(AUTH_ENDPOINTS.me, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    const response = await apiRequest(API_ENDPOINTS.usersMe);
 
     if (!response.ok) {
         if (response.status === 401) {

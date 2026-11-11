@@ -37,6 +37,7 @@ terraform.tfvars
 
 # Azure
 .azure/
+.copilot-azure/
 
 # Azurite
 __blobstorage__/*
@@ -45,9 +46,6 @@ __azurite_db_*__.json
 # Next.js
 .next/
 build/
-
-# Vercel
-.vercel
 
 # OS
 .DS_Store

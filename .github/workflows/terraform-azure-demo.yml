@@ -1,0 +1,101 @@
+name: Terraform Azure demo
+
+on:
+  pull_request:
+    paths:
+      - infrastructure/azure/demo/**
+      - .github/workflows/terraform-azure-demo.yml
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: Terraform operation
+        type: choice
+        options:
+          - plan
+          - apply
+        default: plan
+        required: true
+      confirm_apply:
+        description: Confirm apply when operation is apply
+        type: boolean
+        default: false
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/azure/demo
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.9
+          terraform_wrapper: false
+
+      - name: Format check
+        run: terraform fmt -check -recursive
+
+      - name: Initialize without remote state
+        run: terraform init -backend=false -input=false
+
+      - name: Validate
+        run: terraform validate
+
+  terraform:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: azure-demo
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: infrastructure/azure/demo
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_static_web_app_name: ${{ vars.AZURE_DEMO_STATIC_WEB_APP_NAME }}
+      TF_IN_AUTOMATION: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.9
+          terraform_wrapper: false
+
+      - name: Login to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Initialize remote state
+        run: terraform init -input=false
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Plan
+        run: terraform plan -input=false -out=tfplan
+
+      - name: Require apply confirmation
+        if: inputs.operation == 'apply' && inputs.confirm_apply != true
+        run: |
+          echo "Set confirm_apply to true to apply the Terraform plan."
+          exit 1
+
+      - name: Apply reviewed plan
+        if: inputs.operation == 'apply' && inputs.confirm_apply == true
+        run: terraform apply -input=false -auto-approve tfplan
