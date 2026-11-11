@@ -47,8 +47,9 @@ environment, synthetic-data, and management metadata.
 
 `.github/workflows/terraform-azure-demo.yml` validates Terraform on pull
 requests. Plan and apply run only through manual dispatch on `main`; apply
-requires `confirm_apply=true` and approval in the protected `azure-demo`
-GitHub Environment.
+requires `confirm_apply=true`. The job targets the `azure-demo` GitHub
+Environment; configure that Environment to require reviewer approval before
+dispatching applies.
 
 Configure these Environment variables in GitHub:
 
