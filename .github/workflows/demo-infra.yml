@@ -1,10 +1,10 @@
-name: Terraform Azure demo
+name: Demo infra
 
 on:
   pull_request:
     paths:
       - infrastructure/azure/demo/**
-      - .github/workflows/terraform-azure-demo.yml
+      - .github/workflows/demo-infra.yml
   workflow_dispatch:
     inputs:
       operation:
@@ -28,6 +28,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: demo-infra-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:

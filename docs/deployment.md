@@ -20,7 +20,8 @@ Pending first successful deployment.
 The frontend workflow builds a glibc-based Linux Docker image from the frozen
 pnpm lockfile, smoke-tests it, and exports its standalone runtime as a ZIP.
 PR checks also unpack and test that ZIP under a clean Node runtime and load
-the native Sharp dependency. Main releases deploy the same tested package,
+the native Sharp dependency. ZIP creation preserves pnpm dependency symlinks.
+Main releases deploy the same tested package,
 without Oryx rebuilding dependencies. Docker build and Azure runtime use Node 20.
 
 The main workflow supports push and manual dispatch. Set repository variable
@@ -56,11 +57,16 @@ terraform plan -out=tfplan \
 
 Default resource group: `rg-folium-demo`, East US 2. Override the globally unique
 Web App name if necessary. Review the plan before applying: it removes the
-former demo Static Web App and adds F1 hosting. No live removal has been
-performed by editing this configuration. Disabling the optional flag after
+former demo Static Web App from state and adds F1 hosting. The operator has
+already removed the live Static Web App; refresh and review the plan to
+reconcile that deletion. Disabling the optional flag after
 provisioning plans destruction of the App Service resources.
 
 The manual Terraform workflow runs only on main in the protected Environment.
+Workflow files are `demo-validate.yml` (frontend build/package/release) and
+`demo-infra.yml` (Terraform). New frontend runs cancel older runs for the same
+source branch, including duplicate push/PR runs. Infrastructure PR validation
+also cancels superseded runs; manual Terraform operations are not interrupted.
 Select `enable_app_service_demo=true`; apply also requires `confirm_apply=true`.
 Grant the identity Contributor scoped to the demo resource group and Storage
 Blob Data Contributor on the state container. Bootstrap/import the resource

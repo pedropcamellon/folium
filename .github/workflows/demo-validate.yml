@@ -1,18 +1,22 @@
-name: Check frontend demo
+name: Demo validate
 
 on:
   push:
     paths:
       - frontend/**
-      - .github/workflows/check-frontend-demo.yml
+      - .github/workflows/demo-validate.yml
   pull_request:
     paths:
       - frontend/**
-      - .github/workflows/check-frontend-demo.yml
+      - .github/workflows/demo-validate.yml
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: demo-validate-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -46,7 +50,7 @@ jobs:
           test -d /tmp/folium-package/.next/static
           test -d /tmp/folium-package/public
           cd /tmp/folium-package
-          zip -qr /tmp/folium-demo.zip .
+          zip -qry /tmp/folium-demo.zip .
           unzip -t /tmp/folium-demo.zip
       - name: Smoke-test extracted deployment package
         run: |
@@ -58,7 +62,7 @@ jobs:
             --name folium-package-check node:20.20.2-bookworm-slim node server.js
           trap 'docker logs folium-package-check; docker stop folium-package-check' EXIT
           curl --fail --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
-          docker exec folium-package-check node -e "require('sharp'); console.log('Native Sharp dependency loaded')"
+          docker exec folium-package-check node -e "require(require.resolve('sharp', { paths: [require.resolve('next/package.json')] })); console.log('Native Sharp dependency loaded')"
       - name: Upload tested package
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
