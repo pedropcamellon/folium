@@ -10,6 +10,7 @@ on:
       - frontend/**
       - .github/workflows/demo-validate.yml
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
@@ -56,11 +57,11 @@ jobs:
         run: |
           mkdir -p /tmp/folium-extracted
           unzip -q /tmp/folium-demo.zip -d /tmp/folium-extracted
-          docker run --detach --rm --publish 3000:3000 \
+          docker run --detach --publish 3000:3000 \
             --volume /tmp/folium-extracted:/app:ro --workdir /app \
             --env HOSTNAME=0.0.0.0 --env PORT=3000 \
             --name folium-package-check node:20.20.2-bookworm-slim node server.js
-          trap 'docker logs folium-package-check; docker stop folium-package-check' EXIT
+          trap 'docker logs folium-package-check; docker rm --force folium-package-check' EXIT
           curl --fail --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
           docker exec folium-package-check node -e "require(require.resolve('sharp', { paths: [require.resolve('next/package.json')] })); console.log('Native Sharp dependency loaded')"
       - name: Upload tested package
@@ -75,96 +76,3 @@ jobs:
         run: |
           echo "::error::Mock frontend container validation failed. Inspect the Docker build and HTTP smoke-test logs before deploying."
           echo "Mock frontend container validation failed; no Azure deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
-
-  deploy:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
-    needs: build
-    runs-on: ubuntu-latest
-    concurrency:
-      group: folium-demo-deployment
-      cancel-in-progress: false
-    environment: azure-demo
-    permissions:
-      contents: write
-      id-token: write
-    env:
-      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_DEMO_RESOURCE_GROUP }}
-      AZURE_APP_NAME: ${{ vars.AZURE_DEMO_APPSERVICE_NAME }}
-    steps:
-      - name: Checkout deployment documentation
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Download tested package
-        uses: actions/download-artifact@v4
-        with:
-          name: folium-frontend-demo-package
-          path: /tmp
-      - name: Log in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Deploy tested package to Free F1 App Service
-        run: |
-          : "${AZURE_RESOURCE_GROUP:?Set AZURE_DEMO_RESOURCE_GROUP in the azure-demo Environment}"
-          : "${AZURE_APP_NAME:?Set AZURE_DEMO_APPSERVICE_NAME in the azure-demo Environment}"
-          az webapp deploy \
-            --resource-group "$AZURE_RESOURCE_GROUP" \
-            --name "$AZURE_APP_NAME" \
-            --src-path /tmp/folium-demo.zip \
-            --type zip
-      - name: Smoke-test deployed demo
-        id: smoke-test
-        run: |
-          hostname="$(az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME" --query defaultHostName --output tsv)"
-          if [ -z "$hostname" ]; then
-            echo "::error::App Service did not return a default hostname."
-            exit 1
-          fi
-          url="https://$hostname"
-          curl --fail --retry 30 --retry-all-errors --retry-delay 10 --max-time 20 "$url/"
-          echo "demo_url=$url" >> "$GITHUB_OUTPUT"
-      - name: Update documented production demo URL
-        env:
-          DEMO_URL: ${{ steps.smoke-test.outputs.demo_url }}
-        run: |
-          node <<'NODE'
-          const fs = require("node:fs");
-          const file = "docs/deployment.md";
-          const url = process.env.DEMO_URL;
-          let parsed;
-          try {
-            parsed = new URL(url);
-          } catch {
-            throw new Error("App Service did not return a valid production URL.");
-          }
-          if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".azurewebsites.net")) {
-            throw new Error("App Service did not return a valid production URL.");
-          }
-          const content = fs.readFileSync(file, "utf8");
-          const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
-          if (!marker.test(content)) {
-            throw new Error("Could not find the demo URL markers in docs/deployment.md.");
-          }
-          const updated = content.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`);
-          fs.writeFileSync(file, updated);
-          NODE
-      - name: Commit demo URL update
-        run: |
-          if git diff --quiet -- docs/deployment.md; then
-            echo "Demo URL is already current."
-            exit 0
-          fi
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add docs/deployment.md
-          git commit -m "docs: update deployed demo URL"
-          git push
-      - name: Report deployment failure
-        if: failure()
-        run: |
-          echo "::error::F1 deployment or HTTP smoke test failed. Inspect Azure deployment and application logs before retrying."
-          echo "F1 deployment or HTTP smoke testing failed; inspect the logs for the last completed step." >> "$GITHUB_STEP_SUMMARY"

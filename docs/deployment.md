@@ -24,7 +24,11 @@ the native Sharp dependency. ZIP creation preserves pnpm dependency symlinks.
 Main releases deploy the same tested package,
 without Oryx rebuilding dependencies. Docker build and Azure runtime use Node 20.
 
-The main workflow supports push and manual dispatch. Set repository variable
+Validation supports push and manual dispatch without deploying. Run the
+infrastructure workflow on main with confirmed App Service apply to execute
+three ordered stages: validate/package, infrastructure apply, then deploy.
+The third stage uses `demo-deploy.yml` and the package from the same run;
+failed validation/apply and plan-only runs cannot deploy. Set repository variable
 `AZURE_DEMO_APPSERVICE_ENABLED=true` only after provisioning. Protect the
 `azure-demo` Environment with required approval and configure its variables:
 
@@ -63,8 +67,9 @@ reconcile that deletion. Disabling the optional flag after
 provisioning plans destruction of the App Service resources.
 
 The manual Terraform workflow runs only on main in the protected Environment.
-Workflow files are `demo-validate.yml` (frontend build/package/release) and
-`demo-infra.yml` (Terraform). New frontend runs cancel older runs for the same
+Workflow files are `demo-validate.yml` (frontend build/package),
+`demo-infra.yml` (Terraform orchestration), and `demo-deploy.yml` (release
+after successful apply). New frontend runs cancel older runs for the same
 source branch, including duplicate push/PR runs. Infrastructure PR validation
 also cancels superseded runs; manual Terraform operations are not interrupted.
 Select `enable_app_service_demo=true`; apply also requires `confirm_apply=true`.
