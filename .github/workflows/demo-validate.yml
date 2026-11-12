@@ -1,25 +1,27 @@
 name: Demo validate
 
 on:
-  push:
-    paths:
-      - frontend/**
-      - .github/workflows/demo-validate.yml
-  pull_request:
-    paths:
-      - frontend/**
-      - .github/workflows/demo-validate.yml
-  workflow_dispatch:
   workflow_call:
 
 permissions:
   contents: read
 
-concurrency:
-  group: demo-validate-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
-
 jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/azure/demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.9
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
   build:
     runs-on: ubuntu-latest
     defaults:

@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     concurrency:
       group: folium-demo-deployment
@@ -23,7 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-      - name: Download validated package from this run
+      - name: Download validated package from caller run
         uses: actions/download-artifact@v4
         with:
           name: folium-frontend-demo-package

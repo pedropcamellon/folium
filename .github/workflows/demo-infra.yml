@@ -1,123 +1,43 @@
 name: Demo infra
 
 on:
-  pull_request:
-    paths:
-      - infrastructure/azure/demo/**
-      - .github/workflows/demo-infra.yml
-  workflow_dispatch:
-    inputs:
-      operation:
-        description: Terraform operation
-        type: choice
-        options:
-          - plan
-          - apply
-        default: plan
-        required: true
-      confirm_apply:
-        description: Confirm apply when operation is apply
-        type: boolean
-        default: false
-        required: true
-      enable_app_service_demo:
-        description: Include Free F1 App Service with built-in Node hosting
-        type: boolean
-        default: false
-        required: true
+  workflow_call:
 
 permissions:
   contents: read
-
-concurrency:
-  group: demo-infra-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  id-token: write
 
 jobs:
-  package:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.operation == 'apply' && inputs.confirm_apply && inputs.enable_app_service_demo
-    uses: ./.github/workflows/demo-validate.yml
-
-  validate:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infrastructure/azure/demo
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.14.9
-          terraform_wrapper: false
-
-      - name: Format check
-        run: terraform fmt -check -recursive
-
-      - name: Initialize without remote state
-        run: terraform init -backend=false -input=false
-
-      - name: Validate
-        run: terraform validate
-
   terraform:
-    needs: package
-    if: always() && !cancelled() && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && (inputs.operation == 'plan' || !inputs.enable_app_service_demo || !inputs.confirm_apply || needs.package.result == 'success')
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment: azure-demo
-    permissions:
-      contents: read
-      id-token: write
     defaults:
       run:
         working-directory: infrastructure/azure/demo
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      TF_VAR_enable_app_service_demo: ${{ inputs.enable_app_service_demo }}
+      TF_VAR_enable_app_service_demo: "true"
       TF_IN_AUTOMATION: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.14.9
           terraform_wrapper: false
-
       - name: Login to Azure with OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
       - name: Initialize remote state
         run: terraform init -input=false
-
       - name: Validate
         run: terraform validate
-
-      - name: Plan
+      - name: Plan Free F1 environment
         run: terraform plan -input=false -out=tfplan
-
-      - name: Require apply confirmation
-        if: inputs.operation == 'apply' && inputs.confirm_apply != true
-        run: |
-          echo "Set confirm_apply to true to apply the Terraform plan."
-          exit 1
-
-      - name: Apply reviewed plan
-        if: inputs.operation == 'apply' && inputs.confirm_apply == true
+      - name: Apply Free F1 environment
         run: terraform apply -input=false -auto-approve tfplan
-
-  deploy:
-    needs: [package, terraform]
-    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'apply' && inputs.confirm_apply && inputs.enable_app_service_demo
-    permissions:
-      contents: write
-      id-token: write
-    uses: ./.github/workflows/demo-deploy.yml

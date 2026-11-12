@@ -24,12 +24,16 @@ the native Sharp dependency. ZIP creation preserves pnpm dependency symlinks.
 Main releases deploy the same tested package,
 without Oryx rebuilding dependencies. Docker build and Azure runtime use Node 20.
 
-Validation supports push and manual dispatch without deploying. Run the
-infrastructure workflow on main with confirmed App Service apply to execute
-three ordered stages: validate/package, infrastructure apply, then deploy.
-The third stage uses `demo-deploy.yml` and the package from the same run;
-failed validation/apply and plan-only runs cannot deploy. Set repository variable
-`AZURE_DEMO_APPSERVICE_ENABLED=true` only after provisioning. Protect the
+`demo-pipeline.yml` is the only entry point. PRs and branch pushes validate
+Terraform and build/test the frontend package without Azure credentials.
+Pushes to `main` (including merges) and manual dispatch on `main` run:
+
+1. `demo-validate.yml`: validate Terraform and build/test the release ZIP.
+2. `demo-infra.yml`: plan and apply the Free F1 environment using OIDC.
+3. `demo-deploy.yml`: deploy the same run's tested ZIP and update the URL.
+
+Each stage requires the previous stage to succeed. The children use
+`workflow_call` only and have no independent push/PR triggers. Protect the
 `azure-demo` Environment with required approval and configure its variables:
 
 - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
@@ -40,9 +44,11 @@ with issuer `https://token.actions.githubusercontent.com` and audience
 `api://AzureADTokenExchange`. Use the repository's configured immutable OIDC
 subject. No client secret or registry credentials are required.
 
-The deployed endpoint must pass HTTP checks before the workflow updates this
-guide. URL-only commits do not match deployment path filters. Deployments are
-serialized; no Azure deployment runs on PRs.
+Terraform is reconciled on every main release before deployment; no manual
+enable flag is required. The deployed endpoint must pass HTTP
+checks before the workflow updates this guide. URL-only commits do not match
+deployment path filters. Deployments are serialized; no Azure deployment runs
+on PRs.
 
 ## Terraform
 
@@ -66,13 +72,11 @@ already removed the live Static Web App; refresh and review the plan to
 reconcile that deletion. Disabling the optional flag after
 provisioning plans destruction of the App Service resources.
 
-The manual Terraform workflow runs only on main in the protected Environment.
-Workflow files are `demo-validate.yml` (frontend build/package),
-`demo-infra.yml` (Terraform orchestration), and `demo-deploy.yml` (release
-after successful apply). New frontend runs cancel older runs for the same
-source branch, including duplicate push/PR runs. Infrastructure PR validation
-also cancels superseded runs; manual Terraform operations are not interrupted.
-Select `enable_app_service_demo=true`; apply also requires `confirm_apply=true`.
+The pipeline applies Terraform only on main in the protected Environment,
+explicitly enabling the Free F1 resources. Configure required Environment
+reviewers before merging. New non-main runs cancel older runs for the same
+source branch, including duplicate push/PR runs. Main runs queue rather than
+interrupting an in-progress apply or release.
 Grant the identity Contributor scoped to the demo resource group and Storage
 Blob Data Contributor on the state container. Bootstrap/import the resource
 group with an authorized operator rather than granting subscription-wide access.
@@ -84,7 +88,7 @@ window. Roll back by redeploying that package through the protected workflow
 process and repeating HTTP/mock-flow checks. Reverting code alone does not
 restore the removed Static Web App. Rollback has not yet been live-tested.
 
-Disable the repository deployment gate before teardown. Review a destroy plan
+Disable the parent pipeline before teardown. Review a destroy plan
 using the same subscription and `enable_app_service_demo=true` inputs; destroy
 only the isolated demo target, never the full-stack root.
 
