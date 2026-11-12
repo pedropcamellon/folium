@@ -1,5 +1,5 @@
 # Frontend Dockerfile - Next.js with pnpm for fast builds
-FROM node:20.20.2-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 
 # Activate the package-manager version declared in package.json.
 RUN corepack enable && corepack prepare pnpm@10.15.1 --activate

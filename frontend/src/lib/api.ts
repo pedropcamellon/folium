@@ -5,6 +5,7 @@
 import { clearAuthToken, getAuthToken } from "./auth-token";
 import { IS_MOCK_API } from "./api-mode";
 import { mockApiRequest } from "./mock-api";
+import { publicAsset } from "./demo-routing";
 
 export const FASTAPI_BASE_URL = IS_MOCK_API
     ? ""
@@ -155,7 +156,7 @@ export async function apiUpload<T>(
 
             if (xhr.status === 401 && typeof window !== "undefined") {
                 clearAuthToken();
-                window.location.href = "/login";
+                window.location.href = publicAsset("/login");
             }
             reject(new Error(`Upload failed with status ${xhr.status}`));
         };
@@ -191,6 +192,6 @@ export async function apiJson<T = unknown>(
 function handleUnauthorized(response: Response): void {
     if (response.status === 401 && typeof window !== "undefined") {
         clearAuthToken();
-        window.location.href = "/login";
+        window.location.href = publicAsset("/login");
     }
 }

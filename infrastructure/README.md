@@ -2,9 +2,9 @@
 
 Infrastructure is organized by deployment target and workload:
 
-- [`demo/`](demo/) is the isolated, synthetic-data-only mock frontend demo. It
-  provisions Free F1 App Service with built-in Node hosting and has its own
-  Terraform state and release pipeline.
+- [`demo/`](demo/) provisions the isolated synthetic-data frontend on Azure
+  Static Web Apps Free, using separate remote state. It contains no container
+  registry, running application server, or backend resources.
 - [`azure/`](azure/) contains the full Folium Azure application infrastructure
   and reusable Azure modules. It is not the lightweight demo deployment.
 - [`aws/`](aws/) contains the planned AWS deployment configuration.

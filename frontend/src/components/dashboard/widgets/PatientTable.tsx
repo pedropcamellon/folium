@@ -1,3 +1,6 @@
+import Link from "next/link";
+
+import { patientHref } from "@/lib/demo-routing";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -100,7 +103,7 @@ export function PatientTable({
                                             Delete
                                         </Button>
                                     )}
-                                    <a href={`/patients/${patient.id}`}>
+                                    <Link href={patientHref(patient.id)}>
                                         <Button
                                             size="sm"
                                             variant="ghost"
@@ -112,7 +115,7 @@ export function PatientTable({
                                         >
                                             View History
                                         </Button>
-                                    </a>
+                                    </Link>
                                 </TableCell>
                             </TableRow>
                         ))}

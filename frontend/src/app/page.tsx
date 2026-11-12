@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { getDefaultRouteForRole } from "@/lib/role-routing";
+import { publicAsset } from "@/lib/demo-routing";
 
 import { useAuth } from "@/hooks/useAuth";
 
@@ -29,7 +30,7 @@ export default function Home() {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-8 bg-slate-50 px-6 text-slate-500">
             <Image
-                src="/banner.png"
+                src={publicAsset("/banner.png")}
                 alt="Folium EHR"
                 width={473}
                 height={149}

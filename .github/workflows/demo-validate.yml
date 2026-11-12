@@ -7,74 +7,34 @@ permissions:
   contents: read
 
 jobs:
-  terraform:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infrastructure/demo
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.14.9
-          terraform_wrapper: false
-      - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false -input=false
-      - run: terraform validate
-
   build:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: frontend
+    env:
+      NEXT_PUBLIC_DEMO_STATIC: "true"
+      NEXT_PUBLIC_API_MODE: mock
     steps:
       - uses: actions/checkout@v4
-      - name: Build production container
-        run: docker build --build-arg NEXT_PUBLIC_API_MODE=mock --tag folium-frontend-demo:check .
-      - name: Start production container
-        id: start-container
-        run: docker run --detach --rm --publish 3000:3000 --name folium-frontend-demo-check folium-frontend-demo:check
-      - name: Smoke-test production container
-        id: smoke-test
-        run: curl --fail --retry 10 --retry-connrefused --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
-      - name: Show container logs after smoke-test failure
-        if: failure() && steps.start-container.outcome == 'success' && steps.smoke-test.outcome == 'failure'
-        run: docker logs folium-frontend-demo-check
-      - name: Stop production container
-        if: always() && steps.start-container.outcome == 'success'
-        run: docker stop folium-frontend-demo-check
-      - name: Package tested standalone runtime
-        run: |
-          container_id="$(docker create folium-frontend-demo:check)"
-          trap 'docker rm "$container_id"' EXIT
-          mkdir -p /tmp/folium-package
-          docker cp "$container_id:/app/." /tmp/folium-package/
-          test -f /tmp/folium-package/server.js
-          test -d /tmp/folium-package/.next/static
-          test -d /tmp/folium-package/public
-          cd /tmp/folium-package
-          zip -qry /tmp/folium-demo.zip .
-          unzip -t /tmp/folium-demo.zip
-      - name: Smoke-test extracted deployment package
-        run: |
-          mkdir -p /tmp/folium-extracted
-          unzip -q /tmp/folium-demo.zip -d /tmp/folium-extracted
-          docker run --detach --publish 3000:3000 \
-            --volume /tmp/folium-extracted:/app:ro --workdir /app \
-            --env HOSTNAME=0.0.0.0 --env PORT=3000 \
-            --name folium-package-check node:20.20.2-bookworm-slim node server.js
-          trap 'docker logs folium-package-check; docker rm --force folium-package-check' EXIT
-          curl --fail --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
-          docker exec folium-package-check node -e "require(require.resolve('sharp', { paths: [require.resolve('next/package.json')] })); console.log('Native Sharp dependency loaded')"
-      - name: Upload tested package
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+      - uses: pnpm/action-setup@v4
         with:
-          name: folium-frontend-demo-package
-          path: /tmp/folium-demo.zip
-          retention-days: 1
-      - name: Report build failure
-        if: failure()
+          version: 10.15.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build --no-lint
+      - run: pnpm type-check
+      - name: Check deployment files
         run: |
-          echo "::error::Mock frontend container validation failed. Inspect the Docker build and HTTP smoke-test logs before deploying."
-          echo "Mock frontend container validation failed; no Azure deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
+          test -s out/index.html
+          test -s out/patients/demo/index.html
+          test -d out/_next/static
+      - uses: actions/upload-artifact@v4
+        with:
+          name: folium-static-demo
+          path: frontend/out
+          retention-days: 1

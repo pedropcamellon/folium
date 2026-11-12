@@ -6,12 +6,14 @@ on:
       - frontend/**
       - infrastructure/demo/**
       - infrastructure/azure/modules/resource_group/**
+      - infrastructure/azure/modules/static_web_app/**
       - .github/workflows/demo-*.yml
   pull_request:
     paths:
       - frontend/**
       - infrastructure/demo/**
       - infrastructure/azure/modules/resource_group/**
+      - infrastructure/azure/modules/static_web_app/**
       - .github/workflows/demo-*.yml
   workflow_dispatch:
 
@@ -26,20 +28,125 @@ jobs:
   validate:
     uses: ./.github/workflows/demo-validate.yml
 
-  infra:
-    needs: validate
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+  terraform:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infrastructure/demo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.9
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+
+  preview:
+    needs: [validate, terraform]
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
-    uses: ./.github/workflows/demo-infra.yml
+      pull-requests: write
+    env:
+      SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        if: env.SWA_TOKEN != ''
+        with:
+          name: folium-static-demo
+          path: frontend/out
+      - uses: Azure/static-web-apps-deploy@v1
+        if: env.SWA_TOKEN != ''
+        with:
+          azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
+          repo_token: ${{ github.token }}
+          action: upload
+          app_location: frontend/out
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
+          production_branch: main
+      - name: Explain unavailable preview
+        if: env.SWA_TOKEN == ''
+        run: echo "::notice::Preview skipped because the SWA deployment secret is unavailable. Static validation still passed."
 
-  deploy:
-    needs: [validate, infra]
+  release:
+    needs: [validate, terraform]
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: azure-demo
     permissions:
       contents: write
       id-token: write
-    uses: ./.github/workflows/demo-deploy.yml
-    with:
-      app_service_name: ${{ needs.infra.outputs.app_service_name }}
+    env:
+      TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/download-artifact@v4
+        with:
+          name: folium-static-demo
+          path: frontend/out
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.14.9
+          terraform_wrapper: false
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Apply Free Static Web App
+        working-directory: infrastructure/demo
+        run: |
+          terraform init -reconfigure -input=false
+          terraform plan -input=false -out=tfplan
+          terraform apply -input=false tfplan
+      - name: Get deployment credentials
+        id: swa
+        working-directory: infrastructure/demo
+        run: |
+          group="$(terraform output -raw resource_group_name)"
+          name="$(terraform output -raw static_web_app_name)"
+          token="$(az staticwebapp secrets list --name "$name" --resource-group "$group" --query properties.apiKey -o tsv)"
+          test -n "$token"
+          echo "::add-mask::$token"
+          echo "token=$token" >> "$GITHUB_OUTPUT"
+          echo "url=$(terraform output -raw demo_url)" >> "$GITHUB_OUTPUT"
+      - uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: frontend/out
+          output_location: ""
+          skip_app_build: true
+          skip_api_build: true
+      - name: Verify and document endpoint
+        env:
+          DEMO_URL: ${{ steps.swa.outputs.url }}
+        run: |
+          curl --fail --retry 20 --retry-all-errors --retry-delay 5 --max-time 30 "$DEMO_URL/" -o /tmp/demo.html
+          grep -q 'Demo mode: synthetic data only' /tmp/demo.html
+          curl --fail --max-time 30 "$DEMO_URL/patients/demo/?id=demo-patient-001" -o /dev/null
+          node <<'NODE'
+          const fs = require("node:fs");
+          const file = "docs/deployment.md";
+          const url = process.env.DEMO_URL;
+          if (!/^https:\/\/[a-z0-9.-]+\.azurestaticapps\.net$/.test(url)) throw new Error("Invalid SWA URL");
+          const text = fs.readFileSync(file, "utf8");
+          const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
+          if (!marker.test(text)) throw new Error("Missing URL markers");
+          fs.writeFileSync(file, text.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`));
+          NODE
+          if ! git diff --quiet -- docs/deployment.md; then
+            git config user.name github-actions[bot]
+            git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+            git add docs/deployment.md
+            git commit -m "docs: update verified static demo URL"
+            git push
+          fi

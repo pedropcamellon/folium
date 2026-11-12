@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { AuthProvider } from "@/contexts/AuthContext";
 import { IS_MOCK_API } from "@/lib/api-mode";
+import { publicAsset } from "@/lib/demo-routing";
 
 import "./globals.css";
 
@@ -21,10 +22,10 @@ export const metadata: Metadata = {
     description:
         "A modern healthcare SaaS platform for clinical documentation and AI insights.",
     icons: {
-        icon: "/favicon-32x32.png",
-        apple: "/apple-touch-icon.png",
+        icon: publicAsset("/favicon-32x32.png"),
+        apple: publicAsset("/apple-touch-icon.png"),
     },
-    manifest: "/site.webmanifest",
+    manifest: publicAsset("/site.webmanifest"),
 };
 
 export default function RootLayout({

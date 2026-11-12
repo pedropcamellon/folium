@@ -1,111 +1,115 @@
 # Deployment Guide
 
-## Azure mock frontend demo
+## Synthetic static demo
 
-The demo showcases synthetic data without a backend or database. Hosting uses
-Free Linux F1 App Service with its built-in Node runtime. F1 cannot run custom
-containers: Docker is used to build and validate the standalone package, not
-as the Azure hosting runtime. No B1 plan or Azure Container Registry is created.
-F1 has shared CPU/storage quotas and no production SLA; validate subscription
-availability and limits before provisioning.
+The demo runs on Azure Static Web Apps **Free**, in Central US. It uses
+browser-local synthetic fixtures, no Folium backend, and no server runtime.
+It is not a clinical system or a production authentication boundary.
+Demo edits are simulated in the browser, not persisted in a shared database.
 
 Production demo URL (updated after each successful deployment and HTTP check):
 
 <!-- demo-url:start -->
-Pending first successful deployment.
+[https://salmon-island-0248c5310.3.azurestaticapps.net](https://salmon-island-0248c5310.3.azurestaticapps.net)
 <!-- demo-url:end -->
 
-## Build and release
+### Hosting decisions and history
 
-The frontend workflow builds a glibc-based Linux Docker image from the frozen
-pnpm lockfile, smoke-tests it, and exports its standalone runtime as a ZIP.
-PR checks also unpack and test that ZIP under a clean Node runtime and load
-the native Sharp dependency. ZIP creation preserves pnpm dependency symlinks.
-Main releases deploy the same tested package,
-without Oryx rebuilding dependencies. Docker build and Azure runtime use Node 20.
+The original SWA deployment delegated dependency resolution and the Next.js
+build to Oryx. Different dependency resolution exposed Motion build failures
+and left the endpoint serving a placeholder. That was a build reliability
+failure, not proof that SWA cannot host Next.js.
 
-`demo-pipeline.yml` is the only entry point. PRs and branch pushes validate
-Terraform and build/test the frontend package without Azure credentials.
-Pushes to `main` (including merges) and manual dispatch on `main` run:
+App Service F1 was explored next. It cannot host custom containers, so a ZIP
+package was necessary. East US runtime suspension and inconsistent regional
+quota enforcement also blocked that path. Central US creation was rejected
+despite available quota reported by the quota API.
 
-1. `demo-validate.yml`: validate Terraform and build/test the release ZIP.
-2. `demo-infra.yml`: plan and apply the Free F1 environment using OIDC.
-3. `demo-deploy.yml`: deploy the same run's tested ZIP and update the URL.
+Container Apps successfully ran the tested container, but ACR Basic introduced
+a standing registry charge. GHCR could remove that charge but still required
+registry authorization and public package setup. The selected host is SWA
+Free with a portable static export.
 
-Each stage requires the previous stage to succeed. The children use
-`workflow_call` only and have no independent push/PR triggers. Protect the
-`azure-demo` Environment with required approval and configure its variables:
+The current approach builds once using the frozen pnpm lockfile and deploys
+only the exported files with `skip_app_build` and `skip_api_build`. Oryx does
+not reinstall dependencies, rebuild Next.js, or provision a hybrid SSR backend.
+SWA's hybrid Next.js support is not used.
 
-- `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
-- `AZURE_DEMO_RESOURCE_GROUP`.
+Only the demo resource group and Free SWA are managed by this Terraform root.
+ACR, Container Apps, their identity and role assignment, and App Service hosting
+are removed. Shared Terraform state storage is retained and may have its own
+small storage/transaction charges; Free hosting does not mean every Azure
+resource in the subscription is free.
 
-Use an Entra federated credential for the repository's `azure-demo` Environment
-with issuer `https://token.actions.githubusercontent.com` and audience
-`api://AzureADTokenExchange`. Use the repository's configured immutable OIDC
-subject. No client secret or registry credentials are required.
+## Build modes and routing
 
-Terraform is reconciled on every main release before deployment; no manual
-enable flag is required. The deployed endpoint must pass HTTP
-checks before the workflow updates this guide. URL-only commits do not match
-deployment path filters. Deployments are serialized; no Azure deployment runs
-on PRs.
+The normal application retains standalone output and dynamic patient routes.
+Static export is enabled only with `NEXT_PUBLIC_DEMO_STATIC=true`, and requires
+`NEXT_PUBLIC_API_MODE=mock`. Public assets use an optional
+`NEXT_PUBLIC_BASE_PATH`; SWA uses the domain root, so it is empty.
 
-## Terraform
+```bash
+cd frontend
+NEXT_PUBLIC_DEMO_STATIC=true NEXT_PUBLIC_API_MODE=mock pnpm build --no-lint
+pnpm type-check
+```
 
-Use `infrastructure/demo/` for the standalone mock demo. Use
-`infrastructure/azure/` for the full Folium Azure application. These roots
-serve different purposes and must not be interchanged. F1
-provisioning is opt-in. The dedicated backend retains the historical
-`folium-demo-static-web-app.tfstate` key for state continuity. Do not rename
-the key or discard state during this migration.
+In the static demo, patient links use `/patients/demo/?id=<id>` so records
+created after build can render through one exported route. The standard
+application continues using `/patients/<id>`. Static hosting does not run
+Next.js middleware or image optimization; the demo uses unoptimized images
+and browser-local mock behavior instead.
 
-Local plan/apply and GitHub Actions use this same Azure Blob remote state.
-After moving the Terraform root, initialize locally with `-reconfigure` so a
-previous validation-only local backend is not reused. The `-backend=false`
-option is only for CI validation and must not be used for plan or apply.
+## Release pipeline
+
+`demo-pipeline.yml` is the only demo entry point. PRs and branch pushes validate
+Terraform and build/type-check the static export. The workflow also checks the
+landing page, exported patient route, and static assets exist before uploading.
+
+On main, validation is followed by Terraform plan/apply and deployment of the
+same exported artifact using `Azure/static-web-apps-deploy`. OIDC authenticates
+the release to Azure; the SWA deployment token is retrieved at runtime and
+masked. Required protected `azure-demo` Environment variables are
+`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
+The release identity needs Contributor on the demo group and Storage Blob Data
+Contributor on the state container. Provision the group with an authorized
+operator if the release identity is resource-group-scoped.
+
+The endpoint must return the actual synthetic demo marker, not merely HTTP 200,
+before the workflow updates this guide's URL. Documentation-only commits do
+not trigger deployment. Main runs queue rather than interrupting an apply.
+Same-repository PRs deploy the validated artifact to SWA previews using the
+repository secret `AZURE_STATIC_WEB_APPS_API_TOKEN`; previews skip explicitly
+when the secret is unavailable. Fork PRs validate only and receive no deployment
+credentials. Preview execution still requires verification after publication.
+
+## Terraform, teardown, and rollback
+
+Use `infrastructure/demo/`, not the full application root at
+`infrastructure/azure/`. Both local and Actions runs use the same Blob backend
+and historical `folium-demo-static-web-app.tfstate` key. Do not rename the key.
 
 ```bash
 cd infrastructure/demo
-az login
-az account set --subscription "<subscription-id>"
 terraform init -reconfigure
-terraform plan -out=tfplan \
-  -var="subscription_id=$(az account show --query id --output tsv)" \
-  -var="enable_app_service_demo=true"
+terraform plan -out=swa.tfplan -var="subscription_id=<subscription-id>"
+terraform apply swa.tfplan
 ```
 
-default resource group: `rg-folium-demo`, East US. App Service defaults to
-`folium-demo` (renamed from `folium-demo-free`); override the globally unique
-Web App name if necessary. Review the plan before applying: it removes the
-former demo Static Web App from state and adds F1 hosting. The operator has
-already removed the live Static Web App; refresh and review the plan to
-reconcile that deletion. Disabling the optional flag after
-provisioning plans destruction of the App Service resources.
+Neither `container_image` nor `enable_app_service_demo` exists in the SWA root.
+Never apply an old ACA/F1 plan. After an interrupted apply, confirm no Terraform
+writer is running before addressing a stale lock; do not bypass locking.
 
-The pipeline applies Terraform only on main in the protected Environment,
-explicitly enabling the Free F1 resources. Configure required Environment
-reviewers before merging. New non-main runs cancel older runs for the same
-source branch, including duplicate push/PR runs. Main runs queue rather than
-interrupting an in-progress apply or release.
-Grant the identity Contributor scoped to the demo resource group and Storage
-Blob Data Contributor on the state container. Your local Azure CLI identity
-also needs Storage Blob Data Contributor on that same container. Bootstrap/import the resource
-group with an authorized operator rather than granting subscription-wide access.
+Disable the release workflow and review a destroy plan for this isolated root
+before teardown. Preserve shared state storage. Roll back by redeploying a
+previously validated static artifact; rollback has not yet been live-tested.
 
-## Rollback and teardown
+## Verified evidence
 
-Retain a known-good release ZIP outside the short-lived CI artifact retention
-window. Roll back by redeploying that package through the protected workflow
-process and repeating HTTP/mock-flow checks. Reverting code alone does not
-restore the removed Static Web App. Rollback has not yet been live-tested.
-
-Disable the parent pipeline before teardown. Review a destroy plan
-using the same subscription and `enable_app_service_demo=true` inputs; destroy
-only the isolated demo target, never the full-stack root.
-
-## Safety
-
-Use synthetic data only. This demo is not a clinical system and does not provide
-production authentication or persistence. Live deployment, quota validation,
-browser network checks, URL-commit behavior, and rollback remain acceptance
-checks rather than verified outcomes.
+On November 12, 2026 the exported app deployed successfully to the URL above.
+Live browser checks loaded the provider dashboard, opened the seeded patient's
+history, and created a synthetic patient whose query-based history route
+rendered successfully. Dashboard/history navigation recorded no external or
+backend requests and no page errors. The local export build, TypeScript check,
+and nine-route/asset checks passed. CI deployment and preview acceptance work
+remain tracked in issue #16; issue #88 preserves the Azure investigation.

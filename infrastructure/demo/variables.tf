@@ -13,23 +13,11 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for the frontend demo resources."
   type        = string
+  default     = "Central US"
+}
+
+variable "resource_group_location" {
+  description = "Metadata location of the existing resource group; independent of the hosting region."
+  type        = string
   default     = "East US"
-}
-
-variable "enable_app_service_demo" {
-  description = "Create Free F1 App Service using the built-in Node runtime."
-  type        = bool
-  default     = false
-}
-
-variable "app_service_plan_name" {
-  description = "Name of the Linux F1 App Service plan."
-  type        = string
-  default     = "asp-folium-demo-free"
-}
-
-variable "app_service_name" {
-  description = "Globally unique name of the Node demo Web App."
-  type        = string
-  default     = "folium-demo"
 }
