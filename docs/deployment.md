@@ -16,15 +16,16 @@ Pending first successful deployment.
 The current deployment remains on Azure Static Web Apps until the App Service
 container migration is provisioned and enabled. The container workflow builds
 and smoke-tests the production image on frontend changes, publishes the tested
-image to GHCR on `main`, and deploys its immutable digest only when
-`AZURE_DEMO_APPSERVICE_ENABLED=true` is configured in the `azure-demo`
-Environment. It updates this URL only after the deployed endpoint passes an
-HTTP smoke test. URL-only commits to this guide do not retrigger deployment.
+image to Azure Container Registry on `main`, and deploys its immutable digest
+only when `AZURE_DEMO_APPSERVICE_ENABLED=true` is configured in the
+`azure-demo` Environment. It updates this URL only after the deployed endpoint
+passes an HTTP smoke test. URL-only commits to this guide do not retrigger
+deployment.
 
-Before enabling App Service deployment, set the `folium-demo` GHCR package
-visibility to public so the Web App can pull the image without credentials.
-Configure the `azure-demo` Environment with its Azure OIDC variables and
-reviewer protection.
+GitHub Actions uses Azure OIDC with AcrPush permission; the Web App pulls
+from the private registry using its system-assigned identity with AcrPull.
+Registry admin credentials remain disabled. Configure the `azure-demo`
+Environment with its Azure OIDC variables, ACR name, and reviewer protection.
 
 ## Provisioning
 
@@ -35,6 +36,13 @@ resources use a Linux B1 plan and incur recurring charges. Enable them only
 after reviewing current pricing and authorizing the cost. Do not apply
 `infrastructure/azure/`, which provisions the full-stack application and
 other paid services.
+
+The optional container target also provisions a private Basic Azure Container
+Registry. Current published list pricing is $0.167/day for ACR Basic (about
+$5.09/month at 30.4 days); Linux B1 was previously estimated at $12.41/month
+for 730 hours in East US 2. The combined estimate is about $17.50/month before
+taxes, billing adjustments, storage overages, and network costs. Recheck
+current prices before provisioning.
 
 The demo state uses the dedicated `foliumdemotfstate` storage account and the
 separate `folium-demo-static-web-app.tfstate` key in the `tfstate` container.
@@ -48,7 +56,8 @@ cd infrastructure/azure/demo
 terraform init
 terraform apply \
   -var="subscription_id=$(az account show --query id --output tsv)" \
-  -var="static_web_app_name=<globally-unique-name>"
+  -var="static_web_app_name=<globally-unique-name>" \
+  -var="container_registry_name=<globally-unique-name>"
 ```
 
 The default resource group is `rg-folium-demo` in `East US 2`. The app name
@@ -71,16 +80,23 @@ Configure these Environment variables in GitHub:
   Azure identity with a federated credential for
   `repo:pedropcamellon@83567517/folium@1174567174:environment:azure-demo`.
 - `AZURE_DEMO_STATIC_WEB_APP_NAME` for the globally unique app name.
+- `AZURE_DEMO_ACR_NAME` for the globally unique container registry name.
 - `AZURE_DEMO_APPSERVICE_ENABLED=true` only after the App Service is provisioned
   and deployment is approved; also set `AZURE_DEMO_APPSERVICE_NAME` and
   `AZURE_DEMO_RESOURCE_GROUP`.
 
 Grant that identity **Storage Blob Data Contributor** on the
 `foliumdemotfstate/tfstate` container and **Contributor** only on
-`rg-folium-demo`. For the first run, create the resource group with an
-authorized operator identity and import it into the demo state before using
-the GitHub workflow; do not grant the workflow subscription-wide Contributor
-just to create the group.
+`rg-folium-demo`. Grant the same federated identity **AcrPush** on the demo
+registry for CI image publishing; the Web App's system identity receives
+**AcrPull** through Terraform. Because Terraform creates this role assignment,
+its identity also needs role-assignment write permission scoped to
+`rg-folium-demo` (for example, Role Based Access Control Administrator with a
+role-assignment condition limiting grants to AcrPull), in addition to
+Contributor. For the first run, create the resource group with an authorized
+operator identity and import it into the demo state before using the GitHub
+workflow; do not grant the workflow subscription-wide Contributor just to
+create the group.
 
 ```bash
 az group create --name rg-folium-demo --location "East US 2"
@@ -89,6 +105,7 @@ terraform init
 terraform import \
   -var="subscription_id=$(az account show --query id --output tsv)" \
   -var="static_web_app_name=<globally-unique-name>" \
+  -var="container_registry_name=<globally-unique-name>" \
   module.resource_group.azurerm_resource_group.this \
   "/subscriptions/$(az account show --query id --output tsv)/resourceGroups/rg-folium-demo"
 ```
@@ -109,9 +126,9 @@ az staticwebapp secrets list --name <app-name> --resource-group rg-folium-demo \
 ```
 
 The Free tier has service limits; exceeding them may require a plan change.
-No backend, database, Azure Container Registry, monitoring, secrets vault, or
-model service is part of this target. The optional container uses public GHCR;
-ensure the image contains only the public synthetic-data demo.
+No backend, database beyond the optional container registry, monitoring,
+secrets vault, or model service is part of this target. Ensure the private
+registry contains only the synthetic-data demo image.
 
 ## Teardown
 
@@ -122,6 +139,7 @@ cd infrastructure/azure/demo
 terraform destroy \
   -var="subscription_id=$(az account show --query id --output tsv)" \
   -var="static_web_app_name=<globally-unique-name>" \
+  -var="container_registry_name=<globally-unique-name>" \
   -var="enable_app_service_demo=true"
 ```
 

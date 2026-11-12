@@ -39,8 +39,7 @@ variable "app_service_name" {
   default     = "folium-demo-container"
 }
 
-variable "container_image" {
-  description = "Public GHCR image and tag used by the container-based demo."
+variable "container_registry_name" {
+  description = "Globally unique name of the private Azure Container Registry."
   type        = string
-  default     = "ghcr.io/pedropcamellon/folium-demo:latest"
 }

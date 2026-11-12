@@ -13,3 +13,7 @@ output "demo_url" {
 output "app_service_demo_url" {
   value = var.enable_app_service_demo ? "https://${azurerm_linux_web_app.container_demo[0].default_hostname}" : null
 }
+
+output "container_registry_login_server" {
+  value = var.enable_app_service_demo ? azurerm_container_registry.demo[0].login_server : null
+}

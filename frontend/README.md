@@ -49,13 +49,14 @@ optionally provision an Azure App Service Linux B1 plan and container Web App;
 that paid environment is disabled by default and has not been provisioned.
 The migration remains tracked in issue #88.
 
-On pushes to `main`, the container check publishes the exact tested image to
-GHCR under a commit-specific tag and deploys that digest only when the
-`AZURE_DEMO_APPSERVICE_ENABLED` GitHub Environment variable is `true`. Before
-enabling deployment, make the `folium-demo` GHCR package public so App Service
-can pull it without registry credentials, and configure the `azure-demo`
-Environment's Azure OIDC variables and approval protections. Successful
-deployments update the URL in the deployment guide after an HTTP smoke test.
+On pushes to `main`, after the App Service gate is enabled, the container
+workflow publishes the exact tested image to Azure Container Registry under a
+commit-specific tag and deploys that digest. GitHub Actions uses Azure OIDC
+and AcrPush; App Service uses its system-assigned identity with AcrPull. The
+registry admin account stays disabled. Configure the `azure-demo` Environment
+with Azure OIDC variables, the registry name, and reviewer protections before
+enabling this flow. Successful deployments update the URL in the deployment
+guide after an HTTP smoke test.
 
 The prior Static Web Apps deployment relied on Oryx dependency resolution,
 which did not consistently follow the repository's pnpm lockfile. It exposed
@@ -66,8 +67,13 @@ without requiring a paid Azure deployment.
 
 The F1 plan's multi-app allowance does not include custom containers. The
 minimum planned container tier is Linux B1, estimated at about $12.41/month
-for 730 hours in East US 2 before taxes or incidental charges. The Terraform
-switch is opt-in; do not apply it without reviewing current pricing.
+for 730 hours in East US 2. ACR Basic is listed at $0.167/day (about
+$5.09/month for 30.4 days), so estimated fixed plan+registry charges are
+about $17.50/month before taxes, storage overages, and network costs. These
+are list-price estimates; the Free/F1 $0 screenshot is not applicable to
+custom containers. Verify the Azure quote for both services before
+provisioning. The Terraform switch is opt-in; do not apply without reviewing
+the full estimate.
 
 See the [deployment guide](../docs/deployment.md) for credentials, production
 URL, Terraform, and deployment verification.

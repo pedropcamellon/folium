@@ -37,6 +37,17 @@ resource "azurerm_service_plan" "container_demo" {
   tags                = local.tags
 }
 
+resource "azurerm_container_registry" "demo" {
+  count = var.enable_app_service_demo ? 1 : 0
+
+  name                = var.container_registry_name
+  resource_group_name = module.resource_group.name
+  location            = module.resource_group.location
+  sku                 = "Basic"
+  admin_enabled       = false
+  tags                = local.tags
+}
+
 resource "azurerm_linux_web_app" "container_demo" {
   count = var.enable_app_service_demo ? 1 : 0
 
@@ -47,12 +58,17 @@ resource "azurerm_linux_web_app" "container_demo" {
   https_only          = true
   tags                = local.tags
 
+  identity {
+    type = "SystemAssigned"
+  }
+
   site_config {
-    always_on = true
+    always_on                               = true
+    container_registry_use_managed_identity = true
 
     application_stack {
-      docker_image_name   = var.container_image
-      docker_registry_url = "https://ghcr.io"
+      docker_image_name   = "folium-demo:bootstrap"
+      docker_registry_url = "https://${azurerm_container_registry.demo[0].login_server}"
     }
   }
 
@@ -63,7 +79,16 @@ resource "azurerm_linux_web_app" "container_demo" {
 
   lifecycle {
     ignore_changes = [
-      site_config[0].application_stack[0].docker_image_name
+      site_config[0].application_stack[0].docker_image_name,
     ]
   }
+}
+
+resource "azurerm_role_assignment" "app_service_acr_pull" {
+  count = var.enable_app_service_demo ? 1 : 0
+
+  scope                            = azurerm_container_registry.demo[0].id
+  role_definition_name             = "AcrPull"
+  principal_id                     = azurerm_linux_web_app.container_demo[0].identity[0].principal_id
+  skip_service_principal_aad_check = true
 }
