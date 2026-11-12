@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { publicAsset } from "@/lib/demo-routing";
 
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
@@ -23,7 +24,7 @@ export default function SidebarHeader({
             >
                 {collapsed ? (
                     <Image
-                        src="/logo-icon.png"
+                        src={publicAsset("/logo-icon.png")}
                         alt="Folium"
                         width={28}
                         height={34}
@@ -31,7 +32,7 @@ export default function SidebarHeader({
                     />
                 ) : (
                     <Image
-                        src="/banner.png"
+                        src={publicAsset("/banner.png")}
                         alt="Folium EHR"
                         width={473}
                         height={149}
