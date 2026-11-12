@@ -37,7 +37,7 @@ Each stage requires the previous stage to succeed. The children use
 `azure-demo` Environment with required approval and configure its variables:
 
 - `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`.
-- `AZURE_DEMO_APPSERVICE_NAME` and `AZURE_DEMO_RESOURCE_GROUP`.
+- `AZURE_DEMO_RESOURCE_GROUP`.
 
 Use an Entra federated credential for the repository's `azure-demo` Environment
 with issuer `https://token.actions.githubusercontent.com` and audience
@@ -52,20 +52,30 @@ on PRs.
 
 ## Terraform
 
-Use only `infrastructure/azure/demo/`, not the paid full-stack root. F1
+Use `infrastructure/demo/` for the standalone mock demo. Use
+`infrastructure/azure/` for the full Folium Azure application. These roots
+serve different purposes and must not be interchanged. F1
 provisioning is opt-in. The dedicated backend retains the historical
 `folium-demo-static-web-app.tfstate` key for state continuity. Do not rename
 the key or discard state during this migration.
 
+Local plan/apply and GitHub Actions use this same Azure Blob remote state.
+After moving the Terraform root, initialize locally with `-reconfigure` so a
+previous validation-only local backend is not reused. The `-backend=false`
+option is only for CI validation and must not be used for plan or apply.
+
 ```bash
-cd infrastructure/azure/demo
-terraform init
+cd infrastructure/demo
+az login
+az account set --subscription "<subscription-id>"
+terraform init -reconfigure
 terraform plan -out=tfplan \
   -var="subscription_id=$(az account show --query id --output tsv)" \
   -var="enable_app_service_demo=true"
 ```
 
-Default resource group: `rg-folium-demo`, East US 2. Override the globally unique
+default resource group: `rg-folium-demo`, East US. App Service defaults to
+`folium-demo` (renamed from `folium-demo-free`); override the globally unique
 Web App name if necessary. Review the plan before applying: it removes the
 former demo Static Web App from state and adds F1 hosting. The operator has
 already removed the live Static Web App; refresh and review the plan to
@@ -78,7 +88,8 @@ reviewers before merging. New non-main runs cancel older runs for the same
 source branch, including duplicate push/PR runs. Main runs queue rather than
 interrupting an in-progress apply or release.
 Grant the identity Contributor scoped to the demo resource group and Storage
-Blob Data Contributor on the state container. Bootstrap/import the resource
+Blob Data Contributor on the state container. Your local Azure CLI identity
+also needs Storage Blob Data Contributor on that same container. Bootstrap/import the resource
 group with an authorized operator rather than granting subscription-wide access.
 
 ## Rollback and teardown

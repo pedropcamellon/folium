@@ -31,5 +31,5 @@ variable "app_service_plan_name" {
 variable "app_service_name" {
   description = "Globally unique name of the Node demo Web App."
   type        = string
-  default     = "folium-demo-free"
+  default     = "folium-demo"
 }

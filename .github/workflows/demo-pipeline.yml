@@ -4,13 +4,13 @@ on:
   push:
     paths:
       - frontend/**
-      - infrastructure/azure/demo/**
+      - infrastructure/demo/**
       - infrastructure/azure/modules/resource_group/**
       - .github/workflows/demo-*.yml
   pull_request:
     paths:
       - frontend/**
-      - infrastructure/azure/demo/**
+      - infrastructure/demo/**
       - infrastructure/azure/modules/resource_group/**
       - .github/workflows/demo-*.yml
   workflow_dispatch:
@@ -41,3 +41,5 @@ jobs:
       contents: write
       id-token: write
     uses: ./.github/workflows/demo-deploy.yml
+    with:
+      app_service_name: ${{ needs.infra.outputs.app_service_name }}

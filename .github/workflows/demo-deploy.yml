@@ -2,6 +2,11 @@ name: Demo deploy
 
 on:
   workflow_call:
+    inputs:
+      app_service_name:
+        description: App Service name returned by the infrastructure stage.
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -17,7 +22,7 @@ jobs:
     environment: azure-demo
     env:
       AZURE_RESOURCE_GROUP: ${{ vars.AZURE_DEMO_RESOURCE_GROUP }}
-      AZURE_APP_NAME: ${{ vars.AZURE_DEMO_APPSERVICE_NAME }}
+      AZURE_APP_NAME: ${{ inputs.app_service_name }}
     steps:
       - name: Checkout deployment documentation
         uses: actions/checkout@v4
@@ -37,7 +42,8 @@ jobs:
       - name: Deploy tested package
         run: |
           : "${AZURE_RESOURCE_GROUP:?Set AZURE_DEMO_RESOURCE_GROUP}"
-          : "${AZURE_APP_NAME:?Set AZURE_DEMO_APPSERVICE_NAME}"
+          : "${AZURE_APP_NAME:?Infrastructure stage did not provide the App Service name}"
+          az webapp start --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME"
           az webapp deploy --resource-group "$AZURE_RESOURCE_GROUP" \
             --name "$AZURE_APP_NAME" --src-path /tmp/folium-demo.zip --type zip
       - name: Smoke-test deployed demo
