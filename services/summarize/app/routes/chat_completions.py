@@ -28,6 +28,8 @@ async def chat_completions(request: ChatCompletionsRequest) -> dict:
             messages=[message.model_dump() for message in request.messages],
             temperature=request.temperature,
             max_tokens=request.max_tokens,
+            top_p=request.top_p,
+            repeat_penalty=request.repeat_penalty,
             response_format=request.response_format,
         )
         choice = response["choices"][0]
