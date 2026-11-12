@@ -16,30 +16,20 @@ variable "location" {
   default     = "East US 2"
 }
 
-variable "static_web_app_name" {
-  description = "Globally unique name for the Static Web App."
-  type        = string
-}
-
 variable "enable_app_service_demo" {
-  description = "Create the paid Linux B1 App Service container environment."
+  description = "Create Free F1 App Service using the built-in Node runtime."
   type        = bool
   default     = false
 }
 
 variable "app_service_plan_name" {
-  description = "Name of the Linux B1 App Service plan."
+  description = "Name of the Linux F1 App Service plan."
   type        = string
-  default     = "asp-folium-demo-container"
+  default     = "asp-folium-demo-free"
 }
 
 variable "app_service_name" {
-  description = "Globally unique name of the container-based demo Web App."
+  description = "Globally unique name of the Node demo Web App."
   type        = string
-  default     = "folium-demo-container"
-}
-
-variable "container_registry_name" {
-  description = "Globally unique name of the private Azure Container Registry."
-  type        = string
+  default     = "folium-demo-free"
 }

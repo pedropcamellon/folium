@@ -44,19 +44,16 @@ behind the current client architecture and workflow-state patterns.
 
 ## Azure mock demo deployment
 
-The current demo remains on Azure Static Web Apps Free. Terraform can
-optionally provision an Azure App Service Linux B1 plan and container Web App;
-that paid environment is disabled by default and has not been provisioned.
-The migration remains tracked in issue #88.
+The demo uses Free F1 App Service with its built-in Node runtime, not a custom
+container. No paid B1 or ACR is provisioned. The former demo Static Web App
+configuration and deployment workflow have been removed.
 
-On pushes to `main`, after the App Service gate is enabled, the container
-workflow publishes the exact tested image to Azure Container Registry under a
-commit-specific tag and deploys that digest. GitHub Actions uses Azure OIDC
-and AcrPush; App Service uses its system-assigned identity with AcrPull. The
-registry admin account stays disabled. Configure the `azure-demo` Environment
-with Azure OIDC variables, the registry name, and reviewer protections before
-enabling this flow. Successful deployments update the URL in the deployment
-guide after an HTTP smoke test.
+CI builds and HTTP-smoke-tests a glibc-based Docker image, exports its
+standalone runtime as a ZIP, and tests the extracted package under clean Node.
+F1 receives that package through Azure OIDC ZIP deployment. Docker is a build
+and validation tool only; F1 cannot host custom containers. Protect the
+`azure-demo` Environment with required approval. Successful deployments update
+the documented URL after HTTP smoke testing.
 
 The prior Static Web Apps deployment relied on Oryx dependency resolution,
 which did not consistently follow the repository's pnpm lockfile. It exposed
@@ -65,15 +62,8 @@ export mismatch. Building and smoke-testing the production container before
 deployment validates the same locked dependency and runtime packaging
 without requiring a paid Azure deployment.
 
-The F1 plan's multi-app allowance does not include custom containers. The
-minimum planned container tier is Linux B1, estimated at about $12.41/month
-for 730 hours in East US 2. ACR Basic is listed at $0.167/day (about
-$5.09/month for 30.4 days), so estimated fixed plan+registry charges are
-about $17.50/month before taxes, storage overages, and network costs. These
-are list-price estimates; the Free/F1 $0 screenshot is not applicable to
-custom containers. Verify the Azure quote for both services before
-provisioning. The Terraform switch is opt-in; do not apply without reviewing
-the full estimate.
+F1 has shared compute/storage limits and no production SLA. Provisioning is
+opt-in; verify current quota and availability before applying Terraform.
 
 See the [deployment guide](../docs/deployment.md) for credentials, production
 URL, Terraform, and deployment verification.

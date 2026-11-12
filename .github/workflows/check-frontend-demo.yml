@@ -36,15 +36,35 @@ jobs:
       - name: Stop production container
         if: always() && steps.start-container.outcome == 'success'
         run: docker stop folium-frontend-demo-check
-      - name: Save tested image for publishing
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: docker save folium-frontend-demo:check | gzip -1 > /tmp/folium-frontend-demo.tar.gz
-      - name: Upload tested image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Package tested standalone runtime
+        run: |
+          container_id="$(docker create folium-frontend-demo:check)"
+          trap 'docker rm "$container_id"' EXIT
+          mkdir -p /tmp/folium-package
+          docker cp "$container_id:/app/." /tmp/folium-package/
+          test -f /tmp/folium-package/server.js
+          test -d /tmp/folium-package/.next/static
+          test -d /tmp/folium-package/public
+          cd /tmp/folium-package
+          zip -qr /tmp/folium-demo.zip .
+          unzip -t /tmp/folium-demo.zip
+      - name: Smoke-test extracted deployment package
+        run: |
+          mkdir -p /tmp/folium-extracted
+          unzip -q /tmp/folium-demo.zip -d /tmp/folium-extracted
+          docker run --detach --rm --publish 3000:3000 \
+            --volume /tmp/folium-extracted:/app:ro --workdir /app \
+            --env HOSTNAME=0.0.0.0 --env PORT=3000 \
+            --name folium-package-check node:20.20.2-bookworm-slim node server.js
+          trap 'docker logs folium-package-check; docker stop folium-package-check' EXIT
+          curl --fail --retry 10 --retry-all-errors --retry-delay 2 http://127.0.0.1:3000/
+          docker exec folium-package-check node -e "require('sharp'); console.log('Native Sharp dependency loaded')"
+      - name: Upload tested package
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: folium-frontend-demo-image
-          path: /tmp/folium-frontend-demo.tar.gz
+          name: folium-frontend-demo-package
+          path: /tmp/folium-demo.zip
           retention-days: 1
       - name: Report build failure
         if: failure()
@@ -52,63 +72,13 @@ jobs:
           echo "::error::Mock frontend container validation failed. Inspect the Docker build and HTTP smoke-test logs before deploying."
           echo "Mock frontend container validation failed; no Azure deployment was attempted." >> "$GITHUB_STEP_SUMMARY"
 
-  publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
     needs: build
     runs-on: ubuntu-latest
-    environment: azure-demo
-    permissions:
-      contents: read
-      id-token: write
-    outputs:
-      image_ref: ${{ steps.push.outputs.image_ref }}
-    env:
-      AZURE_ACR_NAME: ${{ vars.AZURE_DEMO_ACR_NAME }}
-      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-    steps:
-      - name: Download tested image
-        uses: actions/download-artifact@v4
-        with:
-          name: folium-frontend-demo-image
-          path: /tmp
-      - name: Load tested image
-        run: gzip -dc /tmp/folium-frontend-demo.tar.gz | docker load
-      - name: Log in to Azure with OIDC
-        uses: azure/login@v2
-        with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-      - name: Log in to Azure Container Registry
-        run: az acr login --name "$AZURE_ACR_NAME"
-      - name: Resolve registry endpoint
-        run: echo "ACR_LOGIN_SERVER=$(az acr show --name \"$AZURE_ACR_NAME\" --query loginServer --output tsv)" >> "$GITHUB_ENV"
-      - name: Publish tested image to ACR
-        id: push
-        env:
-          IMAGE_TAG: sha-${{ github.sha }}
-        run: |
-          IMAGE="$ACR_LOGIN_SERVER/folium-demo"
-          docker tag folium-frontend-demo:check "$IMAGE:$IMAGE_TAG"
-          docker push "$IMAGE:$IMAGE_TAG" | tee /tmp/docker-push.log
-          digest="$(az acr repository show --name "$AZURE_ACR_NAME" --image "folium-demo:$IMAGE_TAG" --query digest --output tsv)"
-          if [ -z "$digest" ]; then
-            echo "::error::Could not determine the published image digest."
-            exit 1
-          fi
-          echo "image_ref=$IMAGE@$digest" >> "$GITHUB_OUTPUT"
-      - name: Report image publish failure
-        if: failure()
-        run: |
-          echo "::error::Publishing the tested frontend image to ACR failed. Check Azure OIDC and AcrPush permissions."
-          echo "Frontend image publishing failed; App Service deployment did not run." >> "$GITHUB_STEP_SUMMARY"
-
-  deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
-    needs: publish
-    runs-on: ubuntu-latest
+    concurrency:
+      group: folium-demo-deployment
+      cancel-in-progress: false
     environment: azure-demo
     permissions:
       contents: write
@@ -116,26 +86,32 @@ jobs:
     env:
       AZURE_RESOURCE_GROUP: ${{ vars.AZURE_DEMO_RESOURCE_GROUP }}
       AZURE_APP_NAME: ${{ vars.AZURE_DEMO_APPSERVICE_NAME }}
-      AZURE_ACR_NAME: ${{ vars.AZURE_DEMO_ACR_NAME }}
-      TF_IMAGE_REF: ${{ needs.publish.outputs.image_ref }}
     steps:
-      - name: Checkout
+      - name: Checkout deployment documentation
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download tested package
+        uses: actions/download-artifact@v4
+        with:
+          name: folium-frontend-demo-package
+          path: /tmp
       - name: Log in to Azure with OIDC
         uses: azure/login@v2
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Configure App Service with the tested image
+      - name: Deploy tested package to Free F1 App Service
         run: |
-          registry="$(az acr show --name "$AZURE_ACR_NAME" --query loginServer --output tsv)"
-          az webapp config container set \
+          : "${AZURE_RESOURCE_GROUP:?Set AZURE_DEMO_RESOURCE_GROUP in the azure-demo Environment}"
+          : "${AZURE_APP_NAME:?Set AZURE_DEMO_APPSERVICE_NAME in the azure-demo Environment}"
+          az webapp deploy \
             --resource-group "$AZURE_RESOURCE_GROUP" \
             --name "$AZURE_APP_NAME" \
-            --docker-custom-image-name "$TF_IMAGE_REF" \
-            --docker-registry-server-url "https://$registry"
-          az webapp restart --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME"
+            --src-path /tmp/folium-demo.zip \
+            --type zip
       - name: Smoke-test deployed demo
         id: smoke-test
         run: |
@@ -155,7 +131,13 @@ jobs:
           const fs = require("node:fs");
           const file = "docs/deployment.md";
           const url = process.env.DEMO_URL;
-          if (!url || !/^https:\/\/[a-z0-9-]+\.azurewebsites\.net\/?$/i.test(url)) {
+          let parsed;
+          try {
+            parsed = new URL(url);
+          } catch {
+            throw new Error("App Service did not return a valid production URL.");
+          }
+          if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".azurewebsites.net")) {
             throw new Error("App Service did not return a valid production URL.");
           }
           const content = fs.readFileSync(file, "utf8");
@@ -180,5 +162,5 @@ jobs:
       - name: Report deployment failure
         if: failure()
         run: |
-          echo "::error::App Service deployment or its HTTP smoke test failed. Inspect Azure and container logs before retrying."
-          echo "App Service deployment failed or did not pass its HTTP smoke test; the documented production URL was not updated." >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::F1 deployment or HTTP smoke test failed. Inspect Azure deployment and application logs before retrying."
+          echo "F1 deployment or HTTP smoke testing failed; inspect the logs for the last completed step." >> "$GITHUB_STEP_SUMMARY"
