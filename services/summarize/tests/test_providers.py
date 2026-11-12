@@ -22,6 +22,67 @@ class TestProviderInterface:
 
         assert provider.get_provider_name() == "local"
 
+    @pytest.mark.asyncio
+    async def test_local_provider_forwards_sampling_parameters(self, monkeypatch):
+        """Test that local provider sampling parameters reach the inference engine."""
+        from app.providers.local import LocalLLMProvider
+        from app.providers import local as local_provider_module
+
+        captured_arguments = {}
+
+        class FakeModel:
+            def create_chat_completion(self, **kwargs):
+                captured_arguments.update(kwargs)
+                return {
+                    "choices": [{"message": {"content": "A concise summary."}}],
+                    "usage": {},
+                }
+
+        monkeypatch.setattr(
+            local_provider_module.local_inference_engine,
+            "_get_model",
+            lambda: FakeModel(),
+        )
+
+        def fake_format_prompt(transcript, format):
+            return transcript
+
+        monkeypatch.setattr(
+            local_provider_module,
+            "format_prompt",
+            fake_format_prompt,
+        )
+
+        result = await LocalLLMProvider().summarize(
+            "Synthetic follow-up transcript.", format="narrative"
+        )
+
+        assert result["summary"] == "A concise summary."
+        assert captured_arguments["top_p"] == 0.9
+        assert captured_arguments["repeat_penalty"] == 1.1
+
+    def test_local_inference_forwards_sampling_parameters(self, monkeypatch):
+        """Test local inference forwards sampling parameters to llama.cpp."""
+        from app.inference.local import LocalInferenceEngine
+
+        captured_arguments = {}
+
+        class FakeModel:
+            def create_chat_completion(self, **kwargs):
+                captured_arguments.update(kwargs)
+                return {"choices": []}
+
+        engine = LocalInferenceEngine()
+        monkeypatch.setattr(engine, "_get_model", lambda: FakeModel())
+        engine.chat_completion(
+            messages=[{"role": "user", "content": "Synthetic input"}],
+            top_p=0.65,
+            repeat_penalty=1.3,
+        )
+
+        assert captured_arguments["top_p"] == 0.65
+        assert captured_arguments["repeat_penalty"] == 1.3
+
     def test_openai_provider_not_implemented(self):
         """Test that OpenAI provider raises NotImplementedError."""
         from app.providers.openai import OpenAIProvider

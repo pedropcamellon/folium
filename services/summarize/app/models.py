@@ -13,10 +13,14 @@ class ChatMessage(BaseModel):
 class ChatCompletionsRequest(BaseModel):
     """Subset of the OpenAI chat-completions request used by local workers."""
 
+    model_config = ConfigDict(extra="forbid")
+
     model: str = Field(..., min_length=1)
     messages: list[ChatMessage] = Field(..., min_length=1, max_length=20)
     temperature: float | None = Field(None, ge=0, le=2)
     max_tokens: int | None = Field(None, ge=1, le=4_000)
+    top_p: float = Field(0.9, ge=0, le=1)
+    repeat_penalty: float = Field(1.1, gt=0)
     response_format: dict[str, str] | None = None
 
 
