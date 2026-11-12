@@ -13,7 +13,7 @@ variable "resource_group_name" {
 variable "location" {
   description = "Azure region for the frontend demo resources."
   type        = string
-  default     = "East US 2"
+  default     = "East US"
 }
 
 variable "enable_app_service_demo" {
