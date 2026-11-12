@@ -1,0 +1,85 @@
+name: Demo deploy
+
+on:
+  workflow_call:
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' && vars.AZURE_DEMO_APPSERVICE_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: folium-demo-deployment
+      cancel-in-progress: false
+    environment: azure-demo
+    env:
+      AZURE_RESOURCE_GROUP: ${{ vars.AZURE_DEMO_RESOURCE_GROUP }}
+      AZURE_APP_NAME: ${{ vars.AZURE_DEMO_APPSERVICE_NAME }}
+    steps:
+      - name: Checkout deployment documentation
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Download validated package from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: folium-frontend-demo-package
+          path: /tmp
+      - name: Log in to Azure with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Deploy tested package
+        run: |
+          : "${AZURE_RESOURCE_GROUP:?Set AZURE_DEMO_RESOURCE_GROUP}"
+          : "${AZURE_APP_NAME:?Set AZURE_DEMO_APPSERVICE_NAME}"
+          az webapp deploy --resource-group "$AZURE_RESOURCE_GROUP" \
+            --name "$AZURE_APP_NAME" --src-path /tmp/folium-demo.zip --type zip
+      - name: Smoke-test deployed demo
+        id: smoke-test
+        run: |
+          hostname="$(az webapp show --resource-group "$AZURE_RESOURCE_GROUP" --name "$AZURE_APP_NAME" --query defaultHostName --output tsv)"
+          test -n "$hostname" || { echo "::error::App Service returned no hostname."; exit 1; }
+          url="https://$hostname"
+          curl --fail --retry 30 --retry-all-errors --retry-delay 10 --max-time 20 "$url/"
+          echo "demo_url=$url" >> "$GITHUB_OUTPUT"
+      - name: Update documented production demo URL
+        env:
+          DEMO_URL: ${{ steps.smoke-test.outputs.demo_url }}
+        run: |
+          node <<'NODE'
+          const fs = require("node:fs");
+          const file = "docs/deployment.md";
+          const url = process.env.DEMO_URL;
+          const parsed = new URL(url);
+          if (parsed.protocol !== "https:" || !parsed.hostname.endsWith(".azurewebsites.net")) {
+            throw new Error("App Service did not return a valid production URL.");
+          }
+          const content = fs.readFileSync(file, "utf8");
+          const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
+          if (!marker.test(content)) {
+            throw new Error("Could not find the demo URL markers.");
+          }
+          fs.writeFileSync(file, content.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`));
+          NODE
+      - name: Commit demo URL update
+        run: |
+          if git diff --quiet -- docs/deployment.md; then
+            echo "Demo URL is already current."
+            exit 0
+          fi
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add docs/deployment.md
+          git commit -m "docs: update deployed demo URL"
+          git push
+      - name: Report deployment failure
+        if: failure()
+        run: |
+          echo "::error::F1 deployment, smoke test, or documentation update failed."
+          echo "Inspect the failed deployment step before retrying." >> "$GITHUB_STEP_SUMMARY"

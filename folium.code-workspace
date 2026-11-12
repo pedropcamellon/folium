@@ -18,7 +18,7 @@
     },
     {
       "name": "Folium Agents Tasks",
-      "path": "../folium-agents-tasks",
+      "path": "../tasks/folium-agents",
     },
   ],
   "settings": {

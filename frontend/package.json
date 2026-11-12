@@ -74,8 +74,14 @@
             "prettier --write"
         ]
     },
+    "overrides": {
+        "motion-dom": "12.23.12",
+        "motion-utils": "12.23.6"
+    },
     "pnpm": {
         "overrides": {
+            "motion-dom": "12.23.12",
+            "motion-utils": "12.23.6",
             "react": "19.1.0",
             "react-dom": "19.1.0"
         }

@@ -1,5 +1,5 @@
 # Frontend Dockerfile - Next.js with pnpm for fast builds
-FROM node:20.20.2-alpine AS base
+FROM node:20.20.2-bookworm-slim AS base
 
 # Activate the package-manager version declared in package.json.
 RUN corepack enable && corepack prepare pnpm@10.15.1 --activate
@@ -33,8 +33,10 @@ FROM dependencies AS builder
 COPY . .
 
 # Build Next.js app
+ARG NEXT_PUBLIC_API_MODE=mock
+ENV NEXT_PUBLIC_API_MODE=${NEXT_PUBLIC_API_MODE}
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build
+RUN pnpm build --no-lint
 
 # Production stage
 FROM base AS production
@@ -44,8 +46,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create non-root user
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
 
 # Copy built assets from builder
 COPY --from=builder /app/public ./public
