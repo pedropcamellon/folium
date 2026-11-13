@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import {
     ClinicalDocument,
     ClinicalDocumentAttachmentView,
 } from "@/types/clinicalDocument";
+import type { XrayScan } from "@/types/xrayScan";
 import { Upload } from "lucide-react";
 
 import { DeleteDocumentDialog } from "@/components/documents/DeleteDocumentDialog";
@@ -16,6 +17,8 @@ import { Button } from "@/components/ui/button";
 import { API_ENDPOINTS, apiRequest } from "@/lib/api";
 
 import { usePatientDocuments } from "@/hooks/usePatientDocuments";
+
+import { listXrayScans } from "@/services/xrayScanService";
 
 import { DocumentList } from "./DocumentList";
 import { DocumentSearchInput } from "./DocumentSearchInput";
@@ -51,9 +54,42 @@ export function PatientClinicalDocumentsPanel({
         useState<ClinicalDocumentAttachmentView | null>(null);
     const [documentToDelete, setDocumentToDelete] =
         useState<ClinicalDocument | null>(null);
+    const [xrayScans, setXrayScans] = useState<XrayScan[]>([]);
+    const [xrayScanError, setXrayScanError] = useState<string | null>(null);
+
+    const refreshXrayScans = useCallback(async () => {
+        try {
+            setXrayScans(await listXrayScans(patientId));
+            setXrayScanError(null);
+        } catch (error) {
+            setXrayScanError(
+                error instanceof Error
+                    ? error.message
+                    : "Could not load X-ray review status"
+            );
+        }
+    }, [patientId]);
+
+    useEffect(() => {
+        void refreshXrayScans();
+    }, [refreshXrayScans]);
+
+    useEffect(() => {
+        if (
+            !xrayScans.some(
+                (scan) =>
+                    scan.status === "PENDING" || scan.status === "PROCESSING"
+            )
+        ) {
+            return;
+        }
+        const timer = window.setInterval(() => void refreshXrayScans(), 2000);
+        return () => window.clearInterval(timer);
+    }, [refreshXrayScans, xrayScans]);
 
     const handleUploadSuccess = () => {
         refreshDocuments();
+        void refreshXrayScans();
     };
 
     const handleViewDocument = async (doc: ClinicalDocument) => {
@@ -144,6 +180,51 @@ export function PatientClinicalDocumentsPanel({
                 onDownload={handleDownloadDocument}
                 onDelete={handleDeleteClick}
             />
+
+            <section className="mt-6 space-y-3" aria-live="polite">
+                <h3 className="font-semibold">X-ray review</h3>
+                {xrayScanError && (
+                    <p role="alert" className="text-sm text-red-700">
+                        {xrayScanError}
+                    </p>
+                )}
+                {xrayScans.map((scan) => (
+                    <article key={scan.id} className="rounded-md border p-3">
+                        <p className="text-sm font-medium">
+                            Review status: {scan.status}
+                            {scan.status === "COMPLETE" &&
+                                " - Needs provider review"}
+                        </p>
+                        {scan.failureMessage && (
+                            <p
+                                role="alert"
+                                className="mt-1 text-sm text-red-700"
+                            >
+                                {scan.failureMessage}
+                            </p>
+                        )}
+                        {scan.result && (
+                            <>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                    {scan.result.modelRepository} @{" "}
+                                    {scan.result.modelRevision}
+                                </p>
+                                <ul className="mt-2 space-y-1 text-sm">
+                                    {scan.result.findings.map((finding) => (
+                                        <li key={finding.label}>
+                                            {finding.label}: model score{" "}
+                                            {finding.score.toFixed(3)}
+                                        </li>
+                                    ))}
+                                </ul>
+                                <p className="mt-2 text-xs text-muted-foreground">
+                                    {scan.result.disclaimer}
+                                </p>
+                            </>
+                        )}
+                    </article>
+                ))}
+            </section>
 
             <DocumentUploadModal
                 open={uploadModalOpen}

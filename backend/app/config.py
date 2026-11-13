@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     SUMMARIZATION_SERVICE_URL: str = (
         "http://localhost:8002"  # or "http://summarize:8002" in docker-compose
     )
+    XRAY_REVIEW_SERVICE_URL: str = "http://localhost:8010"
+    XRAY_REVIEW_SERVICE_TOKEN: str = ""
 
     # Temporal
     TEMPORAL_ADDRESS: str = "localhost:7233"

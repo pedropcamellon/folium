@@ -2,10 +2,10 @@
  * Central API configuration for FastAPI backend
  * Direct calls to FastAPI (no BFF middleware)
  */
-import { clearAuthToken, getAuthToken } from "./auth-token";
 import { IS_MOCK_API } from "./api-mode";
-import { mockApiRequest } from "./mock-api";
+import { clearAuthToken, getAuthToken } from "./auth-token";
 import { publicAsset } from "./demo-routing";
+import { mockApiRequest } from "./mock-api";
 
 export const FASTAPI_BASE_URL = IS_MOCK_API
     ? ""
@@ -67,6 +67,9 @@ export const API_ENDPOINTS = {
         `${FASTAPI_BASE_URL}/api/v1/imaging-studies/${id}`,
     imagingStudiesByPatient: (patientId: string) =>
         `${FASTAPI_BASE_URL}/api/v1/imaging-studies/?patientId=${patientId}`,
+    xrayScans: `${FASTAPI_BASE_URL}/api/v1/xray-scans/`,
+    xrayScan: (id: string, patientId: string) =>
+        `${FASTAPI_BASE_URL}/api/v1/xray-scans/${id}?patientId=${patientId}`,
 
     // Summarization
     summarize: `${FASTAPI_BASE_URL}/api/v1/summarization`,

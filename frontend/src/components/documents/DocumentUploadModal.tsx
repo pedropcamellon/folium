@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // Types
 import { ClinicalDocumentCategory } from "@/types/clinicalDocument";
+import type {
+    XrayScan,
+    XrayScanResult,
+    XrayScanStatus,
+} from "@/types/xrayScan";
 import {
     AlertCircle,
     CheckCircle2,
@@ -34,6 +39,7 @@ import {
 } from "@/components/ui/select";
 
 import { uploadDocument } from "@/services/clinicalDocumentService";
+import { createXrayScan, getXrayScan } from "@/services/xrayScanService";
 
 interface DocumentUploadModalProps {
     open: boolean;
@@ -74,6 +80,50 @@ export function DocumentUploadModal({
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [uploadedDocumentId, setUploadedDocumentId] = useState<string | null>(
+        null
+    );
+    const [scanId, setScanId] = useState<string | null>(null);
+    const [scanStatus, setScanStatus] = useState<XrayScanStatus | null>(null);
+    const [scanResult, setScanResult] = useState<XrayScanResult | null>(null);
+    const [scanError, setScanError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (
+            !scanId ||
+            !scanStatus ||
+            scanStatus === "COMPLETE" ||
+            scanStatus === "FAILED"
+        ) {
+            return;
+        }
+
+        let active = true;
+        const poll = async () => {
+            try {
+                const scan: XrayScan = await getXrayScan(scanId, patientId);
+                if (!active) return;
+                setScanStatus(scan.status);
+                setScanResult(scan.result);
+                setScanError(scan.failureMessage);
+            } catch (error) {
+                if (active) {
+                    setScanError(
+                        error instanceof Error
+                            ? error.message
+                            : "Could not retrieve scan status"
+                    );
+                }
+            }
+        };
+        const timer = window.setInterval(() => void poll(), 2000);
+        void poll();
+
+        return () => {
+            active = false;
+            window.clearInterval(timer);
+        };
+    }, [patientId, scanId, scanStatus]);
 
     const onDrop = (acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -100,6 +150,11 @@ export function DocumentUploadModal({
         setTitle(file.name.replace(/\.[^/.]+$/, "")); // Remove extension
         setUploadError(null);
         setUploadSuccess(false);
+        setUploadedDocumentId(null);
+        setScanId(null);
+        setScanStatus(null);
+        setScanResult(null);
+        setScanError(null);
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -125,7 +180,7 @@ export function DocumentUploadModal({
         setUploadProgress(0);
 
         try {
-            await uploadDocument({
+            const document = await uploadDocument({
                 file: selectedFile,
                 patientId,
                 category: documentType,
@@ -133,14 +188,17 @@ export function DocumentUploadModal({
                 onProgress: setUploadProgress,
             });
 
+            setUploadedDocumentId(document.id);
             setUploadSuccess(true);
             setUploadProgress(100);
-
-            // Notify parent and close after brief delay
-            setTimeout(() => {
+            if (selectedFile.type.startsWith("image/")) {
                 onUploadSuccess?.();
-                handleClose();
-            }, 1500);
+            } else {
+                window.setTimeout(() => {
+                    onUploadSuccess?.();
+                    handleClose();
+                }, 1500);
+            }
         } catch (error) {
             setUploadError(
                 error instanceof Error ? error.message : "Upload failed"
@@ -151,6 +209,30 @@ export function DocumentUploadModal({
         }
     };
 
+    const handleRunXrayScan = async () => {
+        if (!uploadedDocumentId) return;
+        setScanId(null);
+        setScanError(null);
+        setScanResult(null);
+        setScanStatus("PENDING");
+        try {
+            const scan = await createXrayScan({
+                patientId,
+                clinicalDocumentId: uploadedDocumentId,
+            });
+            setScanId(scan.id);
+            setScanStatus(scan.status);
+            onUploadSuccess?.();
+        } catch (error) {
+            setScanStatus(null);
+            setScanError(
+                error instanceof Error
+                    ? error.message
+                    : "Could not start X-ray review"
+            );
+        }
+    };
+
     const handleClose = () => {
         if (isUploading) return; // Prevent closing during upload
         setSelectedFile(null);
@@ -158,6 +240,11 @@ export function DocumentUploadModal({
         setUploadProgress(0);
         setUploadError(null);
         setUploadSuccess(false);
+        setUploadedDocumentId(null);
+        setScanId(null);
+        setScanStatus(null);
+        setScanResult(null);
+        setScanError(null);
         onClose();
     };
 
@@ -257,6 +344,75 @@ export function DocumentUploadModal({
                             </div>
                         </div>
                     )}
+
+                    {uploadSuccess &&
+                        selectedFile?.type.startsWith("image/") && (
+                            <section
+                                className="space-y-3 rounded-lg border p-4"
+                                aria-live="polite"
+                            >
+                                <p className="text-sm text-muted-foreground">
+                                    Optional research-only second-look. This
+                                    model does not diagnose disease or locate
+                                    nodules; provider review is required.
+                                </p>
+                                {!scanId && (
+                                    <Button onClick={handleRunXrayScan}>
+                                        Run X-ray review
+                                    </Button>
+                                )}
+                                {scanStatus && (
+                                    <p className="text-sm font-medium">
+                                        Review status: {scanStatus}
+                                    </p>
+                                )}
+                                {scanStatus === "FAILED" && (
+                                    <Button
+                                        variant="secondary"
+                                        onClick={handleRunXrayScan}
+                                    >
+                                        Retry review
+                                    </Button>
+                                )}
+                                {scanError && (
+                                    <p
+                                        role="alert"
+                                        className="text-sm text-red-700"
+                                    >
+                                        {scanError}
+                                    </p>
+                                )}
+                                {scanResult && (
+                                    <div className="space-y-2">
+                                        <p className="font-semibold">
+                                            Needs provider review
+                                        </p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Scores are not calibrated
+                                            probabilities. Model:{" "}
+                                            {scanResult.modelRepository} @{" "}
+                                            {scanResult.modelRevision}
+                                        </p>
+                                        <ul className="space-y-1 text-sm">
+                                            {scanResult.findings.map(
+                                                (finding) => (
+                                                    <li key={finding.label}>
+                                                        {finding.label}: model
+                                                        score{" "}
+                                                        {finding.score.toFixed(
+                                                            3
+                                                        )}
+                                                    </li>
+                                                )
+                                            )}
+                                        </ul>
+                                        <p className="text-xs text-muted-foreground">
+                                            {scanResult.disclaimer}
+                                        </p>
+                                    </div>
+                                )}
+                            </section>
+                        )}
 
                     {/* Error Message */}
                     {uploadError && (

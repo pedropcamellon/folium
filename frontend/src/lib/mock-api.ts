@@ -1,3 +1,10 @@
+import type { ClinicalDocument } from "@/types/clinicalDocument";
+import type { DiagnosticReport } from "@/types/diagnosticReport";
+import type { ImagingStudy } from "@/types/imagingStudy";
+import type { PatientTimelineResponse } from "@/types/patientTimeline";
+import { type User, UserRole } from "@/types/user";
+import type { XrayScan } from "@/types/xrayScan";
+
 import type {
     Patient,
     PatientEncounter,
@@ -5,13 +12,8 @@ import type {
     SummarizationResponse,
     VoiceNoteWorkflowStatusResponse,
 } from "@/types";
-import type { ClinicalDocument } from "@/types/clinicalDocument";
-import type { DiagnosticReport } from "@/types/diagnosticReport";
-import type { ImagingStudy } from "@/types/imagingStudy";
-import type { PatientTimelineResponse } from "@/types/patientTimeline";
 import type { ChartReview } from "@/types";
 import { VoiceNoteWorkflowStatus } from "@/types";
-import { UserRole, type User } from "@/types/user";
 
 const now = "2026-01-15T10:00:00.000Z";
 const patientId = "demo-patient-001";
@@ -93,6 +95,7 @@ const documents: ClinicalDocument[] = [
 ];
 const reports: DiagnosticReport[] = [];
 const imagingStudies: ImagingStudy[] = [];
+const xrayScans = new Map<string, XrayScan>();
 const chartReviews = new Map<string, ChartReview>([
     [
         encounterId,
@@ -179,12 +182,16 @@ export async function mockApiRequest(
         if (method === "POST") {
             const patient: Patient = {
                 id: `demo-patient-${crypto.randomUUID()}`,
-                medicalRecordNumber: String(body.medicalRecordNumber ?? "DEMO-NEW"),
+                medicalRecordNumber: String(
+                    body.medicalRecordNumber ?? "DEMO-NEW"
+                ),
                 firstName: String(body.firstName ?? "Sample"),
                 lastName: String(body.lastName ?? "Patient"),
                 dateOfBirth: String(body.dateOfBirth ?? "1980-01-01"),
                 gender: String(body.gender ?? "Other"),
-                contactInfo: String(body.contactInfo ?? "Synthetic demo record"),
+                contactInfo: String(
+                    body.contactInfo ?? "Synthetic demo record"
+                ),
                 medicalImages: [],
                 clinicalSummaries: [],
             };
@@ -193,7 +200,9 @@ export async function mockApiRequest(
         }
     }
 
-    const patientMatch = path.match(/^\/api\/v1\/patients\/([^/]+)(?:\/(timeline))?$/);
+    const patientMatch = path.match(
+        /^\/api\/v1\/patients\/([^/]+)(?:\/(timeline))?$/
+    );
     if (patientMatch) {
         const [, id, subresource] = patientMatch;
         const patient = patients.find((item) => item.id === id);
@@ -209,7 +218,10 @@ export async function mockApiRequest(
                     kind: "encounter" as const,
                     encounter,
                 }));
-            return jsonResponse({ entries, nextCursor: null } satisfies PatientTimelineResponse);
+            return jsonResponse({
+                entries,
+                nextCursor: null,
+            } satisfies PatientTimelineResponse);
         }
         if (method === "GET") {
             return patient
@@ -235,37 +247,43 @@ export async function mockApiRequest(
         }
         return jsonResponse(
             encounters.filter(
-                (item) => !url.searchParams.has("patientId") ||
+                (item) =>
+                    !url.searchParams.has("patientId") ||
                     item.patientId === url.searchParams.get("patientId")
             )
         );
     }
 
-    const encounterMatch = path.match(/^\/api\/v1\/encounters\/([^/]+)(?:\/([^/]+))?$/);
+    const encounterMatch = path.match(
+        /^\/api\/v1\/encounters\/([^/]+)(?:\/([^/]+))?$/
+    );
     if (encounterMatch) {
         const [, id, subresource] = encounterMatch;
         const encounter = encounters.find((item) => item.id === id);
-        if (!encounter) return jsonResponse({ detail: "Encounter not found" }, 404);
+        if (!encounter)
+            return jsonResponse({ detail: "Encounter not found" }, 404);
         if (!subresource) return jsonResponse(encounter);
         if (subresource === "note" || subresource === "summary") {
             if (method !== "GET") {
-                if (subresource === "note") encounter.note = String(body.note ?? "");
+                if (subresource === "note")
+                    encounter.note = String(body.note ?? "");
                 else encounter.summary = String(body.summary ?? "");
             }
             return jsonResponse(encounter);
         }
         if (subresource === "chart-review") {
             return jsonResponse(
-                chartReviews.get(id) ?? {
-                    id: `demo-review-${id}`,
-                    encounterId: id,
-                    status: "completed",
-                    summary: "Sample chart review completed.",
-                    missingInfo: [],
-                    followUpQuestions: [],
-                    sourceRefs: [],
-                    reviewFlags: [],
-                } satisfies ChartReview
+                chartReviews.get(id) ??
+                    ({
+                        id: `demo-review-${id}`,
+                        encounterId: id,
+                        status: "completed",
+                        summary: "Sample chart review completed.",
+                        missingInfo: [],
+                        followUpQuestions: [],
+                        sourceRefs: [],
+                        reviewFlags: [],
+                    } satisfies ChartReview)
             );
         }
         if (subresource === "voice-note-status") {
@@ -285,7 +303,8 @@ export async function mockApiRequest(
     if (path === "/api/v1/clinical-documents") {
         return jsonResponse(
             documents.filter(
-                (item) => !url.searchParams.has("patientId") ||
+                (item) =>
+                    !url.searchParams.has("patientId") ||
                     item.patientId === url.searchParams.get("patientId")
             )
         );
@@ -304,7 +323,9 @@ export async function mockApiRequest(
         return jsonResponse(document, 201);
     }
 
-    const documentMatch = path.match(/^\/api\/v1\/clinical-documents\/([^/]+)(?:\/attachments\/([^/]+)\/download)?$/);
+    const documentMatch = path.match(
+        /^\/api\/v1\/clinical-documents\/([^/]+)(?:\/attachments\/([^/]+)\/download)?$/
+    );
     if (documentMatch) {
         const [, id, attachmentId] = documentMatch;
         if (attachmentId) {
@@ -329,6 +350,35 @@ export async function mockApiRequest(
     }
 
     if (path === "/api/v1/imaging-studies") return jsonResponse(imagingStudies);
+
+    if (path === "/api/v1/xray-scans" && method === "POST") {
+        const id = `demo-xray-scan-${crypto.randomUUID()}`;
+        const scan: XrayScan = {
+            id,
+            patientId: String(body.patientId ?? patientId),
+            clinicalDocumentId: String(body.clinicalDocumentId ?? ""),
+            status: "COMPLETE",
+            result: {
+                findings: [],
+                modelRepository: "synthetic-mock",
+                modelRevision: "mock",
+                reviewRequired: true,
+                disclaimer:
+                    "Synthetic mock result only. Not a model output or diagnosis.",
+            },
+            failureMessage: null,
+        };
+        xrayScans.set(id, scan);
+        return jsonResponse(scan, 202);
+    }
+
+    const xrayScanMatch = path.match(/^\/api\/v1\/xray-scans\/([^/]+)$/);
+    if (xrayScanMatch) {
+        const scan = xrayScans.get(xrayScanMatch[1]);
+        return scan
+            ? jsonResponse(scan)
+            : jsonResponse({ detail: "X-ray review not found" }, 404);
+    }
 
     if (path === "/api/v1/summarization/health") {
         return jsonResponse({
