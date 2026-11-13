@@ -135,18 +135,20 @@ jobs:
           curl --fail --max-time 30 "$DEMO_URL/patients/demo/?id=demo-patient-001" -o /dev/null
           node <<'NODE'
           const fs = require("node:fs");
-          const file = "docs/deployment.md";
+          const files = ["docs/deployment.md", "docs/README.md"];
           const url = process.env.DEMO_URL;
           if (!/^https:\/\/[a-z0-9.-]+\.azurestaticapps\.net$/.test(url)) throw new Error("Invalid SWA URL");
-          const text = fs.readFileSync(file, "utf8");
-          const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
-          if (!marker.test(text)) throw new Error("Missing URL markers");
-          fs.writeFileSync(file, text.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`));
+          for (const file of files) {
+            const text = fs.readFileSync(file, "utf8");
+            const marker = /<!-- demo-url:start -->[\s\S]*?<!-- demo-url:end -->/;
+            if (!marker.test(text)) throw new Error(`Missing URL markers in ${file}`);
+            fs.writeFileSync(file, text.replace(marker, `<!-- demo-url:start -->\n[${url}](${url})\n<!-- demo-url:end -->`));
+          }
           NODE
-          if ! git diff --quiet -- docs/deployment.md; then
+          if ! git diff --quiet -- docs/deployment.md docs/README.md; then
             git config user.name github-actions[bot]
             git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-            git add docs/deployment.md
+            git add docs/deployment.md docs/README.md
             git commit -m "docs: update verified static demo URL"
             git push
           fi
