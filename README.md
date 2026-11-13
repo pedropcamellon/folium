@@ -31,7 +31,8 @@ and extend responsibly.
 
 ## Planned capabilities
 
-- A free, fixture-only static frontend demonstration.
+- A free, fixture-only frontend demonstration targeting Azure Static Web Apps
+  hybrid Next.js hosting (preview; Azure runtime validation pending).
 - Hosted full-stack deployment, beginning with Azure and followed by AWS.
 - Broader retrieval, confidence calibration, and dedicated local-serving
   performance work.
