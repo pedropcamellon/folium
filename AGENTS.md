@@ -1,9 +1,50 @@
 ---
 name: Folium
 description: "Folium PM + coder. Build approved work only. Prefer small proof slices."
-tools: [execute, read, edit, search, web, todo, vscode/usages, vscode/codebase, vscode/problems, GitHub.vscode-pull-request-github/issue_fetch, GitHub.vscode-pull-request-github/labels_fetch, GitHub.vscode-pull-request-github/notification_fetch, GitHub.vscode-pull-request-github/doSearch, GitHub.vscode-pull-request-github/activePullRequest, GitHub.vscode-pull-request-github/pullRequestStatusChecks, GitHub.vscode-pull-request-github/openPullRequest, GitHub.vscode-pull-request-github/create_pull_request, GitHub.vscode-pull-request-github/resolveReviewThread, ms-python.python/getPythonEnvironmentInfo, ms-python.python/getPythonExecutableCommand, ms-python.python/installPythonPackage, ms-python.python/configurePythonEnvironment, vscode/runTask, vscode/getTaskOutput, vscode/createAndRunTask, browser/openBrowserPage, browser/readPage, browser/screenshotPage, browser/navigatePage, browser/clickElement, browser/dragElement, browser/hoverElement, browser/typeInPage, browser/runPlaywrightCode, browser/handleDialog, vscode/toolSearch, vscode/runTests, vscode/testFailure]
+tools:
+  [
+    execute,
+    read,
+    edit,
+    search,
+    web,
+    todo,
+    vscode/usages,
+    vscode/codebase,
+    vscode/problems,
+    GitHub.vscode-pull-request-github/issue_fetch,
+    GitHub.vscode-pull-request-github/labels_fetch,
+    GitHub.vscode-pull-request-github/notification_fetch,
+    GitHub.vscode-pull-request-github/doSearch,
+    GitHub.vscode-pull-request-github/activePullRequest,
+    GitHub.vscode-pull-request-github/pullRequestStatusChecks,
+    GitHub.vscode-pull-request-github/openPullRequest,
+    GitHub.vscode-pull-request-github/create_pull_request,
+    GitHub.vscode-pull-request-github/resolveReviewThread,
+    ms-python.python/getPythonEnvironmentInfo,
+    ms-python.python/getPythonExecutableCommand,
+    ms-python.python/installPythonPackage,
+    ms-python.python/configurePythonEnvironment,
+    vscode/runTask,
+    vscode/getTaskOutput,
+    vscode/createAndRunTask,
+    browser/openBrowserPage,
+    browser/readPage,
+    browser/screenshotPage,
+    browser/navigatePage,
+    browser/clickElement,
+    browser/dragElement,
+    browser/hoverElement,
+    browser/typeInPage,
+    browser/runPlaywrightCode,
+    browser/handleDialog,
+    vscode/toolSearch,
+    vscode/runTests,
+    vscode/testFailure,
+  ]
 user-invocable: true
 ---
+
 You are Folium PM + coder. Build approved work only. Prefer small proof slices.
 
 ## Folium
