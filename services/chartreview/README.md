@@ -12,10 +12,14 @@ recommendations, or autonomous actions.
 1. A clinician explicitly requests a draft from an interaction.
 2. The backend validates the patient and interaction, persists a queued review,
    and starts a Temporal workflow with an immutable active-interaction snapshot.
-3. The LangGraph worker runs one `retrieve_history` node as a Temporal Activity.
-   It calls a backend-owned internal endpoint for at most three approved prior
-   interaction blocks. The worker has no database credentials, SQL access,
-   document access, or unrestricted chart-search capability.
+3. The LangGraph worker first creates a bounded plan for one factual gap or
+   chooses no search. A separate action decision selects up to three lexical
+   terms for that fixed plan, then `retrieve_history` calls the backend as a
+   Temporal Activity. An empty result may trigger another action for the same
+   plan, up to three logical lookups; approved blocks stop retrieval. Each
+   lookup can return at most three approved prior-interaction blocks. The
+   worker has no database credentials, SQL access, document access, or
+   unrestricted chart-search capability.
 4. The `generate_review` node runs as a Temporal Activity. It sends the active
    snapshot and separately labelled prior context to the configured local
    OpenAI-compatible inference service.
@@ -30,8 +34,10 @@ recommendations, or autonomous actions.
 flowchart LR
 	 C[Clinician request] --> B[Backend snapshot and queued review]
 	 B --> T[Temporal workflow]
-	 T --> H[LangGraph history retrieval Activity]
-	 H --> R[Bounded backend prior-interaction blocks]
+	 T --> H[Plan Activity]
+	 H --> A[Separate bounded action]
+	 A --> R[History retrieval Activity]
+	 R -->|No match, within budget| A
 	 R --> G[LangGraph generation Activity]
 	 G --> M[Local OpenAI-compatible model]
 	 M --> V[Output and citation validation]
@@ -66,19 +72,10 @@ service token; it fails at startup when required configuration is missing.
 - Validate structured output before returning it to the backend.
 - Keep source references traceable to the input bundle.
 
-## Expansion Path
+## Matching Policy
 
-The current graph is intentionally fixed: retrieve a small approved history
-block once, then generate one draft. Making it more agentic should mean adding
-constrained decisions, not granting broad chart access or autonomous authority.
-
-A future graph may evaluate a `missing_info` item and choose whether to request
-one additional typed retrieval block. That decision must be bounded by a
-backend-owned policy that defines allowed source types, the maximum number of
-retrieval rounds, and explicit stop conditions. The backend should return only
-the approved immutable blocks and keep an audit record of each request.
-
-The graph can then route between `review context`, `request approved block`, and
-`produce draft`, while Temporal continues to provide durable execution, retries,
-and observable terminal outcomes. Final output validation, exact citation
-allowlisting, and human review remain required at every level of capability.
+The model selects only bounded lexical terms. The backend retains patient scope,
+active-interaction exclusion, curated fields, and exact substring matching.
+The loop does not enable synonyms, arbitrary regex, documents, or unrestricted
+query syntax. Any normalized or token-aware backend matching policy requires
+offline synthetic-benchmark comparison before production use.

@@ -13,6 +13,20 @@ description: >
 Terse tool syntax only. Policy/behavior (which account, when to use, branch policy)
 lives in the agent instructions, not here.
 
+## Issue Comments
+
+Use comments as durable project memory, not as a progress log. Post only concise
+facts, accepted decisions, and tradeoffs that could inform future work and are
+not already clear from the issue description or acceptance criteria. Omit
+workflow narration, status changes, plans, branch/worktree details, routine
+validation updates, and other operational noise. Add validation evidence only
+when it establishes a meaningful result or affects a decision.
+
+Local task Markdown is a disposable scratchpad, not content to synchronize to
+GitHub. Keep the issue description and acceptance criteria focused; do not
+mirror task checklists, implementation notes, progress logs, or review history
+into the issue or comments.
+
 ## Identity
 
 ```bash

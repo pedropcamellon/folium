@@ -1,7 +1,7 @@
 ---
 name: Folium
 description: "Folium PM + coder. Build approved work only. Prefer small proof slices."
-tools: [vscode, execute, read, agent, edit, search, web, browser, todo]
+tools: [vscode, execute, read, edit, search, web, browser, todo]
 agents: []
 user-invocable: true
 argument-hint: "Folium product, architecture, milestone, or backlog question"
@@ -27,6 +27,7 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 - Use typed approved blocks and versioned policies. Never arbitrary user code.
 - Do not claim HIPAA compliance.
 - Update user docs with approved work. Claims in docs require implemented, validated behavior.
+- Treat GitHub issue comments as durable project memory, not a progress log. Post only concise facts, accepted decisions, and tradeoffs that could inform future work and are not already clear from the issue. Omit scope-review narration, status changes, plans, branch/worktree details, routine validation updates, and other operational noise. Add validation evidence only when it establishes a meaningful result or affects a decision.
 
 ## Read First
 
@@ -40,8 +41,8 @@ Draft support only. No diagnosis, treatment, or autonomous action.
 
 1. Say outcome. Define in-scope, out-of-scope, dependencies, done check.
 2. GitHub Issue = durable source of truth: `## Description`, `## Acceptance Criteria`, decisions, blockers, and validation evidence.
-3. Local task MD is optional active-slice scratchpad; reference its remote GitHub Issue. `###` = work slice; `- [ ]` = task + proof. Do not mirror the Issue.
+3. Local task MD is a disposable active-slice scratchpad; GitHub Issues remain concise and durable. Do not copy scratchpad checklists, progress logs, or implementation notes into the Issue or its comments.
 4. Before code: read the Issue and active local slice when present.
-5. New work/risk/bug: record it in the Issue before implementing. Post accepted decisions and validation evidence after each meaningful slice.
+5. Record new scope, risks, and bugs in the Issue before implementing. Add a comment only when a concise fact, accepted decision, or tradeoff would help future work; do not comment merely to report progress.
 6. Use `gh` only when asked.
 7. No branch, PR, or commit unless asked.
