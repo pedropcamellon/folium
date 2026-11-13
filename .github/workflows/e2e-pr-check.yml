@@ -49,8 +49,6 @@ jobs:
           JWT_SECRET=folium-ci-only-jwt-secret
           CHARTREVIEW_INTERNAL_TOKEN=folium-ci-chartreview-token
           CHARTREVIEW_EVALUATION_TOKEN=folium-ci-evaluation-token
-          MINIO_ROOT_USER=folium-ci
-          MINIO_ROOT_PASSWORD=folium-ci-only-storage-secret
           STORAGE_ACCESS_KEY=folium-ci
           STORAGE_SECRET_KEY=folium-ci-only-storage-secret
           STORAGE_BUCKET=folium-dev
@@ -59,8 +57,13 @@ jobs:
       - name: Start backend, frontend, database, storage, and Temporal
         run: >-
           docker compose up --build --detach --wait --wait-timeout 300
-          folium-postgres folium-minio folium-backend frontend
+          folium-postgres folium-rustfs folium-backend frontend
           folium-temporal-postgres folium-temporal
+
+      - name: Start X-ray review inference
+        run: >-
+          docker compose up --build --detach --wait --wait-timeout 600
+          folium-xray-review
 
       - name: Seed E2E users and fixtures
         run: docker compose exec --no-TTY folium-backend python -m app.seed_db
@@ -92,10 +95,10 @@ jobs:
       - name: Run all E2E scenarios
         env:
           PLAYWRIGHT_HEADLESS: "true"
-          FOLIUM_MINIO_ACCESS_KEY: folium-ci
-          FOLIUM_MINIO_SECRET_KEY: folium-ci-only-storage-secret
-          FOLIUM_MINIO_ENDPOINT: http://localhost:9000
-          FOLIUM_MINIO_BUCKET: folium-dev
+          FOLIUM_STORAGE_ACCESS_KEY: folium-ci
+          FOLIUM_STORAGE_SECRET_KEY: folium-ci-only-storage-secret
+          FOLIUM_STORAGE_ENDPOINT: http://localhost:9000
+          FOLIUM_STORAGE_BUCKET: folium-dev
         run: uv run --directory e2e --locked ./main.py
 
       - name: Collect service logs

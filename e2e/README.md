@@ -63,11 +63,13 @@ when local defaults do not apply.
 The `E2E Pull Request Check` workflow runs all registered scenarios when a pull
 request targeting `main` is opened, updated, or reopened. It starts an
 ephemeral Compose environment with seeded users and fixtures. CI supplies
-throwaway MinIO root and S3 credentials in the workflow; no repository secrets
+throwaway RustFS S3 credentials in the workflow; no repository secrets
 or external storage bucket are required.
 
 The chart-review scenario still exercises the frontend, backend, Temporal
 workflow, and worker. Only the model HTTP endpoint is replaced by the
 deterministic server in `ci/mock_chart_review_ai.py`, so CI does not download
-or run a local model. Service logs are uploaded as the `e2e-service-logs`
+or run a local language model. The X-ray scenario uses the real inference
+service and downloads its pinned model, adding startup time and a model-host
+dependency. Service logs are uploaded as the `e2e-service-logs`
 workflow artifact.
