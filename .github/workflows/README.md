@@ -8,6 +8,9 @@ and promote folium.
 - `deploy-backend.yml` is the manual promotion entry point. It selects the
   target environment and calls reusable build, approval, infrastructure, and
   provider deployment workflows.
+- `e2e-pr-check.yml` runs the full browser E2E suite on pull requests targeting
+  `main`, using ephemeral Compose services and a deterministic chart-review
+  model mock.
 - `build.yml` and `approval.yml` are reusable workflow building blocks.
 - `azure-*.yml` and `aws-*.yml` contain provider-specific reusable deployment
   and Terraform workflows.

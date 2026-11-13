@@ -57,3 +57,19 @@ uploads two synthetic audio payloads to one encounter, verifies the replacement
 object exists, and asserts the prior object is absent. Set
 `FOLIUM_API_BASE_URL`, `FOLIUM_STORAGE_ENDPOINT`, and `FOLIUM_STORAGE_BUCKET` only
 when local defaults do not apply.
+
+## GitHub Actions pull-request check
+
+The `E2E Pull Request Check` workflow runs all registered scenarios when a pull
+request targeting `main` is opened, updated, or reopened. It starts an
+ephemeral Compose environment with seeded users and fixtures. CI supplies
+throwaway RustFS S3 credentials in the workflow; no repository secrets
+or external storage bucket are required.
+
+The chart-review scenario still exercises the frontend, backend, Temporal
+workflow, and worker. Only the model HTTP endpoint is replaced by the
+deterministic server in `ci/mock_chart_review_ai.py`, so CI does not download
+or run a local language model. The X-ray scenario uses the real inference
+service and downloads its pinned model, adding startup time and a model-host
+dependency. Service logs are uploaded as the `e2e-service-logs`
+workflow artifact.
