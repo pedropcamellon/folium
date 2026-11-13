@@ -49,6 +49,7 @@ jobs:
           JWT_SECRET=folium-ci-only-jwt-secret
           CHARTREVIEW_INTERNAL_TOKEN=folium-ci-chartreview-token
           CHARTREVIEW_EVALUATION_TOKEN=folium-ci-evaluation-token
+          XRAY_REVIEW_SERVICE_TOKEN=folium-ci-xray-token
           STORAGE_ACCESS_KEY=folium-ci
           STORAGE_SECRET_KEY=folium-ci-only-storage-secret
           STORAGE_BUCKET=folium-dev

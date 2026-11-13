@@ -76,7 +76,9 @@ def run_provider_xray_review_flow(
         )
         expect(terminal).to_be_visible(timeout=wait_ms)
         assert terminal.inner_text() == "Scan status: COMPLETE", (
-            page.locator("aside").inner_text()
+            page.get_by_role("complementary")
+            .filter(has=page.get_by_role("heading", name="Insights", exact=True))
+            .inner_text()
         )
         expect(page.get_by_text("Needs provider review", exact=True)).to_be_visible()
         expect(page.get_by_text("This model does not diagnose", exact=False)).to_be_visible()
