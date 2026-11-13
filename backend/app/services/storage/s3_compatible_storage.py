@@ -1,4 +1,4 @@
-"""MinIO storage provider implementation"""
+"""S3-compatible storage provider implementation"""
 
 import boto3
 from botocore.client import Config
@@ -11,15 +11,15 @@ from .base import ObjectStorageProvider, StorageConfig
 logger = logging.getLogger(__name__)
 
 
-class MinIOStorage(ObjectStorageProvider):
-    """MinIO storage implementation (uses S3-compatible API)"""
+class S3CompatibleStorage(ObjectStorageProvider):
+    """Storage implementation for S3-compatible object stores."""
 
     def __init__(self, config: StorageConfig):
         super().__init__(config)
         self._client = None
 
     async def initialize(self) -> None:
-        """Initialize MinIO client and ensure bucket exists"""
+        """Initialize the S3-compatible client and ensure the bucket exists."""
         self._client = boto3.client(
             "s3",
             endpoint_url=self.config.endpoint_url,
@@ -32,22 +32,22 @@ class MinIOStorage(ObjectStorageProvider):
         # Check bucket exists, create if not
         try:
             self._client.head_bucket(Bucket=self.config.bucket)
-            logger.info(f"MinIO: Connected to bucket '{self.config.bucket}'")
+            logger.info(f"S3-compatible storage: connected to bucket '{self.config.bucket}'")
         except ClientError:
             self._client.create_bucket(Bucket=self.config.bucket)
-            logger.info(f"MinIO: Created bucket '{self.config.bucket}'")
+            logger.info(f"S3-compatible storage: created bucket '{self.config.bucket}'")
 
     async def upload(
         self, key: str, data: bytes, content_type: str, metadata: Optional[dict] = None
     ) -> str:
-        """Upload to MinIO"""
+        """Upload an object."""
         extra_args = {"ContentType": content_type}
         if metadata:
             extra_args["Metadata"] = metadata
 
         self._client.put_object(Bucket=self.config.bucket, Key=key, Body=data, **extra_args)
 
-        logger.info(f"MinIO: Uploaded {key}")
+        logger.info(f"S3-compatible storage: uploaded {key}")
 
         # Return URL
         if self.config.cdn_url:
@@ -55,24 +55,24 @@ class MinIOStorage(ObjectStorageProvider):
         return f"{self.config.endpoint_url}/{self.config.bucket}/{key}"
 
     async def download(self, key: str) -> bytes:
-        """Download from MinIO"""
+        """Download an object."""
         response = self._client.get_object(Bucket=self.config.bucket, Key=key)
         data = response["Body"].read()
-        logger.info(f"MinIO: Downloaded {key}")
+        logger.info(f"S3-compatible storage: downloaded {key}")
         return data
 
     async def delete(self, key: str) -> bool:
-        """Delete from MinIO"""
+        """Delete an object."""
         try:
             self._client.delete_object(Bucket=self.config.bucket, Key=key)
-            logger.info(f"MinIO: Deleted {key}")
+            logger.info(f"S3-compatible storage: deleted {key}")
             return True
         except ClientError as e:
-            logger.error(f"MinIO: Delete failed for {key}: {e}")
+            logger.error(f"S3-compatible storage: delete failed for {key}: {e}")
             return False
 
     async def exists(self, key: str) -> bool:
-        """Check if object exists in MinIO"""
+        """Check whether an object exists."""
         try:
             self._client.head_object(Bucket=self.config.bucket, Key=key)
             return True
@@ -90,13 +90,15 @@ class MinIOStorage(ObjectStorageProvider):
             internal: If True, use internal endpoint for Docker service-to-service communication.
                      If False, use public endpoint for browser access.
         """
-        logger.info(f"MinIO: Generating presigned URL for key={key}, internal={internal}")
-        logger.info(f"MinIO: Config - endpoint_url={self.config.endpoint_url}")
-        logger.info(f"MinIO: Config - public_endpoint_url={self.config.public_endpoint_url}")
+        logger.info(
+            "S3-compatible storage: generating presigned URL for key=%s, internal=%s",
+            key,
+            internal,
+        )
 
         # Use internal endpoint for service-to-service communication
         if internal:
-            logger.info("MinIO: Using internal endpoint for presigned URL generation")
+            logger.info("S3-compatible storage: using internal endpoint for presigned URL")
             url = self._client.generate_presigned_url(
                 "get_object",
                 Params={"Bucket": self.config.bucket, "Key": key},
@@ -105,7 +107,7 @@ class MinIOStorage(ObjectStorageProvider):
         # If we have a public endpoint, create a temporary client with that endpoint
         # to generate the signature correctly for browser access
         elif self.config.public_endpoint_url:
-            logger.info("MinIO: Using public endpoint for presigned URL generation")
+            logger.info("S3-compatible storage: using public endpoint for presigned URL")
             public_client = boto3.client(
                 "s3",
                 endpoint_url=self.config.public_endpoint_url,
@@ -127,7 +129,7 @@ class MinIOStorage(ObjectStorageProvider):
                 ExpiresIn=expiration,
             )
 
-        logger.info(f"MinIO: Generated presigned URL: {url}")
+        logger.info("S3-compatible storage: generated presigned URL")
         return url
 
     async def list_objects(self, prefix: str = "") -> list[str]:
