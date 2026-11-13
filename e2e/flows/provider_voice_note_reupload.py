@@ -11,10 +11,10 @@ from patient_payloads import build_provider_test_patient
 from playwright.sync_api import Page
 from settings import (
     API_BASE_URL,
-    MINIO_ACCESS_KEY,
-    MINIO_BUCKET,
-    MINIO_ENDPOINT,
-    MINIO_SECRET_KEY,
+    STORAGE_ACCESS_KEY,
+    STORAGE_BUCKET,
+    STORAGE_ENDPOINT,
+    STORAGE_SECRET_KEY,
 )
 from ui import (
     create_encounter,
@@ -40,13 +40,13 @@ def run_provider_voice_note_reupload_flow(
         first_upload = _upload_audio(page, encounter_id, _silent_wav())
         first_storage_key = _storage_key(page, encounter_id)
         assert first_storage_key == first_upload["storageKey"]
-        storage_client.head_object(Bucket=MINIO_BUCKET, Key=first_storage_key)
+        storage_client.head_object(Bucket=STORAGE_BUCKET, Key=first_storage_key)
 
         second_upload = _upload_audio(page, encounter_id, _silent_wav())
         second_storage_key = _storage_key(page, encounter_id)
         assert second_storage_key == second_upload["storageKey"]
         assert second_storage_key != first_storage_key
-        storage_client.head_object(Bucket=MINIO_BUCKET, Key=second_storage_key)
+        storage_client.head_object(Bucket=STORAGE_BUCKET, Key=second_storage_key)
         _assert_missing_object(storage_client, first_storage_key)
         log_step(
             flow.name, "Verified replacement audio exists and prior audio was deleted"
@@ -122,22 +122,22 @@ def _silent_wav() -> bytes:
 
 
 def _storage_client() -> Any:
-    if not MINIO_ACCESS_KEY or not MINIO_SECRET_KEY:
+    if not STORAGE_ACCESS_KEY or not STORAGE_SECRET_KEY:
         raise RuntimeError(
-            "Set FOLIUM_MINIO_ACCESS_KEY and FOLIUM_MINIO_SECRET_KEY to run "
+            "Set FOLIUM_STORAGE_ACCESS_KEY and FOLIUM_STORAGE_SECRET_KEY to run "
             "provider-voice-note-reupload."
         )
     return boto3.client(
         "s3",
-        endpoint_url=MINIO_ENDPOINT,
-        aws_access_key_id=MINIO_ACCESS_KEY,
-        aws_secret_access_key=MINIO_SECRET_KEY,
+        endpoint_url=STORAGE_ENDPOINT,
+        aws_access_key_id=STORAGE_ACCESS_KEY,
+        aws_secret_access_key=STORAGE_SECRET_KEY,
     )
 
 
 def _assert_missing_object(storage_client: Any, storage_key: str) -> None:
     try:
-        storage_client.head_object(Bucket=MINIO_BUCKET, Key=storage_key)
+        storage_client.head_object(Bucket=STORAGE_BUCKET, Key=storage_key)
     except ClientError as exc:
         error_code = exc.response["Error"]["Code"]
         if error_code in {"404", "NoSuchKey", "NotFound"}:

@@ -59,7 +59,7 @@ class AWSTranscribeProvider(TranscriptionProvider):
         if audio_url.startswith("s3://") or "s3.amazonaws.com" in audio_url:
             media_uri = audio_url  # Direct S3 access
         else:
-            # Download and upload to temp S3 bucket (for MinIO/Azure)
+            # Download and upload to a temporary S3 bucket for non-AWS storage.
             media_uri = await self._bridge_to_s3(audio_url)
 
         # Submit transcription job

@@ -67,6 +67,7 @@ class ClinicalDocumentCategory(StrEnum):
     EXTERNAL_RECORD = "external_record"
     VISIT_SUMMARY = "visit_summary"
     PATIENT_SUBMISSION = "patient_submission"
+    XRAY = "xray"
 
 
 class ClinicalRecordStatus(StrEnum):

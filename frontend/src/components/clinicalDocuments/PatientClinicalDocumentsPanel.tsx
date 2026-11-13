@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
     ClinicalDocument,
@@ -51,6 +51,14 @@ export function PatientClinicalDocumentsPanel({
         useState<ClinicalDocumentAttachmentView | null>(null);
     const [documentToDelete, setDocumentToDelete] =
         useState<ClinicalDocument | null>(null);
+    useEffect(() => {
+        const fileUrl = selectedDocument?.fileUrl;
+        return () => {
+            if (fileUrl?.startsWith("blob:")) {
+                URL.revokeObjectURL(fileUrl);
+            }
+        };
+    }, [selectedDocument?.fileUrl]);
 
     const handleUploadSuccess = () => {
         refreshDocuments();
@@ -66,19 +74,25 @@ export function PatientClinicalDocumentsPanel({
             );
 
             if (!response.ok) {
-                throw new Error("Failed to get document view URL");
+                throw new Error(
+                    `Failed to load document (HTTP ${response.status})`
+                );
             }
 
             const docWithPresignedUrl = {
                 ...doc,
                 attachment,
-                fileUrl: response.url,
+                fileUrl: URL.createObjectURL(await response.blob()),
             };
             setSelectedDocument(docWithPresignedUrl);
             setViewerModalOpen(true);
         } catch (err) {
             console.error("Error loading document:", err);
-            alert("Failed to load document for viewing");
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : "Failed to load document for viewing"
+            );
         }
     };
 
@@ -90,9 +104,16 @@ export function PatientClinicalDocumentsPanel({
             API_ENDPOINTS.documentAttachmentDownload(doc.id, attachment.id)
         );
         if (!response.ok) {
-            throw new Error("Failed to get document download URL");
+            throw new Error(
+                `Failed to download document (HTTP ${response.status})`
+            );
         }
-        window.open(response.url, "_blank");
+        const objectUrl = URL.createObjectURL(await response.blob());
+        const link = window.document.createElement("a");
+        link.href = objectUrl;
+        link.download = attachment.fileName;
+        link.click();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     };
 
     const handleDeleteClick = (doc: ClinicalDocument) => {

@@ -14,7 +14,7 @@ from questionary.prompts.common import Choice, InquirerControl
 
 SERVICES = (
     ("folium-postgres", "PostgreSQL"),
-    ("folium-minio", "MinIO"),
+    ("folium-rustfs", "RustFS"),
     ("folium-temporal-postgres", "Temporal PostgreSQL"),
     ("folium-temporal", "Temporal server"),
     ("folium-temporal-ui", "Temporal UI"),
@@ -22,6 +22,7 @@ SERVICES = (
     ("frontend", "Frontend"),
     ("folium-transcribe", "Transcription"),
     ("folium-summarize", "Local inference"),
+    ("folium-xray-review", "X-ray review (research only)"),
     ("folium-chartreview-worker", "Chart review worker"),
     ("folium-voicenotes-worker", "Voice notes worker"),
     ("folium-mlflow", "MLflow evaluations"),
@@ -36,11 +37,12 @@ BUILDABLE_SERVICES = frozenset(
         "frontend",
         "folium-transcribe",
         "folium-summarize",
+        "folium-xray-review",
         "folium-chartreview-worker",
         "folium-voicenotes-worker",
     }
 )
-OPTIONAL_SERVICES = frozenset({"folium-promtail"})
+OPTIONAL_SERVICES = frozenset({"folium-promtail", "folium-xray-review"})
 
 PICKER_STYLE = questionary.Style(
     [

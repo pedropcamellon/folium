@@ -45,10 +45,12 @@ export const navItems: NavItem[] = [
     {
         id: "imaging-ai",
         label: "Imaging AI",
-        href: "#",
+        href: "/imaging",
         icon: FaXRay,
-        comingSoon: true,
-        requiredPermissions: [permissions.documentsRead],
+        requiredPermissions: [
+            permissions.documentsRead,
+            permissions.patientsRead,
+        ],
     },
     {
         id: "reports",

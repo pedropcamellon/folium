@@ -1,7 +1,6 @@
 """Abstract base class for cloud-agnostic object storage"""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 from dataclasses import dataclass
 
 
@@ -9,23 +8,23 @@ from dataclasses import dataclass
 class StorageConfig:
     """Configuration for storage provider"""
 
-    provider: str  # 'aws', 'azure', 'minio'
+    provider: str  # 'aws', 'azure', 'rustfs'
     bucket: str
     region: str
-    endpoint_url: Optional[str] = None
-    public_endpoint_url: Optional[str] = None  # For browser-accessible URLs
-    access_key: Optional[str] = None
-    secret_key: Optional[str] = None
-    cdn_url: Optional[str] = None
+    endpoint_url: str | None = None
+    public_endpoint_url: str | None = None  # For browser-accessible URLs
+    access_key: str | None = None
+    secret_key: str | None = None
+    cdn_url: str | None = None
     # Provider-specific config
-    connection_string: Optional[str] = None  # Azure
-    account_name: Optional[str] = None  # Azure
+    connection_string: str | None = None  # Azure
+    account_name: str | None = None  # Azure
 
 
 class ObjectStorageProvider(ABC):
     """
     Abstract interface for object storage operations.
-    Implementations: AWSStorage, AzureStorage, MinIOStorage
+    Implementations: AWSStorage, AzureStorage, S3CompatibleStorage
     """
 
     def __init__(self, config: StorageConfig):
@@ -34,11 +33,10 @@ class ObjectStorageProvider(ABC):
     @abstractmethod
     async def initialize(self) -> None:
         """Initialize provider and ensure bucket/container exists"""
-        pass
 
     @abstractmethod
     async def upload(
-        self, key: str, data: bytes, content_type: str, metadata: Optional[dict] = None
+        self, key: str, data: bytes, content_type: str, metadata: dict | None = None
     ) -> str:
         """
         Upload file to storage
@@ -52,7 +50,6 @@ class ObjectStorageProvider(ABC):
         Returns:
             Public URL or CDN URL
         """
-        pass
 
     @abstractmethod
     async def download(self, key: str) -> bytes:
@@ -65,7 +62,6 @@ class ObjectStorageProvider(ABC):
         Returns:
             File bytes
         """
-        pass
 
     @abstractmethod
     async def delete(self, key: str) -> bool:
@@ -78,7 +74,6 @@ class ObjectStorageProvider(ABC):
         Returns:
             True if successful
         """
-        pass
 
     @abstractmethod
     async def exists(self, key: str) -> bool:
@@ -91,7 +86,6 @@ class ObjectStorageProvider(ABC):
         Returns:
             True if exists
         """
-        pass
 
     @abstractmethod
     async def get_presigned_url(
@@ -108,7 +102,6 @@ class ObjectStorageProvider(ABC):
         Returns:
             Presigned URL
         """
-        pass
 
     @abstractmethod
     async def list_objects(self, prefix: str = "") -> list[str]:
@@ -121,4 +114,3 @@ class ObjectStorageProvider(ABC):
         Returns:
             List of storage keys
         """
-        pass

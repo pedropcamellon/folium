@@ -1,13 +1,15 @@
 # Deployment Guide
 
-## Synthetic static demo
+## Synthetic hybrid demo
 
-The demo runs on Azure Static Web Apps **Free**, in Central US. It uses
-browser-local synthetic fixtures, no Folium backend, and no server runtime.
+The demo targets Azure Static Web Apps **Free**, in Central US, using its
+preview hybrid Next.js hosting. It uses browser-local synthetic fixtures and
+does not connect to the Folium backend.
 It is not a clinical system or a production authentication boundary.
 Demo edits are simulated in the browser, not persisted in a shared database.
 
-Production demo URL (updated after each successful deployment and HTTP check):
+Last successfully deployed demo URL (the current live revision is the previous
+static export; this URL is not evidence that hybrid deployment succeeded):
 
 <!-- demo-url:start -->
 [https://salmon-island-0248c5310.3.azurestaticapps.net](https://salmon-island-0248c5310.3.azurestaticapps.net)
@@ -28,12 +30,10 @@ despite available quota reported by the quota API.
 Container Apps successfully ran the tested container, but ACR Basic introduced
 a standing registry charge. GHCR could remove that charge but still required
 registry authorization and public package setup. The selected host is SWA
-Free with a portable static export.
+Free, now using hybrid Next.js hosting rather than static export.
 
-The current approach builds once using the frozen pnpm lockfile and deploys
-only the exported files with `skip_app_build` and `skip_api_build`. Oryx does
-not reinstall dependencies, rebuild Next.js, or provision a hybrid SSR backend.
-SWA's hybrid Next.js support is not used.
+Microsoft documents SWA hybrid Next.js support as preview. The SWA deployment
+action builds the application from its source directory.
 
 Only the demo resource group and Free SWA are managed by this Terraform root.
 ACR, Container Apps, their identity and role assignment, and App Service hosting
@@ -41,33 +41,31 @@ are removed. Shared Terraform state storage is retained and may have its own
 small storage/transaction charges; Free hosting does not mean every Azure
 resource in the subscription is free.
 
-## Build modes and routing
+## Build and routing
 
-The normal application retains standalone output and dynamic patient routes.
-Static export is enabled only with `NEXT_PUBLIC_DEMO_STATIC=true`, and requires
-`NEXT_PUBLIC_API_MODE=mock`. Public assets use an optional
-`NEXT_PUBLIC_BASE_PATH`; SWA uses the domain root, so it is empty.
+The frontend uses Next.js standalone output. Its build also packages `.next/static`
+and `public` for the runtime. Mock mode is explicitly enabled for validation
+and deployment.
 
 ```bash
 cd frontend
-NEXT_PUBLIC_DEMO_STATIC=true NEXT_PUBLIC_API_MODE=mock pnpm build --no-lint
+NEXT_PUBLIC_API_MODE=mock pnpm build
 pnpm type-check
 ```
 
-In the static demo, patient links use `/patients/demo/?id=<id>` so records
-created after build can render through one exported route. The standard
-application continues using `/patients/<id>`. Static hosting does not run
-Next.js middleware or image optimization; the demo uses unoptimized images
-and browser-local mock behavior instead.
+Patient links use dynamic `/patients/<id>` routes. Middleware is pass-through
+and excludes dotted paths, including SWA's documented `/.swa/health.html`
+deployment probe. The demo's mock provider and fixtures remain browser-local;
+no server action or clinical-data API route is added.
 
 ## Release pipeline
 
 `demo-pipeline.yml` is the only demo entry point. PRs and branch pushes validate
-Terraform and build/type-check the static export. The workflow also checks the
-landing page, exported patient route, and static assets exist before uploading.
+Terraform and build/type-check the standalone Next.js app, checking its server
+entrypoint and packaged static assets.
 
 On main, validation is followed by Terraform plan/apply and deployment of the
-same exported artifact using `Azure/static-web-apps-deploy`. OIDC authenticates
+hybrid Next.js app using `Azure/static-web-apps-deploy`. OIDC authenticates
 the release to Azure; the SWA deployment token is retrieved at runtime and
 masked. Required protected `azure-demo` Environment variables are
 `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`.
@@ -101,15 +99,13 @@ Never apply an old ACA/F1 plan. After an interrupted apply, confirm no Terraform
 writer is running before addressing a stale lock; do not bypass locking.
 
 Disable the release workflow and review a destroy plan for this isolated root
-before teardown. Preserve shared state storage. Roll back by redeploying a
-previously validated static artifact; rollback has not yet been live-tested.
+before teardown. Preserve shared state storage. Roll back by redeploying a previously validated app revision; rollback has not
+yet been live-tested.
 
-## Verified evidence
+## Validation and limitations
 
-On November 12, 2026 the exported app deployed successfully to the URL above.
-Live browser checks loaded the provider dashboard, opened the seeded patient's
-history, and created a synthetic patient whose query-based history route
-rendered successfully. Dashboard/history navigation recorded no external or
-backend requests and no page errors. The local export build, TypeScript check,
-and nine-route/asset checks passed. CI deployment and preview acceptance work
-remain tracked in issue #16; issue #88 preserves the Azure investigation.
+The prior static deployment was smoke-tested, but that is not evidence for the
+hybrid runtime. Microsoft's published hybrid limitations include linked Azure
+APIs and SWA CLI emulation/deployment; this demo uses neither. Azure deployment
+and live smoke checks remain required before hybrid hosting is considered
+verified. See issue #95 for pending Azure validation.

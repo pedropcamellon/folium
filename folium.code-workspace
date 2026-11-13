@@ -13,8 +13,12 @@
       "path": "../pedropcamellon.github.io",
     },
     {
-      "name": "Folium EHR Tasks",
+      "name": "Folium Tasks",
       "path": "../tasks",
+    },
+    {
+      "name": "Folium EHR Tasks",
+      "path": "../tasks/folium",
     },
     {
       "name": "Folium Agents Tasks",
@@ -74,8 +78,8 @@
         "cwd": "${workspaceFolder:🔙 Backend (FastAPI)}",
         "env": {
           "ENVIRONMENT": "development",
-          "STORAGE_PROVIDER": "minio",
-          "MINIO_ENDPOINT": "localhost:9000",
+          "STORAGE_PROVIDER": "rustfs",
+          "STORAGE_ENDPOINT": "http://localhost:9000",
         },
         "console": "integratedTerminal",
       },

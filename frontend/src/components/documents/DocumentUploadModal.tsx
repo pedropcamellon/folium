@@ -9,6 +9,7 @@ import {
     CheckCircle2,
     FileText,
     Image as ImageIcon,
+    LoaderCircle,
     Upload,
     X,
 } from "lucide-react";
@@ -47,6 +48,7 @@ const DOCUMENT_TYPES: { value: ClinicalDocumentCategory; label: string }[] = [
     { value: "external_record", label: "External Record" },
     { value: "visit_summary", label: "Visit Summary" },
     { value: "patient_submission", label: "Patient Submission" },
+    { value: "xray", label: "X-ray Image" },
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -97,6 +99,9 @@ export function DocumentUploadModal({
         }
 
         setSelectedFile(file);
+        if (!file.type.startsWith("image/") && documentType === "xray") {
+            setDocumentType("external_record");
+        }
         setTitle(file.name.replace(/\.[^/.]+$/, "")); // Remove extension
         setUploadError(null);
         setUploadSuccess(false);
@@ -125,7 +130,7 @@ export function DocumentUploadModal({
         setUploadProgress(0);
 
         try {
-            await uploadDocument({
+            const document = await uploadDocument({
                 file: selectedFile,
                 patientId,
                 category: documentType,
@@ -135,9 +140,7 @@ export function DocumentUploadModal({
 
             setUploadSuccess(true);
             setUploadProgress(100);
-
-            // Notify parent and close after brief delay
-            setTimeout(() => {
+            window.setTimeout(() => {
                 onUploadSuccess?.();
                 handleClose();
             }, 1500);
@@ -291,6 +294,12 @@ export function DocumentUploadModal({
                                             <SelectItem
                                                 key={type.value}
                                                 value={type.value}
+                                                disabled={
+                                                    type.value === "xray" &&
+                                                    !selectedFile.type.startsWith(
+                                                        "image/"
+                                                    )
+                                                }
                                             >
                                                 {type.label}
                                             </SelectItem>
@@ -313,10 +322,29 @@ export function DocumentUploadModal({
 
                             {/* Upload Progress */}
                             {isUploading && (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span>Uploading...</span>
-                                        <span>{uploadProgress}%</span>
+                                <div
+                                    className="space-y-3 rounded-lg border bg-primary/5 p-4"
+                                    role="status"
+                                    aria-live="polite"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="relative flex h-9 w-9 items-center justify-center">
+                                                <span className="absolute inset-0 rounded-full bg-primary/15 animate-ping" />
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    Uploading your file
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Keep this window open while
+                                                    it completes.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="text-sm font-semibold tabular-nums">
+                                            {uploadProgress}%
+                                        </span>
                                     </div>
                                     <Progress value={uploadProgress} />
                                 </div>

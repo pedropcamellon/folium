@@ -7,9 +7,9 @@ code to a specific cloud SDK.
 ## Provider selection
 
 A storage factory selects the configured provider and returns the same
-application-facing storage contract to its callers. MinIO, Azure Blob Storage,
-and Amazon S3 remain isolated implementations behind that contract, so workflow
-code does not need to branch on a storage vendor.
+application-facing storage contract to its callers. S3-compatible storage,
+Azure Blob Storage, and Amazon S3 remain isolated implementations behind that
+contract, so workflow code does not need to branch on a storage vendor.
 
 Adding a storage option means implementing the storage contract and registering
 it with the factory. Existing callers continue to use the same storage boundary;
@@ -36,11 +36,35 @@ that request before handing the binary to the storage provider. Direct-to-object
 or streaming uploads for larger files are future attachment-storage work: they
 must preserve the same ownership, validation, metadata, and audit boundaries.
 
-## Why MinIO is the local default
+## Local S3-compatible storage
 
-MinIO gives the local Docker environment an S3-compatible object-storage
-service that teams can run inside their own network. It supports local workflow
-development without requiring cloud credentials or a hosted storage account.
+The local Compose environment uses RustFS, an S3-compatible object store, for
+workflow development without a hosted storage account. Set
+`STORAGE_PROVIDER=rustfs` to select Folium's S3-compatible adapter; the local
+endpoint is RustFS.
+
+The local RustFS image is pinned to 1.0.5. Its credentials use the backend's
+`STORAGE_ACCESS_KEY` and `STORAGE_SECRET_KEY` settings. RustFS uses a new
+`rustfs_data` volume. Any existing `minio_data` volume is left untouched and has
+not been migrated or validated for reuse.
+
+RustFS supports a tested subset of S3 behavior, not full compatibility with
+every S3 implementation. Keep usage within Folium's validated storage
+operations; see the [RustFS S3 compatibility matrix](https://docs.rustfs.com/en/reference/s3-compatibility).
+
+### Open the local RustFS console
+
+Start the local storage Compose service, then open
+[`http://localhost:9001`](http://localhost:9001). Sign in with the values of
+`STORAGE_ACCESS_KEY` and `STORAGE_SECRET_KEY` from the root `.env` file. The
+S3 API is available at `http://localhost:9000`; backend containers use
+`http://folium-rustfs:9000` on the Compose network.
+
+The console can confirm that objects are present in RustFS, but it does not
+confirm that a transcription was saved to the application record or rendered
+in the UI. A generated-transcript log confirms the transcription service
+returned text; check the interaction API and frontend separately if that text
+does not appear in the UI.
 
 ## Moving to hosted storage
 

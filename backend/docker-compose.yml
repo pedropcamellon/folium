@@ -12,7 +12,7 @@ services:
     depends_on:
       folium-postgres:
         condition: service_healthy
-      folium-minio:
+      folium-rustfs:
         condition: service_healthy
     env_file:
       - path: ../.env
@@ -23,16 +23,19 @@ services:
       PYTHONUNBUFFERED: "1"
       RELOAD: "true"
       DATABASE_URL: postgresql+asyncpg://folium:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in root .env}@folium-postgres:5432/folium_db
-      STORAGE_ENDPOINT: ${BACKEND_STORAGE_ENDPOINT:-http://folium-minio:9000}
+      STORAGE_ENDPOINT: ${BACKEND_STORAGE_ENDPOINT:-http://folium-rustfs:9000}
       STORAGE_BUCKET: ${STORAGE_BUCKET:-folium-dev}
       STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
       TRANSCRIPTION_SERVICE_URL: ${TRANSCRIPTION_SERVICE_URL:-http://folium-transcribe:8001}
       SUMMARIZATION_SERVICE_URL: ${SUMMARIZATION_SERVICE_URL:-http://folium-summarize:8002}
+      XRAY_REVIEW_SERVICE_URL: http://folium-xray-review:8010
+      XRAY_REVIEW_SERVICE_TOKEN: ${XRAY_REVIEW_SERVICE_TOKEN:-}
       TEMPORAL_ADDRESS: ${TEMPORAL_ADDRESS:-folium-temporal:7233}
       TEMPORAL_NAMESPACE: ${TEMPORAL_NAMESPACE:-default}
       CHARTREVIEW_INTERNAL_TOKEN: ${CHARTREVIEW_INTERNAL_TOKEN:?Set CHARTREVIEW_INTERNAL_TOKEN in root .env}
       CHARTREVIEW_EVALUATION_TOKEN: ${CHARTREVIEW_EVALUATION_TOKEN:?Set CHARTREVIEW_EVALUATION_TOKEN in root .env}
     volumes:
+      - ./app:/workspace/backend/app
       - backend_cache:/root/.cache
     working_dir: /workspace/backend
     command:
@@ -55,13 +58,6 @@ services:
       start_period: 10s
     develop:
       watch:
-        - action: sync
-          path: ./app
-          target: /workspace/backend/app
-          ignore:
-            - __pycache__/
-            - "*.pyc"
-            - .pytest_cache/
         - action: rebuild
           path: ./pyproject.toml
         - action: sync

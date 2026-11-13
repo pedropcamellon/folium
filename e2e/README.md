@@ -33,17 +33,29 @@ Run options:
 - List scenarios: `uv run ./main.py --list`
 - Run one scenario: `uv run ./main.py --scenario provider-voice-note`
 - Run summary only: `uv run ./main.py --scenario provider-summary`
+- Run live X-ray upload/review: `uv run ./main.py --scenario provider-xray-review`
 - Run real voice-note re-upload storage verification:
-  `FOLIUM_MINIO_ACCESS_KEY=... FOLIUM_MINIO_SECRET_KEY=... uv run ./main.py --scenario provider-voice-note-reupload`
+  `FOLIUM_STORAGE_ACCESS_KEY=... FOLIUM_STORAGE_SECRET_KEY=... uv run ./main.py --scenario provider-voice-note-reupload`
 - Run multiple scenarios: `uv run ./main.py --scenario provider-patient-crud --scenario patient-portal`
 - Use env selection instead of flags: set `FOLIUM_E2E_SCENARIOS=provider-voice-note`
 
 Expected outcome: a quick pass/fail signal that role routing, session boundaries, and core provider CRUD interactions still work end to end.
 
-The `provider-voice-note-reupload` scenario uses the live backend and MinIO. It
+The `provider-xray-review` scenario uses real upload, storage, and inference.
+Start the optional X-ray service first. It uploads a generated synthetic chest
+phantom through the UI, opens the image and dedicated review route, requires
+COMPLETE (FAILED fails explicitly), and checks saved findings after reopening
+and reloading. The synthetic patient is deleted afterward. This checks workflow,
+not model accuracy or clinical safety. The phantom is not a clinical X-ray.
+The completed-review screenshot defaults to
+`/tmp/folium-e2e/xray-review-ready.png`; override with `FOLIUM_XRAY_SCREENSHOT`.
+Set `FOLIUM_XRAY_WAIT_MS` to override the 180-second inference timeout.
+
+The `provider-voice-note-reupload` scenario uses the live backend and local
+S3-compatible storage. It
 uploads two synthetic audio payloads to one encounter, verifies the replacement
 object exists, and asserts the prior object is absent. Set
-`FOLIUM_API_BASE_URL`, `FOLIUM_MINIO_ENDPOINT`, and `FOLIUM_MINIO_BUCKET` only
+`FOLIUM_API_BASE_URL`, `FOLIUM_STORAGE_ENDPOINT`, and `FOLIUM_STORAGE_BUCKET` only
 when local defaults do not apply.
 
 ## GitHub Actions pull-request check

@@ -4,6 +4,7 @@ import { useState } from "react";
 
 // Types
 import { ClinicalDocumentAttachmentView } from "@/types/clinicalDocument";
+import { useRouter } from "next/navigation";
 import { Download, ZoomIn, ZoomOut } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ export function DocumentViewerModal({
     open,
     onClose,
 }: DocumentViewerModalProps) {
+    const router = useRouter();
     const [scale, setScale] = useState(1.0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -35,6 +37,15 @@ export function DocumentViewerModal({
         total: number;
     } | null>(null);
 
+    const mimeType = document.attachment.mimeType.trim().toLowerCase();
+    const isImage = mimeType.startsWith("image/");
+    const isXrayImage =
+        document.category === "xray" &&
+        ["image/jpeg", "image/jpg", "image/png"].includes(mimeType);
+    const downloadLabel = isImage ? "Download image" : "Download";
+    const downloadTooltip = isImage
+        ? "Download this image file"
+        : "Download this document file";
     // Get appropriate viewer using factory pattern
     const viewerConfig = documentViewerFactory.getViewer(document);
     const ViewerComponent = viewerConfig.component;
@@ -52,7 +63,10 @@ export function DocumentViewerModal({
     };
 
     const handleDownload = () => {
-        window.open(document.fileUrl, "_blank");
+        const link = window.document.createElement("a");
+        link.href = document.fileUrl;
+        link.download = document.attachment.fileName;
+        link.click();
     };
 
     const handleZoomIn = () => setScale((prev) => Math.min(prev + 0.2, 3.0));
@@ -91,6 +105,23 @@ export function DocumentViewerModal({
 
                 {/* Toolbar */}
                 <div className="flex justify-center gap-2 py-2 border-b flex-shrink-0">
+                    {isXrayImage && (
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                                router.push(
+                                    `/patients/${encodeURIComponent(
+                                        document.patientId
+                                    )}/documents/${encodeURIComponent(
+                                        document.id
+                                    )}/xray-review`
+                                )
+                            }
+                        >
+                            X-ray review
+                        </Button>
+                    )}
                     {supportsZoom && (
                         <>
                             <Button
@@ -135,14 +166,15 @@ export function DocumentViewerModal({
                             variant="tertiary"
                             size="sm"
                             onClick={handleDownload}
+                            title={downloadTooltip}
+                            aria-label={downloadLabel}
                         >
                             <Download className="w-4 h-4 mr-1" />
-                            Download
+                            {downloadLabel}
                         </Button>
                     </div>
                 </div>
 
-                {/* Content Area */}
                 <div className="flex-1 overflow-auto p-4">
                     {loading && (
                         <p className="text-center text-muted-foreground">
