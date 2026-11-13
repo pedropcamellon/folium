@@ -52,23 +52,18 @@ jobs:
       pull-requests: write
     env:
       SWA_TOKEN: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+      NEXT_PUBLIC_API_MODE: mock
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        if: env.SWA_TOKEN != ''
-        with:
-          name: folium-static-demo
-          path: frontend/out
       - uses: Azure/static-web-apps-deploy@v1
         if: env.SWA_TOKEN != ''
         with:
           azure_static_web_apps_api_token: ${{ env.SWA_TOKEN }}
           repo_token: ${{ github.token }}
           action: upload
-          app_location: frontend/out
+          app_location: frontend
+          api_location: ""
           output_location: ""
-          skip_app_build: true
-          skip_api_build: true
           production_branch: main
       - name: Explain unavailable preview
         if: env.SWA_TOKEN == ''
@@ -84,14 +79,11 @@ jobs:
       id-token: write
     env:
       TF_VAR_subscription_id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      NEXT_PUBLIC_API_MODE: mock
     steps:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - uses: actions/download-artifact@v4
-        with:
-          name: folium-static-demo
-          path: frontend/out
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.14.9
@@ -122,17 +114,16 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
           action: upload
-          app_location: frontend/out
+          app_location: frontend
+          api_location: ""
           output_location: ""
-          skip_app_build: true
-          skip_api_build: true
       - name: Verify and document endpoint
         env:
           DEMO_URL: ${{ steps.swa.outputs.url }}
         run: |
           curl --fail --retry 20 --retry-all-errors --retry-delay 5 --max-time 30 "$DEMO_URL/" -o /tmp/demo.html
           grep -q 'Demo mode: synthetic data only' /tmp/demo.html
-          curl --fail --max-time 30 "$DEMO_URL/patients/demo/?id=demo-patient-001" -o /dev/null
+          curl --fail --max-time 30 "$DEMO_URL/patients/demo-patient-001" -o /dev/null
           node <<'NODE'
           const fs = require("node:fs");
           const files = ["docs/deployment.md", "docs/README.md"];
