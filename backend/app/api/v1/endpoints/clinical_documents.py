@@ -5,7 +5,7 @@ from pathlib import Path
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import Response
 
 from app.core.permissions import Permission
 from app.core.rbac import require_permission
@@ -114,10 +114,18 @@ async def download_attachment(
     _: User = Depends(require_permission(Permission.DOCUMENTS_READ)),
     service: ClinicalDocumentService = Depends(get_clinical_document_service),
     storage: ObjectStorageProvider = Depends(get_storage_provider),
-) -> RedirectResponse:
+) -> Response:
     attachment = await service.get_attachment(document_id, attachment_id)
-    url = await storage.get_presigned_url(attachment.storage_key, expiration=3600)
-    return RedirectResponse(url=url)
+    content = await storage.download(attachment.storage_key)
+    return Response(
+        content=content,
+        media_type=attachment.mime_type,
+        headers={
+            "Content-Disposition": "inline",
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)

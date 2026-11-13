@@ -39,6 +39,7 @@ DEVELOPMENT_LOG_SERVICES = frozenset(
         "folium-backend",
         "folium-transcribe",
         "folium-summarize",
+        "folium-xray-review",
         "folium-chartreview-worker",
         "folium-voicenotes-worker",
     }

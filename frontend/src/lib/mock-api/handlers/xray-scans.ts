@@ -1,4 +1,4 @@
-import type { XrayScan } from "@/types/xrayScan";
+import { XrayScanStatus, type XrayScan } from "@/types/xrayScan";
 
 import { jsonResponse } from "../http";
 import type { MockApiHandler } from "../types";
@@ -6,7 +6,8 @@ import type { MockApiHandler } from "../types";
 function completeSyntheticScan(scan: XrayScan): XrayScan {
     return {
         ...scan,
-        status: "COMPLETE",
+        status: XrayScanStatus.COMPLETE,
+        updatedAt: new Date().toISOString(),
         result: {
             findings: [
                 { label: "Lung Lesion", score: 0.74 },
@@ -34,15 +35,21 @@ export const handleXrayScans: MockApiHandler = ({
             id,
             patientId: String(body.patientId ?? state.patientId),
             clinicalDocumentId: String(body.clinicalDocumentId ?? ""),
-            status: "PENDING",
+            status: XrayScanStatus.PENDING,
             result: null,
             failureMessage: null,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
         };
         state.xrayScans.set(id, scan);
         globalThis.setTimeout(() => {
             const current = state.xrayScans.get(id);
             if (current) {
-                state.xrayScans.set(id, { ...current, status: "PROCESSING" });
+                state.xrayScans.set(id, {
+                    ...current,
+                    status: XrayScanStatus.PROCESSING,
+                    updatedAt: new Date().toISOString(),
+                });
             }
         }, 1200);
         globalThis.setTimeout(() => {
@@ -57,10 +64,17 @@ export const handleXrayScans: MockApiHandler = ({
     if (path === "/api/v1/xray-scans" && method === "GET") {
         const requestedPatientId = url.searchParams.get("patientId");
         return jsonResponse(
-            [...state.xrayScans.values()].filter(
-                (scan) =>
-                    !requestedPatientId || scan.patientId === requestedPatientId
-            )
+            [...state.xrayScans.values()]
+                .filter(
+                    (scan) =>
+                        !requestedPatientId ||
+                        scan.patientId === requestedPatientId
+                )
+                .sort(
+                    (left, right) =>
+                        Date.parse(right.createdAt) -
+                        Date.parse(left.createdAt)
+                )
         );
     }
 

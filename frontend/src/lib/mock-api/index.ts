@@ -29,7 +29,14 @@ export async function mockApiRequest(
         url,
         path,
         method: (init.method ?? "GET").toUpperCase(),
-        body: readJsonBody(init),
+        body:
+            init.body instanceof FormData
+                ? Object.fromEntries(
+                      Array.from(init.body.entries()).filter(
+                          ([, value]) => typeof value === "string"
+                      )
+                  )
+                : readJsonBody(init),
         state: mockApiState,
     };
 

@@ -35,6 +35,7 @@ services:
       CHARTREVIEW_INTERNAL_TOKEN: ${CHARTREVIEW_INTERNAL_TOKEN:?Set CHARTREVIEW_INTERNAL_TOKEN in root .env}
       CHARTREVIEW_EVALUATION_TOKEN: ${CHARTREVIEW_EVALUATION_TOKEN:?Set CHARTREVIEW_EVALUATION_TOKEN in root .env}
     volumes:
+      - ./app:/workspace/backend/app
       - backend_cache:/root/.cache
     working_dir: /workspace/backend
     command:
@@ -57,13 +58,6 @@ services:
       start_period: 10s
     develop:
       watch:
-        - action: sync
-          path: ./app
-          target: /workspace/backend/app
-          ignore:
-            - __pycache__/
-            - "*.pyc"
-            - .pytest_cache/
         - action: rebuild
           path: ./pyproject.toml
         - action: sync

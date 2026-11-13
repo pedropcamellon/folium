@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 // Types
 import { ClinicalDocumentCategory } from "@/types/clinicalDocument";
-import type {
-    XrayScan,
-    XrayScanResult,
-    XrayScanStatus,
-} from "@/types/xrayScan";
 import {
     AlertCircle,
     CheckCircle2,
     FileText,
     Image as ImageIcon,
+    LoaderCircle,
     Upload,
     X,
 } from "lucide-react";
@@ -39,7 +35,6 @@ import {
 } from "@/components/ui/select";
 
 import { uploadDocument } from "@/services/clinicalDocumentService";
-import { createXrayScan, getXrayScan } from "@/services/xrayScanService";
 
 interface DocumentUploadModalProps {
     open: boolean;
@@ -53,6 +48,7 @@ const DOCUMENT_TYPES: { value: ClinicalDocumentCategory; label: string }[] = [
     { value: "external_record", label: "External Record" },
     { value: "visit_summary", label: "Visit Summary" },
     { value: "patient_submission", label: "Patient Submission" },
+    { value: "xray", label: "X-ray Image" },
 ];
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -80,50 +76,6 @@ export function DocumentUploadModal({
     const [isUploading, setIsUploading] = useState(false);
     const [uploadError, setUploadError] = useState<string | null>(null);
     const [uploadSuccess, setUploadSuccess] = useState(false);
-    const [uploadedDocumentId, setUploadedDocumentId] = useState<string | null>(
-        null
-    );
-    const [scanId, setScanId] = useState<string | null>(null);
-    const [scanStatus, setScanStatus] = useState<XrayScanStatus | null>(null);
-    const [scanResult, setScanResult] = useState<XrayScanResult | null>(null);
-    const [scanError, setScanError] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (
-            !scanId ||
-            !scanStatus ||
-            scanStatus === "COMPLETE" ||
-            scanStatus === "FAILED"
-        ) {
-            return;
-        }
-
-        let active = true;
-        const poll = async () => {
-            try {
-                const scan: XrayScan = await getXrayScan(scanId, patientId);
-                if (!active) return;
-                setScanStatus(scan.status);
-                setScanResult(scan.result);
-                setScanError(scan.failureMessage);
-            } catch (error) {
-                if (active) {
-                    setScanError(
-                        error instanceof Error
-                            ? error.message
-                            : "Could not retrieve scan status"
-                    );
-                }
-            }
-        };
-        const timer = window.setInterval(() => void poll(), 2000);
-        void poll();
-
-        return () => {
-            active = false;
-            window.clearInterval(timer);
-        };
-    }, [patientId, scanId, scanStatus]);
 
     const onDrop = (acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -147,14 +99,12 @@ export function DocumentUploadModal({
         }
 
         setSelectedFile(file);
+        if (!file.type.startsWith("image/") && documentType === "xray") {
+            setDocumentType("external_record");
+        }
         setTitle(file.name.replace(/\.[^/.]+$/, "")); // Remove extension
         setUploadError(null);
         setUploadSuccess(false);
-        setUploadedDocumentId(null);
-        setScanId(null);
-        setScanStatus(null);
-        setScanResult(null);
-        setScanError(null);
     };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -188,17 +138,12 @@ export function DocumentUploadModal({
                 onProgress: setUploadProgress,
             });
 
-            setUploadedDocumentId(document.id);
             setUploadSuccess(true);
             setUploadProgress(100);
-            if (selectedFile.type.startsWith("image/")) {
+            window.setTimeout(() => {
                 onUploadSuccess?.();
-            } else {
-                window.setTimeout(() => {
-                    onUploadSuccess?.();
-                    handleClose();
-                }, 1500);
-            }
+                handleClose();
+            }, 1500);
         } catch (error) {
             setUploadError(
                 error instanceof Error ? error.message : "Upload failed"
@@ -209,30 +154,6 @@ export function DocumentUploadModal({
         }
     };
 
-    const handleRunXrayScan = async () => {
-        if (!uploadedDocumentId) return;
-        setScanId(null);
-        setScanError(null);
-        setScanResult(null);
-        setScanStatus("PENDING");
-        try {
-            const scan = await createXrayScan({
-                patientId,
-                clinicalDocumentId: uploadedDocumentId,
-            });
-            setScanId(scan.id);
-            setScanStatus(scan.status);
-            onUploadSuccess?.();
-        } catch (error) {
-            setScanStatus(null);
-            setScanError(
-                error instanceof Error
-                    ? error.message
-                    : "Could not start X-ray review"
-            );
-        }
-    };
-
     const handleClose = () => {
         if (isUploading) return; // Prevent closing during upload
         setSelectedFile(null);
@@ -240,11 +161,6 @@ export function DocumentUploadModal({
         setUploadProgress(0);
         setUploadError(null);
         setUploadSuccess(false);
-        setUploadedDocumentId(null);
-        setScanId(null);
-        setScanStatus(null);
-        setScanResult(null);
-        setScanError(null);
         onClose();
     };
 
@@ -345,75 +261,6 @@ export function DocumentUploadModal({
                         </div>
                     )}
 
-                    {uploadSuccess &&
-                        selectedFile?.type.startsWith("image/") && (
-                            <section
-                                className="space-y-3 rounded-lg border p-4"
-                                aria-live="polite"
-                            >
-                                <p className="text-sm text-muted-foreground">
-                                    Optional research-only second-look. This
-                                    model does not diagnose disease or locate
-                                    nodules; provider review is required.
-                                </p>
-                                {!scanId && (
-                                    <Button onClick={handleRunXrayScan}>
-                                        Run X-ray review
-                                    </Button>
-                                )}
-                                {scanStatus && (
-                                    <p className="text-sm font-medium">
-                                        Review status: {scanStatus}
-                                    </p>
-                                )}
-                                {scanStatus === "FAILED" && (
-                                    <Button
-                                        variant="secondary"
-                                        onClick={handleRunXrayScan}
-                                    >
-                                        Retry review
-                                    </Button>
-                                )}
-                                {scanError && (
-                                    <p
-                                        role="alert"
-                                        className="text-sm text-red-700"
-                                    >
-                                        {scanError}
-                                    </p>
-                                )}
-                                {scanResult && (
-                                    <div className="space-y-2">
-                                        <p className="font-semibold">
-                                            Needs provider review
-                                        </p>
-                                        <p className="text-sm text-muted-foreground">
-                                            Scores are not calibrated
-                                            probabilities. Model:{" "}
-                                            {scanResult.modelRepository} @{" "}
-                                            {scanResult.modelRevision}
-                                        </p>
-                                        <ul className="space-y-1 text-sm">
-                                            {scanResult.findings.map(
-                                                (finding) => (
-                                                    <li key={finding.label}>
-                                                        {finding.label}: model
-                                                        score{" "}
-                                                        {finding.score.toFixed(
-                                                            3
-                                                        )}
-                                                    </li>
-                                                )
-                                            )}
-                                        </ul>
-                                        <p className="text-xs text-muted-foreground">
-                                            {scanResult.disclaimer}
-                                        </p>
-                                    </div>
-                                )}
-                            </section>
-                        )}
-
                     {/* Error Message */}
                     {uploadError && (
                         <div className="border border-red-500 bg-red-50 rounded-lg p-4 flex items-center gap-3">
@@ -447,6 +294,12 @@ export function DocumentUploadModal({
                                             <SelectItem
                                                 key={type.value}
                                                 value={type.value}
+                                                disabled={
+                                                    type.value === "xray" &&
+                                                    !selectedFile.type.startsWith(
+                                                        "image/"
+                                                    )
+                                                }
                                             >
                                                 {type.label}
                                             </SelectItem>
@@ -469,10 +322,29 @@ export function DocumentUploadModal({
 
                             {/* Upload Progress */}
                             {isUploading && (
-                                <div className="space-y-2">
-                                    <div className="flex justify-between text-sm">
-                                        <span>Uploading...</span>
-                                        <span>{uploadProgress}%</span>
+                                <div
+                                    className="space-y-3 rounded-lg border bg-primary/5 p-4"
+                                    role="status"
+                                    aria-live="polite"
+                                >
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <span className="relative flex h-9 w-9 items-center justify-center">
+                                                <span className="absolute inset-0 rounded-full bg-primary/15 animate-ping" />
+                                            </span>
+                                            <div>
+                                                <p className="text-sm font-medium">
+                                                    Uploading your file
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Keep this window open while
+                                                    it completes.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="text-sm font-semibold tabular-nums">
+                                            {uploadProgress}%
+                                        </span>
                                     </div>
                                     <Progress value={uploadProgress} />
                                 </div>

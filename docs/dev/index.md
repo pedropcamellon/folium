@@ -21,6 +21,7 @@ take autonomous action.
 ## Developer topics
 
 - [Local Docker runtime](local-development.md)
+- [X-ray second-look review](features/xray-review.md)
 - [Coding conventions](coding-conventions.md)
 - [Bounded chart-review agent](chart-review-agent.md)
 - [Validation and offline evaluation](validation-and-evals.md)

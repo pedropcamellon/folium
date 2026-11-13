@@ -1,4 +1,9 @@
-export type XrayScanStatus = "PENDING" | "PROCESSING" | "COMPLETE" | "FAILED";
+export enum XrayScanStatus {
+    PENDING = "PENDING",
+    PROCESSING = "PROCESSING",
+    COMPLETE = "COMPLETE",
+    FAILED = "FAILED",
+}
 
 export interface XrayFinding {
     label: string;
@@ -20,4 +25,6 @@ export interface XrayScan {
     status: XrayScanStatus;
     result: XrayScanResult | null;
     failureMessage: string | null;
+    createdAt: string;
+    updatedAt: string | null;
 }

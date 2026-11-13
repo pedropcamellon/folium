@@ -131,7 +131,12 @@ export async function apiUpload<T>(
             body: formData,
         });
         if (!response.ok) {
-            throw new Error(`Upload failed with status ${response.status}`);
+            throw new Error(
+                await getUploadErrorMessage(
+                    await response.text(),
+                    response.status
+                )
+            );
         }
         onProgress?.(100);
         return response.json();
@@ -161,7 +166,9 @@ export async function apiUpload<T>(
                 clearAuthToken();
                 window.location.href = publicAsset("/login");
             }
-            reject(new Error(`Upload failed with status ${xhr.status}`));
+            reject(
+                new Error(getUploadErrorMessage(xhr.responseText, xhr.status))
+            );
         };
 
         xhr.onerror = () => reject(new Error("Network error during upload"));
@@ -197,4 +204,43 @@ function handleUnauthorized(response: Response): void {
         clearAuthToken();
         window.location.href = publicAsset("/login");
     }
+}
+
+function getUploadErrorMessage(responseText: string, status: number): string {
+    const statusMessage = `Upload failed with status ${status}`;
+    let response: unknown;
+
+    try {
+        response = JSON.parse(responseText) as unknown;
+    } catch {
+        return statusMessage;
+    }
+
+    if (
+        typeof response !== "object" ||
+        response === null ||
+        !("detail" in response)
+    ) {
+        return statusMessage;
+    }
+
+    const { detail } = response;
+    if (typeof detail === "string") {
+        return `${statusMessage}: ${detail}`;
+    }
+
+    if (Array.isArray(detail)) {
+        const messages = detail.flatMap((item) =>
+            typeof item === "object" &&
+            item !== null &&
+            "msg" in item &&
+            typeof item.msg === "string"
+                ? [item.msg]
+                : []
+        );
+        if (messages.length > 0) {
+            return `${statusMessage}: ${messages.join("; ")}`;
+        }
+    }
+    return statusMessage;
 }

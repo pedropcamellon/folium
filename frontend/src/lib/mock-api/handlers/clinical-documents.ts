@@ -1,4 +1,7 @@
-import type { ClinicalDocument } from "@/types/clinicalDocument";
+import type {
+    ClinicalDocument,
+    ClinicalDocumentCategory,
+} from "@/types/clinicalDocument";
 
 import { jsonResponse } from "../http";
 import type { MockApiHandler } from "../types";
@@ -21,12 +24,22 @@ export const handleClinicalDocuments: MockApiHandler = ({
     }
 
     if (path === "/api/v1/clinical-documents/upload" && method === "POST") {
+        const categories: ClinicalDocumentCategory[] = [
+            "clinical_note",
+            "external_record",
+            "visit_summary",
+            "patient_submission",
+            "xray",
+        ];
+        const category =
+            categories.find((value) => value === body.category) ??
+            "patient_submission";
         const document: ClinicalDocument = {
             id: `demo-document-${crypto.randomUUID()}`,
             patientId: String(body.patientId ?? state.patientId),
-            category: "patient_submission",
+            category,
             status: "final",
-            title: "Sample document",
+            title: String(body.title ?? "Sample document"),
             createdAt: state.now,
             attachments: [],
         };

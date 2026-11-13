@@ -87,6 +87,17 @@ def test_clinical_document_bundle_keeps_storage_metadata_on_attachment() -> None
     assert bundle.attachments[0].storage_key == "documents/synthetic/external-record.pdf"
 
 
+def test_clinical_document_accepts_xray_category() -> None:
+    document = ClinicalDocumentCreate(
+        patientId=uuid4(),
+        category=ClinicalDocumentCategory.XRAY,
+        status=ClinicalRecordStatus.FINAL,
+        title="Synthetic X-ray image",
+    )
+
+    assert document.category == ClinicalDocumentCategory.XRAY
+
+
 def test_encounter_narrative_response_includes_derived_patient_ownership() -> None:
     patient_id = uuid4()
     encounter_id = uuid4()
