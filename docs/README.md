@@ -3,8 +3,11 @@
 # Modern clinical workflows
 
 [Open the live Folium demo](deployment.md#synthetic-hybrid-demo):
+
 <!-- demo-url:start -->
+
 [https://salmon-island-0248c5310.3.azurestaticapps.net](https://salmon-island-0248c5310.3.azurestaticapps.net)
+
 <!-- demo-url:end -->
 
 Folium is an in-progress personal engineering sandbox. It explores how clearer,

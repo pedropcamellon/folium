@@ -11,6 +11,7 @@ from flows.provider_patient_crud import run_provider_patient_crud
 from flows.provider_summary import run_provider_summary_flow
 from flows.provider_voice_note import run_provider_voice_note_flow
 from flows.provider_voice_note_reupload import run_provider_voice_note_reupload_flow
+from flows.provider_xray_review import run_provider_xray_review_flow
 from playwright.sync_api import Page
 from settings import FAKE_TRANSCRIPT, PROVIDER_WAIT_MS
 
@@ -37,6 +38,11 @@ def with_provider_pause(flow: FlowCase, wait_ms: int) -> FlowCase:
 
 
 SCENARIOS: tuple[Scenario, ...] = (
+    Scenario(
+        name="provider-xray-review",
+        flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),
+        runner=run_provider_xray_review_flow,
+    ),
     Scenario(
         name="provider-patient-crud",
         flow=with_provider_pause(PROVIDER_FLOW, PROVIDER_WAIT_MS),

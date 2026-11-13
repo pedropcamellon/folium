@@ -1,6 +1,10 @@
 """Database models for SQLAlchemy ORM."""
 
-from app.models.db.chart_review import ChartReview, ChartReviewCitation, ChartReviewSourceRef
+from app.models.db.chart_review import (
+    ChartReview,
+    ChartReviewCitation,
+    ChartReviewSourceRef,
+)
 from app.models.db.clinical import (
     Attachment,
     ClinicalDocument,
@@ -14,6 +18,7 @@ from app.models.db.clinical import (
 )
 from app.models.db.clinical_activities import Immunization, Medication, Procedure
 from app.models.db.patient import Patient
+from app.models.db.xray_scan import XrayScan
 
 __all__ = [
     "Attachment",
@@ -32,4 +37,5 @@ __all__ = [
     "Patient",
     "Procedure",
     "ResourceRelationship",
+    "XrayScan",
 ]

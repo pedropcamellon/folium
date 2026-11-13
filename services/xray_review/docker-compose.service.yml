@@ -1,0 +1,29 @@
+services:
+  folium-xray-review:
+    profiles:
+      - xray-review
+    image: folium-xray-review
+    pull_policy: build
+    container_name: folium-xray-review
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      XRAY_REVIEW_TOKEN: ${XRAY_REVIEW_SERVICE_TOKEN:-}
+    volumes:
+      - xray_review_model_cache:/tmp/huggingface
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json, urllib.request; data=json.load(urllib.request.urlopen('http://localhost:8010/health')); assert data['status'] == 'ready'",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 5m
+
+volumes:
+  xray_review_model_cache:

@@ -19,6 +19,7 @@ const DOCUMENT_TYPES: ClinicalDocumentCategory[] = [
     "external_record",
     "visit_summary",
     "patient_submission",
+    "xray",
 ];
 
 const TYPE_LABELS: Record<ClinicalDocumentCategory, string> = {
@@ -26,6 +27,7 @@ const TYPE_LABELS: Record<ClinicalDocumentCategory, string> = {
     external_record: "External Record",
     visit_summary: "Visit Summary",
     patient_submission: "Patient Submission",
+    xray: "X-ray Image",
 };
 
 interface DocumentSortFilterMenuProps {

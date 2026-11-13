@@ -131,6 +131,7 @@ class DocumentViewerFactory {
         return [
             "application/pdf",
             "image/jpeg",
+            "image/jpg",
             "image/png",
             "image/gif",
             "image/webp",

@@ -2,7 +2,8 @@ export type ClinicalDocumentCategory =
     | "clinical_note"
     | "external_record"
     | "visit_summary"
-    | "patient_submission";
+    | "patient_submission"
+    | "xray";
 
 export type ClinicalRecordStatus =
     | "preliminary"
