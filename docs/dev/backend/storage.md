@@ -44,8 +44,13 @@ workflow development without a hosted storage account. Set
 endpoint is RustFS.
 
 The local RustFS image is pinned to 1.0.5. Its credentials use the backend's
-`STORAGE_ACCESS_KEY` and `STORAGE_SECRET_KEY` settings. The previous `minio_data`
-Docker volume is left untouched; RustFS uses a new `rustfs_data` volume.
+`STORAGE_ACCESS_KEY` and `STORAGE_SECRET_KEY` settings. RustFS uses a new
+`rustfs_data` volume. Any existing `minio_data` volume is left untouched and has
+not been migrated or validated for reuse.
+
+RustFS supports a tested subset of S3 behavior, not full compatibility with
+every S3 implementation. Keep usage within Folium's validated storage
+operations; see the [RustFS S3 compatibility matrix](https://docs.rustfs.com/en/reference/s3-compatibility).
 
 ### Open the local RustFS console
 

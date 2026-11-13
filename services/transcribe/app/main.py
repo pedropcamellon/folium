@@ -70,7 +70,7 @@ async def transcribe_audio(request: TranscriptionRequest):
     """
     Transcribe audio from presigned URL.
 
-    Accepts audio from any storage provider (S3, Azure Blob, MinIO).
+    Accepts audio from any storage provider (S3-compatible or Azure Blob).
     Uses configured provider (Whisper, AWS, or Azure) based on TRANSCRIPTION_PROVIDER env var.
     """
     try:
