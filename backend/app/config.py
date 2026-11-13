@@ -34,10 +34,10 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
 
     # Multi-Cloud Storage Configuration
-    STORAGE_PROVIDER: str = "minio"  # 'aws', 'azure', 'minio'
+    STORAGE_PROVIDER: str = "rustfs"  # 'aws', 'azure', 'rustfs'
     STORAGE_BUCKET: str = "folium-dev"
     STORAGE_REGION: str = "us-east-2"
-    STORAGE_ENDPOINT: str | None = None  # Required for MinIO/Azure (internal Docker)
+    STORAGE_ENDPOINT: str | None = None  # Required for RustFS/Azure
     STORAGE_PUBLIC_ENDPOINT: str | None = None  # Public-facing endpoint for browser
     STORAGE_ACCESS_KEY: str = ""
     STORAGE_SECRET_KEY: str = ""
@@ -89,7 +89,7 @@ class Settings(BaseSettings):
         if not self.CHARTREVIEW_INTERNAL_TOKEN.strip():
             missing_fields.append("CHARTREVIEW_INTERNAL_TOKEN")
 
-        if self.STORAGE_PROVIDER in {"aws", "minio"}:
+        if self.STORAGE_PROVIDER in {"aws", "rustfs"}:
             if not self.STORAGE_ACCESS_KEY.strip():
                 missing_fields.append("STORAGE_ACCESS_KEY")
             if not self.STORAGE_SECRET_KEY.strip():

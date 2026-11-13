@@ -1,7 +1,7 @@
 services:
-  folium-minio:
-    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
-    container_name: folium-minio
+  folium-rustfs:
+    image: rustfs/rustfs:1.0.5
+    container_name: folium-rustfs
     ports:
       - "9000:9000" # S3 API
       - "9001:9001" # Web Console
@@ -9,15 +9,19 @@ services:
       - path: .env
         required: false
     environment:
-      - MINIO_PROMETHEUS_AUTH_TYPE=public
-    command: server /data --console-address ":9001"
+      RUSTFS_ACCESS_KEY: ${STORAGE_ACCESS_KEY:?Set STORAGE_ACCESS_KEY in root .env}
+      RUSTFS_SECRET_KEY: ${STORAGE_SECRET_KEY:?Set STORAGE_SECRET_KEY in root .env}
+      RUSTFS_ADDRESS: "0.0.0.0:9000"
+      RUSTFS_CONSOLE_ADDRESS: "0.0.0.0:9001"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    command: /data
     volumes:
-      - minio_data:/data
+      - rustfs_data:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health/ready"]
       interval: 30s
       timeout: 20s
       retries: 3
 
 volumes:
-  minio_data:
+  rustfs_data:
