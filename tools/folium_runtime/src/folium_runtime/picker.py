@@ -14,7 +14,7 @@ from questionary.prompts.common import Choice, InquirerControl
 
 SERVICES = (
     ("folium-postgres", "PostgreSQL"),
-    ("folium-minio", "MinIO"),
+    ("folium-rustfs", "RustFS"),
     ("folium-temporal-postgres", "Temporal PostgreSQL"),
     ("folium-temporal", "Temporal server"),
     ("folium-temporal-ui", "Temporal UI"),

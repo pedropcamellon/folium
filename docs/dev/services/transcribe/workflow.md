@@ -2,12 +2,15 @@
 
 ### Implementation: Async Background Task
 
-Backend returns 200 OK immediately after audio upload. Transcription runs in background via `asyncio.create_task()`. Frontend polls for updates.
+Backend returns 200 OK after the audio upload is accepted. Transcription runs in
+the background via `asyncio.create_task()`, and the frontend polls for updates.
+The upload-success response does not itself mean that transcription is complete
+or that the transcript is visible in the UI.
 
 **Flow**:
 
 1. Frontend: User records audio → POST to backend with WebM blob
-2. Backend: Upload to MinIO → Generate presigned URL → Return 200 OK
+2. Backend: Upload to S3-compatible storage → Generate presigned URL → Return 200 OK
 3. Backend (background task): Call transcription service with presigned URL
 4. Transcription service: Download audio → Process with Whisper → Return transcript
 5. Backend (background task): Update interaction note with timestamped transcript

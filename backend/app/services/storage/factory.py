@@ -1,12 +1,11 @@
 """Factory for creating storage provider instances"""
 
 import logging
-from typing import Optional
 
-from .base import ObjectStorageProvider, StorageConfig
 from .aws_storage import AWSStorage
 from .azure_storage import AzureStorage
-from .minio_storage import MinIOStorage
+from .base import ObjectStorageProvider, StorageConfig
+from .s3_compatible_storage import S3CompatibleStorage
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 class StorageProviderFactory:
     """Factory for instantiating storage providers"""
 
-    _providers = {"aws": AWSStorage, "azure": AzureStorage, "minio": MinIOStorage}
+    _providers = {"aws": AWSStorage, "azure": AzureStorage, "rustfs": S3CompatibleStorage}
 
     @classmethod
     def create(cls, config: StorageConfig) -> ObjectStorageProvider:
@@ -56,7 +55,7 @@ class StorageProviderFactory:
 
 
 # Singleton instance
-_storage_instance: Optional[ObjectStorageProvider] = None
+_storage_instance: ObjectStorageProvider | None = None
 
 
 async def get_storage() -> ObjectStorageProvider:
