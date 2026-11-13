@@ -13,8 +13,12 @@
       "path": "../pedropcamellon.github.io",
     },
     {
-      "name": "Folium EHR Tasks",
+      "name": "Folium Tasks",
       "path": "../tasks",
+    },
+    {
+      "name": "Folium EHR Tasks",
+      "path": "../tasks/folium",
     },
     {
       "name": "Folium Agents Tasks",

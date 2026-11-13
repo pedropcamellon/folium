@@ -13,7 +13,6 @@ jobs:
       run:
         working-directory: frontend
     env:
-      NEXT_PUBLIC_DEMO_STATIC: "true"
       NEXT_PUBLIC_API_MODE: mock
     steps:
       - uses: actions/checkout@v4
@@ -26,15 +25,10 @@ jobs:
           cache: pnpm
           cache-dependency-path: frontend/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build --no-lint
+      - run: pnpm build
       - run: pnpm type-check
       - name: Check deployment files
         run: |
-          test -s out/index.html
-          test -s out/patients/demo/index.html
-          test -d out/_next/static
-      - uses: actions/upload-artifact@v4
-        with:
-          name: folium-static-demo
-          path: frontend/out
-          retention-days: 1
+          test -s .next/standalone/server.js
+          test -d .next/standalone/.next/static
+          test -d .next/standalone/public
