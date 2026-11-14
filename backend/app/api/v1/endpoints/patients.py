@@ -116,10 +116,10 @@ async def delete_patient(
 ):
     """Delete patient"""
     logger.audit(
-        action="patient_record_deleted",
+        action="patient_record_deactivated",
         user_id=str(current_user.id),
         patient_id=patient_id,
         method="DELETE",
         endpoint=f"/api/v1/patients/{patient_id}",
     )
-    await service.delete(patient_id)
+    await service.deactivate(patient_id)

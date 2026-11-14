@@ -6,7 +6,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.core.exceptions import PatientNotFoundError
 from app.models.clinical import (
     EncounterCreate,
     EncounterNarrativeCreate,
@@ -14,8 +13,9 @@ from app.models.clinical import (
     EncounterUpdate,
     ResourceType,
 )
-from app.models.db import Encounter, EncounterNarrative, Patient
+from app.models.db import Encounter, EncounterNarrative
 from app.repositories.clinical_provenance_repository import ClinicalProvenanceRepository
+from app.repositories.patient_repository import require_active_patient
 
 
 class EncounterRepository:
@@ -64,6 +64,7 @@ class EncounterRepository:
         encounter = await self.get_by_id(encounter_id)
         if encounter is None:
             return None
+        await require_active_patient(self.session, encounter.patient_id)
 
         narrative_data = narrative_input.model_dump(exclude={"encounter_id", "provenance"})
         narrative_data["status"] = narrative_input.status.value
@@ -85,6 +86,7 @@ class EncounterRepository:
         encounter = await self.get_by_id(encounter_id)
         if encounter is None:
             return None
+        await require_active_patient(self.session, encounter.patient_id)
 
         update_data = encounter_input.model_dump(exclude_unset=True)
         json_update_data = encounter_input.model_dump(exclude_unset=True, mode="json")
@@ -103,6 +105,7 @@ class EncounterRepository:
         encounter = await self.get_by_id(encounter_id)
         if encounter is None:
             return None
+        await require_active_patient(self.session, encounter.patient_id)
 
         narrative = encounter.narratives[-1] if encounter.narratives else None
         if narrative is None:
@@ -128,9 +131,7 @@ class EncounterRepository:
         return True
 
     async def _require_patient(self, patient_id: UUID) -> None:
-        patient = await self.session.scalar(select(Patient.id).where(Patient.id == patient_id))
-        if patient is None:
-            raise PatientNotFoundError(str(patient_id))
+        await require_active_patient(self.session, patient_id)
 
     async def _require_prior_encounter(self, encounter_id: UUID, patient_id: UUID) -> None:
         prior_encounter = await self.session.scalar(

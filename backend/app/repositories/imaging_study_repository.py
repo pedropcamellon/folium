@@ -5,10 +5,10 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import PatientNotFoundError
 from app.models.clinical import ImagingStudyCreate, ResourceType
-from app.models.db import ClinicalDocument, DiagnosticReport, Encounter, ImagingStudy, Patient
+from app.models.db import ClinicalDocument, DiagnosticReport, Encounter, ImagingStudy
 from app.repositories.clinical_provenance_repository import ClinicalProvenanceRepository
+from app.repositories.patient_repository import require_active_patient
 
 
 class ImagingStudyRepository:
@@ -54,9 +54,7 @@ class ImagingStudyRepository:
         return study
 
     async def _require_patient(self, patient_id: UUID) -> None:
-        patient = await self.session.scalar(select(Patient.id).where(Patient.id == patient_id))
-        if patient is None:
-            raise PatientNotFoundError(str(patient_id))
+        await require_active_patient(self.session, patient_id)
 
     async def _require_same_patient_reference(
         self,

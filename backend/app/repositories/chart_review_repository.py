@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.db.chart_review import ChartReview, ChartReviewCitation, ChartReviewSourceRef
+from app.repositories.patient_repository import require_active_patient
 
 
 class ChartReviewRepository:
@@ -20,6 +21,7 @@ class ChartReviewRepository:
         self, patient_id: UUID, encounter_id: UUID, review_input: ChartReviewInput
     ) -> ChartReview:
         """Create a queued review with a JSON-safe snapshot and source references."""
+        await require_active_patient(self.session, patient_id)
         chart_review = ChartReview(
             patient_id=patient_id,
             encounter_id=encounter_id,
