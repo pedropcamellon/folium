@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.db import ClinicalDocument, XrayScan
 from app.models.db.clinical import Attachment
 from app.models.xray_scan import XrayScanCreate, XrayScanStatus
+from app.repositories.patient_repository import require_active_patient
 
 
 class XrayScanRepository:
@@ -15,6 +16,7 @@ class XrayScanRepository:
         self.session = session
 
     async def create(self, scan_input: XrayScanCreate, requested_by: str) -> XrayScan:
+        await require_active_patient(self.session, scan_input.patient_id)
         document = await self.session.scalar(
             select(ClinicalDocument).where(
                 ClinicalDocument.id == scan_input.clinical_document_id,

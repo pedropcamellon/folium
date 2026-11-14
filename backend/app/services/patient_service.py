@@ -47,13 +47,13 @@ class PatientService:
         await self.repository.session.commit()
         return PatientResponse.model_validate(updated)
 
-    async def delete(self, patient_id: str) -> bool:
-        """Delete patient"""
+    async def deactivate(self, patient_id: str) -> bool:
+        """Deactivate patient while retaining clinical history."""
         # Verify patient exists
         existing = await self.repository.get_by_id(patient_id)
         if not existing:
             raise PatientNotFoundError(patient_id)
 
-        result = await self.repository.delete(patient_id)
+        result = await self.repository.deactivate(patient_id)
         await self.repository.session.commit()
         return result

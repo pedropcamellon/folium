@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.models.clinical import DiagnosticReportBundleCreate, ResourceType
 from app.models.db import DiagnosticReport, Observation
 from app.repositories.clinical_provenance_repository import ClinicalProvenanceRepository
+from app.repositories.patient_repository import require_active_patient
 
 
 class DiagnosticReportRepository:
@@ -16,6 +17,7 @@ class DiagnosticReportRepository:
         self.session = session
 
     async def create(self, bundle: DiagnosticReportBundleCreate) -> DiagnosticReport:
+        await require_active_patient(self.session, bundle.report.patient_id)
         report_data = bundle.report.model_dump(exclude={"provenance"})
         report_data["originating_encounter_id"] = report_data.pop("originating_encounter_id")
         report = DiagnosticReport(**report_data)
